@@ -1,6 +1,15 @@
 import React, { useEffect, useState, useContext, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
+import EditPostModal from "./EditPostModal";
+import DeletePostModal from "./DeletePostModal";
+
+interface Attachment {
+  id: number;
+  file_name: string;
+  file_url: string;
+  uploaded_at: string;
+}
 
 interface Post {
   id: number;
@@ -10,6 +19,7 @@ interface Post {
   created_at: string;
   like_count: number;
   is_edited: boolean;
+  attachments?: Attachment[];
 }
 
 interface UserPostsProps {
@@ -59,7 +69,7 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
   }, [user.id, refreshSignal]);
 
   // Edit Post
-  const handleEditPost = async () => {
+  const handleEditPost = async (updatedContent?: string, updatedImage?: string) => {
     if (!currentPost) return;
     try {
       const res = await fetch(`${API_URL}/api/posts/${currentPost.id}`, {
@@ -69,8 +79,8 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          content: editContent,
-          image_url: editImage,
+          content: updatedContent ?? editContent,
+          image_url: updatedImage ?? editImage,
         }),
       });
       const data = await res.json();
@@ -119,6 +129,8 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
           className="bg-gray-100 dark:bg-gray-700 p-4 rounded-xl shadow hover:shadow-lg transition-shadow relative group"
         >
           <p className="text-gray-800 dark:text-gray-100">{post.content}</p>
+
+          {/* Display image if exists */}
           {post.image_url && (
             <img
               src={post.image_url}
@@ -126,6 +138,24 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
               className="mt-2 rounded-lg max-h-60 w-full object-cover"
             />
           )}
+
+          {/* Display attachments */}
+          {post.attachments && post.attachments.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {post.attachments.map((att) => (
+                <a
+                  key={att.id}
+                  href={att.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2 py-1 bg-indigo-200 dark:bg-indigo-600 text-indigo-800 dark:text-white rounded"
+                >
+                  {att.file_name}
+                </a>
+              ))}
+            </div>
+          )}
+
           <div className="flex justify-between mt-2 text-sm text-gray-600 dark:text-gray-300">
             <span>{new Date(post.created_at).toLocaleString()}</span>
             <span>Likes: {post.like_count}</span>
@@ -134,6 +164,7 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
             <span className="text-xs text-gray-500 dark:text-gray-400">Edited</span>
           )}
 
+          {/* Edit/Delete buttons */}
           {post.user_id === user.id && (
             <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <FiEdit2
@@ -159,68 +190,22 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
         </div>
       ))}
 
-      {/* Edit Modal */}
-      {showEditModal && currentPost && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Edit Post</h3>
-            <textarea
-              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-gray-600 dark:text-gray-100 mb-3"
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-            />
-            <input
-              type="text"
-              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-gray-600 dark:text-gray-100 mb-3"
-              placeholder="Image URL (optional)"
-              value={editImage}
-              onChange={(e) => setEditImage(e.target.value)}
-            />
-            <div className="flex justify-end space-x-2">
-              <button
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg"
-                onClick={() => setShowEditModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg"
-                onClick={handleEditPost}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ---- Reusable Modals ---- */}
+      <EditPostModal
+        isOpen={showEditModal && currentPost !== null}
+        content={editContent}
+        imageUrl={editImage}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleEditPost}
+        onChangeContent={setEditContent}
+        onChangeImage={setEditImage}
+      />
 
-      {/* Delete Modal */}
-      {showDeleteModal && currentPost && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">
-              Confirm Delete
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-4">
-              Are you sure you want to delete this post?
-            </p>
-            <div className="flex justify-end space-x-2">
-              <button
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
-                onClick={handleDeletePost}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeletePostModal
+        isOpen={showDeleteModal && currentPost !== null}
+        onClose={() => setShowDeleteModal(false)}
+        onDelete={handleDeletePost}
+      />
     </div>
   );
 };
