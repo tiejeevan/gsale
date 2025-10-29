@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
 const Signin: React.FC = () => {
@@ -61,7 +61,11 @@ const Signin: React.FC = () => {
         <button type="submit">Sign In</button>
       </form>
       {message && <p>{message}</p>}
+      <div className="signup-prompt">
+        <p>Don't have an account? <Link to="/signup">Sign Up</Link></p>
+      </div>
     </div>
+    
   );
 };
 
