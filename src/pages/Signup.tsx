@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 const Signup: React.FC = () => {
   const [first_name, setFirstName] = useState("");
@@ -10,8 +11,9 @@ const Signup: React.FC = () => {
   const [message, setMessage] = useState("");
 
   const navigate = useNavigate();
-  // const API_URL = "https://gsaleback.onrender.com";
-  const API_URL = "http://localhost:5001";
+  const { setAuth } = useContext(AuthContext)!;
+  const API_URL = "https://gsaleback.onrender.com";
+  // const API_URL = "http://localhost:5001"; // or production URL
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,11 +31,10 @@ const Signup: React.FC = () => {
         return;
       }
 
-      // Save token & user to localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // ✅ Update AuthContext immediately
+      setAuth(data.user, data.token);
 
-      setMessage("Signup successful!");
+      // ✅ Navigate to dashboard
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
@@ -82,7 +83,6 @@ const Signup: React.FC = () => {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
             className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 

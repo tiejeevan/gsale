@@ -1,16 +1,24 @@
 import { createContext, useState, useEffect, type ReactNode } from "react";
 
+interface User {
+  id: number;
+  first_name: string;
+  last_name: string;
+  username: string;
+  email: string;
+}
+
 interface AuthContextType {
-  user: any;
+  user: User | null;
   token: string | null;
-  setAuth: (user: any, token: string) => void;
+  setAuth: (user: User, token: string) => void;
   logout: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,7 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const setAuth = (user: any, token: string) => {
+  const setAuth = (user: User, token: string) => {
     setUser(user);
     setToken(token);
     localStorage.setItem("token", token);
@@ -34,7 +42,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    window.location.href = "/login";
+    // Remove hard reload
+    // window.location.href = "/login";
   };
 
   return (

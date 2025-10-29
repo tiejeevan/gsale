@@ -1,14 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 const Dashboard: React.FC = () => {
-  const user = localStorage.getItem("user");
-  const userObj = user ? JSON.parse(user) : null;
+  const auth = useContext(AuthContext);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
-  };
+  if (!auth) return null; // safety check
+  const { user, logout } = auth;
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col md:flex-row">
@@ -45,13 +42,13 @@ const Dashboard: React.FC = () => {
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
             Dashboard
           </h2>
-          {userObj && (
+          {user && (
             <p className="text-gray-700 dark:text-gray-300">
-              Welcome, {userObj.name}!
+              Welcome, {user.first_name} {user.last_name}!
             </p>
           )}
           <button
-            onClick={handleLogout}
+            onClick={logout}
             className="mt-4 px-6 py-3 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 transform hover:scale-105"
           >
             Sign Out

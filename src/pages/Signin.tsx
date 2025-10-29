@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 const Signin: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -7,8 +8,9 @@ const Signin: React.FC = () => {
   const [message, setMessage] = useState("");
 
   const navigate = useNavigate();
-  // const API_URL = "https://gsaleback.onrender.com";
-  const API_URL = "http://localhost:5001";
+  const { setAuth } = useContext(AuthContext)!;
+  const API_URL = "https://gsaleback.onrender.com";
+  // const API_URL = "http://localhost:5001";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,11 +28,10 @@ const Signin: React.FC = () => {
         return;
       }
 
-      // Save token & user to localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // ✅ Update AuthContext immediately
+      setAuth(data.user, data.token);
 
-      setMessage("Signin successful!");
+      // ✅ Navigate to dashboard
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
