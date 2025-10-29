@@ -1,24 +1,22 @@
-import React, { useState, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Signin: React.FC = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  const { setAuth } = useContext(AuthContext)!;
   const navigate = useNavigate();
-  const API_URL = "https://gsaleback.onrender.com";
+  // const API_URL = "https://gsaleback.onrender.com";
+  const API_URL = "http://localhost:5001";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       const res = await fetch(`${API_URL}/api/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
@@ -28,11 +26,11 @@ const Signin: React.FC = () => {
         return;
       }
 
-      // Save user and token in context & localStorage
-      setAuth(data.user, data.token);
+      // Save token & user to localStorage
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
       setMessage("Signin successful!");
-      // Redirect to Dashboard
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
@@ -41,26 +39,20 @@ const Signin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 space-y-6 transition-colors duration-300">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 space-y-6">
         <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 text-center">
           Sign In
         </h2>
 
-        {message && (
-          <p className="text-center text-red-500 dark:text-red-400 font-medium animate-pulse">
-            {message}
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 outline-none bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-300 transition-colors duration-200"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
           <input
@@ -69,7 +61,7 @@ const Signin: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 outline-none bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-300 transition-colors duration-200"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
           <button
@@ -80,12 +72,11 @@ const Signin: React.FC = () => {
           </button>
         </form>
 
+        {message && <p className="text-center text-red-500">{message}</p>}
+
         <p className="text-center text-gray-600 dark:text-gray-300">
           Don't have an account?{" "}
-          <Link
-            to="/signup"
-            className="text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium transition-colors duration-200"
-          >
+          <Link to="/signup" className="text-indigo-500 hover:underline">
             Sign Up
           </Link>
         </p>
