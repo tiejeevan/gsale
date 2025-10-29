@@ -7,7 +7,7 @@ const Dashboard: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    window.location.href = "/signin";
+    window.location.href = "/login";
   };
 
   return (
