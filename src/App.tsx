@@ -5,6 +5,7 @@ import Signin from "./pages/Signin";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthContext } from "./context/AuthContext";
+import Discover from "./pages/Discover";
 
 function App() {
   const { token } = useContext(AuthContext)!;
@@ -27,6 +28,15 @@ function App() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/discover"
+        element={
+          <ProtectedRoute>
+            <Discover />
           </ProtectedRoute>
         }
       />

@@ -9,8 +9,7 @@ const Signin: React.FC = () => {
 
   const navigate = useNavigate();
   const { setAuth } = useContext(AuthContext)!;
-  const API_URL = "https://gsaleback.onrender.com";
-  // const API_URL = "http://localhost:5001";
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
