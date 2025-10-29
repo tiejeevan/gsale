@@ -1,11 +1,6 @@
 import React, { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 
-interface Attachment {
-  file_name: string;
-  url: string;
-}
-
 interface CreatePostProps {
   onPostCreated?: () => void; // callback to refresh posts or do something
 }
