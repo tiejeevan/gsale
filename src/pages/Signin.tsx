@@ -1,6 +1,8 @@
 import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { ShoppingBagIcon, UserIcon } from "@heroicons/react/24/outline";
+
 
 const Signin: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -27,10 +29,7 @@ const Signin: React.FC = () => {
         return;
       }
 
-      // ✅ Update AuthContext immediately
       setAuth(data.user, data.token);
-
-      // ✅ Navigate to dashboard
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
@@ -39,47 +38,69 @@ const Signin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 space-y-6">
-        <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 text-center">
-          Sign In
-        </h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
+      <div className="flex flex-col md:flex-row w-full max-w-4xl shadow-2xl rounded-3xl overflow-hidden bg-white dark:bg-gray-800">
+        {/* Left side - branding */}
+        <div className="md:w-1/2 bg-indigo-500 dark:bg-indigo-600 flex flex-col items-center justify-center p-8 space-y-4">
+          <ShoppingBagIcon className="w-20 h-20 text-white" />
+          <h1 className="text-white text-4xl font-bold">Gsale</h1>
+          <p className="text-indigo-100 text-center text-lg">
+            Buy, sell, and discover amazing garage sale deals in your area.
+          </p>
+        </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-
-          <button
-            type="submit"
-            className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 transform hover:scale-105"
-          >
+        {/* Right side - form */}
+        <div className="md:w-1/2 p-8 space-y-6">
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 text-center">
             Sign In
-          </button>
-        </form>
+          </h2>
 
-        {message && <p className="text-center text-red-500">{message}</p>}
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="relative">
+              <UserIcon className="absolute top-3 left-3 w-5 h-5 text-gray-400 dark:text-gray-300" />
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              />
+            </div>
 
-        <p className="text-center text-gray-600 dark:text-gray-300">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-indigo-500 hover:underline">
-            Sign Up
-          </Link>
-        </p>
+            <div className="relative">
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full pl-4 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-semibold rounded-2xl shadow-lg transition-transform transform hover:scale-105"
+            >
+              Sign In
+            </button>
+          </form>
+
+          {message && (
+            <p className="text-center text-red-500 font-medium">{message}</p>
+          )}
+
+          <p className="text-center text-gray-600 dark:text-gray-300">
+            Don't have an account?{" "}
+            <Link
+              to="/signup"
+              className="text-indigo-500 hover:underline font-semibold"
+            >
+              Sign Up
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
