@@ -32,7 +32,7 @@ function App() {
       />
 
       {/* Catch-all route: redirect unknown paths to root */}
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
 }
