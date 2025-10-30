@@ -38,8 +38,9 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
   const [editContent, setEditContent] = useState("");
   const [editImage, setEditImage] = useState("");
   const API_URL = import.meta.env.VITE_API_URL;
+  const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
 
-  // Ref flag to prevent multiple API calls in StrictMode
+  // Prevent double-fetch in React StrictMode
   const fetchPostsRef = useRef(false);
 
   if (!auth || !auth.user) return null;
@@ -67,6 +68,12 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
     fetchPostsRef.current = true;
     fetchPosts();
   }, [user.id, refreshSignal]);
+
+  // ✅ Helper: extract only filename from file_url
+  const getPublicUrl = (file_url: string) => {
+    const filename = file_url.split("/").pop(); // get last part
+    return `${R2_PUBLIC_URL}/${filename}`;
+  };
 
   // Edit Post
   const handleEditPost = async (updatedContent?: string, updatedImage?: string) => {
@@ -130,31 +137,46 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
         >
           <p className="text-gray-800 dark:text-gray-100">{post.content}</p>
 
-          {/* Display image if exists */}
+          {/* ✅ Display image if exists */}
           {post.image_url && (
             <img
-              src={post.image_url}
+              src={getPublicUrl(post.image_url)}
               alt="Post"
               className="mt-2 rounded-lg max-h-60 w-full object-cover"
             />
           )}
 
-          {/* Display attachments */}
-          {post.attachments && post.attachments.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {post.attachments.map((att) => (
-                <a
-                  key={att.id}
-                  href={att.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2 py-1 bg-indigo-200 dark:bg-indigo-600 text-indigo-800 dark:text-white rounded"
-                >
-                  {att.file_name}
-                </a>
-              ))}
-            </div>
-          )}
+          {/* ✅ Display attachments with public URLs */}
+              {post.attachments && post.attachments.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-3">
+                      {post.attachments.map((att) => {
+                          const fileUrl = getPublicUrl(att.file_url);
+                          const isImage = /\.(jpe?g|png|gif|webp|bmp)$/i.test(att.file_name);
+
+                          return (
+                              <div key={att.id} className="relative">
+                                  {isImage ? (
+                                      <img
+                                          src={fileUrl}
+                                          alt={att.file_name}
+                                          className="rounded-lg max-h-60 w-auto object-cover border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                                          onClick={() => window.open(fileUrl, "_blank")}
+                                      />
+                                  ) : (
+                                      <a
+                                          href={fileUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="px-3 py-1 bg-indigo-200 dark:bg-indigo-600 text-indigo-800 dark:text-white rounded hover:bg-indigo-300 dark:hover:bg-indigo-500 transition-colors inline-block"
+                                      >
+                                          {att.file_name}
+                                      </a>
+                                  )}
+                              </div>
+                          );
+                      })}
+                  </div>
+              )}
 
           <div className="flex justify-between mt-2 text-sm text-gray-600 dark:text-gray-300">
             <span>{new Date(post.created_at).toLocaleString()}</span>
