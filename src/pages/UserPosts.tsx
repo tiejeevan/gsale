@@ -3,6 +3,11 @@ import { AuthContext } from "../context/AuthContext";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import EditPostModal from "./EditPostModal";
 import DeletePostModal from "./DeletePostModal";
+import {
+  getUserPosts,
+  updatePost,
+  deletePost,
+} from "../services/postService";
 
 interface Attachment {
   id: number;
@@ -37,8 +42,8 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
   const [currentPost, setCurrentPost] = useState<Post | null>(null);
   const [editContent, setEditContent] = useState("");
   const [editImage, setEditImage] = useState("");
-  const API_URL = import.meta.env.VITE_API_URL;
-  const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
+  const R2_PUBLIC_URL =
+    "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
 
   // Prevent double-fetch in React StrictMode
   const fetchPostsRef = useRef(false);
@@ -49,15 +54,16 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/posts/user/${user.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) setError(data.error || "Failed to fetch posts");
-      else setPosts(data);
-    } catch (err) {
+      if (!token) {
+        setError("Authentication token missing. Please sign in again.");
+        return;
+      }
+
+      const data = await getUserPosts(user.id, token); // ✅ Convert to string
+      setPosts(data);
+    } catch (err: any) {
       console.error(err);
-      setError("Something went wrong while fetching posts");
+      setError(err.message || "Failed to fetch posts");
     } finally {
       setLoading(false);
     }
@@ -75,25 +81,17 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
     return `${R2_PUBLIC_URL}/${filename}`;
   };
 
-  // Edit Post
+  // ✅ Edit Post
   const handleEditPost = async (updatedContent?: string, updatedImage?: string) => {
-    if (!currentPost) return;
+    if (!currentPost || !token) return;
     try {
-      const res = await fetch(`${API_URL}/api/posts/${currentPost.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          content: updatedContent ?? editContent,
-          image_url: updatedImage ?? editImage,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Failed to update post");
-      } else {
+      const updatedPost = await updatePost(
+        token,
+        currentPost.id, // ✅ Convert number → string
+        updatedContent ?? editContent,
+        updatedImage ?? editImage
+      );
+      if (updatedPost) {
         setShowEditModal(false);
         fetchPosts();
       }
@@ -103,18 +101,12 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
     }
   };
 
-  // Delete Post
+  // ✅ Delete Post
   const handleDeletePost = async () => {
-    if (!currentPost) return;
+    if (!currentPost || !token) return;
     try {
-      const res = await fetch(`${API_URL}/api/posts/${currentPost.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Failed to delete post");
-      } else {
+      const success = await deletePost(token,currentPost.id ); // ✅ Convert number → string
+      if (success) {
         setShowDeleteModal(false);
         fetchPosts();
       }
@@ -137,7 +129,7 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
         >
           <p className="text-gray-800 dark:text-gray-100">{post.content}</p>
 
-          {/* ✅ Display image if exists */}
+          {/* ✅ Display main image */}
           {post.image_url && (
             <img
               src={getPublicUrl(post.image_url)}
@@ -146,37 +138,36 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
             />
           )}
 
-          {/* ✅ Display attachments with public URLs */}
-              {post.attachments && post.attachments.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-3">
-                      {post.attachments.map((att) => {
-                          const fileUrl = getPublicUrl(att.file_url);
-                          const isImage = /\.(jpe?g|png|gif|webp|bmp)$/i.test(att.file_name);
-
-                          return (
-                              <div key={att.id} className="relative">
-                                  {isImage ? (
-                                      <img
-                                          src={fileUrl}
-                                          alt={att.file_name}
-                                          className="rounded-lg max-h-60 w-auto object-cover border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-                                          onClick={() => window.open(fileUrl, "_blank")}
-                                      />
-                                  ) : (
-                                      <a
-                                          href={fileUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="px-3 py-1 bg-indigo-200 dark:bg-indigo-600 text-indigo-800 dark:text-white rounded hover:bg-indigo-300 dark:hover:bg-indigo-500 transition-colors inline-block"
-                                      >
-                                          {att.file_name}
-                                      </a>
-                                  )}
-                              </div>
-                          );
-                      })}
+          {/* ✅ Display attachments */}
+          {post.attachments && post.attachments.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-3">
+              {post.attachments.map((att) => {
+                const fileUrl = getPublicUrl(att.file_url);
+                const isImage = /\.(jpe?g|png|gif|webp|bmp)$/i.test(att.file_name);
+                return (
+                  <div key={att.id} className="relative">
+                    {isImage ? (
+                      <img
+                        src={fileUrl}
+                        alt={att.file_name}
+                        className="rounded-lg max-h-60 w-auto object-cover border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                        onClick={() => window.open(fileUrl, "_blank")}
+                      />
+                    ) : (
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-indigo-200 dark:bg-indigo-600 text-indigo-800 dark:text-white rounded hover:bg-indigo-300 dark:hover:bg-indigo-500 transition-colors inline-block"
+                      >
+                        {att.file_name}
+                      </a>
+                    )}
                   </div>
-              )}
+                );
+              })}
+            </div>
+          )}
 
           <div className="flex justify-between mt-2 text-sm text-gray-600 dark:text-gray-300">
             <span>{new Date(post.created_at).toLocaleString()}</span>
@@ -186,7 +177,7 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
             <span className="text-xs text-gray-500 dark:text-gray-400">Edited</span>
           )}
 
-          {/* Edit/Delete buttons */}
+          {/* ✅ Edit/Delete buttons */}
           {post.user_id === user.id && (
             <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <FiEdit2
