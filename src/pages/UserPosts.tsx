@@ -3,11 +3,8 @@ import { AuthContext } from "../context/AuthContext";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import EditPostModal from "./EditPostModal";
 import DeletePostModal from "./DeletePostModal";
-import {
-  getUserPosts,
-  updatePost,
-  deletePost,
-} from "../services/postService";
+import { getUserPosts, updatePost, deletePost } from "../services/postService";
+import { onPostCreated } from "../utils/eventBus";
 
 interface Attachment {
   id: number;
@@ -27,11 +24,7 @@ interface Post {
   attachments?: Attachment[];
 }
 
-interface UserPostsProps {
-  refreshSignal?: number;
-}
-
-const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
+const UserPosts: React.FC = () => {
   const auth = useContext(AuthContext);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -42,10 +35,8 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
   const [currentPost, setCurrentPost] = useState<Post | null>(null);
   const [editContent, setEditContent] = useState("");
   const [editImage, setEditImage] = useState("");
-  const R2_PUBLIC_URL =
-    "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
 
-  // Prevent double-fetch in React StrictMode
+  const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
   const fetchPostsRef = useRef(false);
 
   if (!auth || !auth.user) return null;
@@ -58,8 +49,7 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
         setError("Authentication token missing. Please sign in again.");
         return;
       }
-
-      const data = await getUserPosts(user.id, token); // ✅ Convert to string
+      const data = await getUserPosts(user.id, token);
       setPosts(data);
     } catch (err: any) {
       console.error(err);
@@ -70,24 +60,29 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
   };
 
   useEffect(() => {
-    if (fetchPostsRef.current) return;
-    fetchPostsRef.current = true;
-    fetchPosts();
-  }, [user.id, refreshSignal]);
+    if (!fetchPostsRef.current) {
+      fetchPostsRef.current = true;
+      fetchPosts();
+    }
+  }, [user.id]);
 
-  // ✅ Helper: extract only filename from file_url
+  // Listen for new post events
+  useEffect(() => {
+    const unsubscribe = onPostCreated(() => fetchPosts());
+    return unsubscribe;
+  }, []);
+
   const getPublicUrl = (file_url: string) => {
-    const filename = file_url.split("/").pop(); // get last part
+    const filename = file_url.split("/").pop();
     return `${R2_PUBLIC_URL}/${filename}`;
   };
 
-  // ✅ Edit Post
   const handleEditPost = async (updatedContent?: string, updatedImage?: string) => {
     if (!currentPost || !token) return;
     try {
       const updatedPost = await updatePost(
         token,
-        currentPost.id, // ✅ Convert number → string
+        currentPost.id,
         updatedContent ?? editContent,
         updatedImage ?? editImage
       );
@@ -101,11 +96,10 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
     }
   };
 
-  // ✅ Delete Post
   const handleDeletePost = async () => {
     if (!currentPost || !token) return;
     try {
-      const success = await deletePost(token,currentPost.id ); // ✅ Convert number → string
+      const success = await deletePost(token, currentPost.id);
       if (success) {
         setShowDeleteModal(false);
         fetchPosts();
@@ -129,7 +123,7 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
         >
           <p className="text-gray-800 dark:text-gray-100">{post.content}</p>
 
-          {/* ✅ Display main image */}
+          {/* Main image */}
           {post.image_url && (
             <img
               src={getPublicUrl(post.image_url)}
@@ -138,7 +132,7 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
             />
           )}
 
-          {/* ✅ Display attachments */}
+          {/* Attachments */}
           {post.attachments && post.attachments.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-3">
               {post.attachments.map((att) => {
@@ -173,11 +167,9 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
             <span>{new Date(post.created_at).toLocaleString()}</span>
             <span>Likes: {post.like_count}</span>
           </div>
-          {post.is_edited && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">Edited</span>
-          )}
+          {post.is_edited && <span className="text-xs text-gray-500 dark:text-gray-400">Edited</span>}
 
-          {/* ✅ Edit/Delete buttons */}
+          {/* Edit/Delete buttons */}
           {post.user_id === user.id && (
             <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <FiEdit2
@@ -203,7 +195,7 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
         </div>
       ))}
 
-      {/* ---- Reusable Modals ---- */}
+      {/* Modals */}
       <EditPostModal
         isOpen={showEditModal && currentPost !== null}
         content={editContent}
@@ -213,7 +205,6 @@ const UserPosts: React.FC<UserPostsProps> = ({ refreshSignal }) => {
         onChangeContent={setEditContent}
         onChangeImage={setEditImage}
       />
-
       <DeletePostModal
         isOpen={showDeleteModal && currentPost !== null}
         onClose={() => setShowDeleteModal(false)}
