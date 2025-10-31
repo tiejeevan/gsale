@@ -5,6 +5,8 @@ import EditPostModal from "./EditPostModal";
 import DeletePostModal from "./DeletePostModal";
 import { getUserPosts, updatePost, deletePost } from "../services/postService";
 import { onPostCreated } from "../utils/eventBus";
+import LikeButton from '../components/LikeButton';
+
 
 interface Attachment {
   id: number;
@@ -21,6 +23,7 @@ interface Post {
   created_at: string;
   like_count: number;
   is_edited: boolean;
+  liked_by_user: boolean;
   attachments?: Attachment[];
 }
 
@@ -165,7 +168,13 @@ const UserPosts: React.FC = () => {
 
           <div className="flex justify-between mt-2 text-sm text-gray-600 dark:text-gray-300">
             <span>{new Date(post.created_at).toLocaleString()}</span>
-            <span>Likes: {post.like_count}</span>
+            <LikeButton
+              targetType="post" // The type of content being liked
+              targetId={post.id}
+              initialLikesCount={post.like_count}
+              isInitiallyLiked={post.liked_by_user}
+              token={token as string}
+            />
           </div>
           {post.is_edited && <span className="text-xs text-gray-500 dark:text-gray-400">Edited</span>}
 

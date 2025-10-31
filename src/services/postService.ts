@@ -19,6 +19,7 @@ export interface Post {
   is_deleted?: boolean;
   visibility?: string;
   username?: string;
+  liked_by_user: boolean;
   attachments?: Attachment[];
 }
 
