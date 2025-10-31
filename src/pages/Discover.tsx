@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiEdit2, FiTrash2 } from "react-icons/fi";
 import EditPostModal from "./EditPostModal";
 import DeletePostModal from "./DeletePostModal";
+import LikeButton from "../components/LikeButton";
 
 interface Attachment {
   id: number;
@@ -21,6 +22,7 @@ interface Post {
   created_at: string;
   like_count: number;
   is_edited: boolean;
+  liked_by_user: boolean;
   attachments?: Attachment[];
 }
 
@@ -187,7 +189,13 @@ const Discover: React.FC = () => {
           )}
 
           <div className="flex justify-end mt-2 text-sm text-gray-600 dark:text-gray-300">
-            Likes: {post.like_count}
+          <LikeButton
+              targetType="post" // The type of content being liked
+              targetId={post.id}
+              initialLikesCount={post.like_count}
+              isInitiallyLiked={post.liked_by_user}
+              token={token as string}
+            />
           </div>
 
           {post.is_edited && (
