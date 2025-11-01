@@ -1,17 +1,30 @@
+// --- START OF FILE AddComment.tsx ---
+
 import React, { useState } from "react";
-import { FiSend } from "react-icons/fi"; // paper plane icon
+// import { FiSend } from "react-icons/fi";
 import { type Comment } from "./CommentsSection";
 
 interface AddCommentProps {
   postId: number;
   parentCommentId: number | null;
   onCommentAdded: (comment: Comment) => void;
+  currentUserAvatar?: string;
+  isTopLevel?: boolean; // To apply specific styles for the main comment box
+  onCancel?: () => void; // For the reply box
 }
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const AddComment: React.FC<AddCommentProps> = ({ postId, parentCommentId, onCommentAdded }) => {
+const AddComment: React.FC<AddCommentProps> = ({
+  postId,
+  parentCommentId,
+  onCommentAdded,
+  currentUserAvatar,
+  // isTopLevel = false,
+  onCancel,
+}) => {
   const [content, setContent] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,10 +35,7 @@ const AddComment: React.FC<AddCommentProps> = ({ postId, parentCommentId, onComm
       const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/api/comments`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           post_id: postId,
           parent_comment_id: parentCommentId,
@@ -34,8 +44,13 @@ const AddComment: React.FC<AddCommentProps> = ({ postId, parentCommentId, onComm
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add comment");
-      onCommentAdded(data);
+      
+      // Call original callback and reset state
+      onCommentAdded(data); 
       setContent("");
+      setIsFocused(false);
+      if (onCancel) onCancel(); // Close reply form on success
+
     } catch (err: any) {
       console.error(err.message);
     } finally {
@@ -43,47 +58,52 @@ const AddComment: React.FC<AddCommentProps> = ({ postId, parentCommentId, onComm
     }
   };
 
+  const handleCancel = () => {
+    setContent("");
+    setIsFocused(false);
+    if (onCancel) {
+      onCancel();
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2 mt-2">
-      <input
-        type="text"
-        placeholder="Write a comment..."
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="flex-1 border rounded-full px-3 py-2 focus:outline-none focus:ring focus:ring-blue-300 dark:bg-gray-700 dark:text-white"
+    <div className="flex items-start gap-3 w-full">
+      <img
+        src={currentUserAvatar || 'https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg'}
+        alt="Your avatar"
+        className="w-10 h-10 rounded-full"
       />
-      <button
-        type="submit"
-        className="p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center"
-        disabled={loading || !content.trim()}
-        aria-label="Post Comment"
-      >
-        {loading ? (
-          <svg
-            className="animate-spin h-5 w-5 text-white"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8H4z"
-            ></path>
-          </svg>
-        ) : (
-          <FiSend size={18} />
+      <form onSubmit={handleSubmit} className="w-full">
+        <div className="w-full">
+          <textarea
+            placeholder="Add a comment..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            className="w-full bg-transparent border-b-2 p-1 focus:border-blue-500 focus:outline-none dark:text-white dark:border-gray-600 transition-colors"
+            rows={isFocused || content ? 2 : 1}
+          />
+        </div>
+        {(isFocused || content) && (
+          <div className="flex justify-end gap-2 mt-2">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-4 py-2 text-sm font-semibold rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !content.trim()}
+              className="px-4 py-2 text-sm font-semibold bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600"
+            >
+              {loading ? "Commenting..." : parentCommentId ? "Reply" : "Comment"}
+            </button>
+          </div>
         )}
-      </button>
-    </form>
+      </form>
+    </div>
   );
 };
 
