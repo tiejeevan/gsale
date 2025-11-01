@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import LikeButton from "./LikeButton";
-import CommentsSection from "./Comments/CommentsSection";
+import CommentsSection, { type Comment } from "./Comments/CommentsSection";
 
 interface Attachment {
   id: number;
@@ -21,6 +21,7 @@ export interface Post {
   is_edited: boolean;
   liked_by_user: boolean;
   attachments?: Attachment[];
+  comments?: Comment[];
 }
 
 interface PostCardProps {
@@ -168,6 +169,7 @@ const PostCard: React.FC<PostCardProps> = ({
         <CommentsSection
           postId={post.id}
           currentUserId={currentUserId}
+          initialComments={post.comments} 
           className="sticky bottom-0 w-full"
         />
       </div>

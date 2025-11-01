@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import CommentItem from "./CommentItem";
 import AddComment from "./AddComment";
 
-const API_URL = import.meta.env.VITE_API_URL;
+// const API_URL = import.meta.env.VITE_API_URL;
 
 export interface Attachment {
   file_name: string;
@@ -33,21 +33,27 @@ interface CommentsSectionProps {
   postId: number;
   currentUserId?: number;
   className?: string;
+  initialComments?: Comment[];
 }
 
-const CommentsSection: React.FC<CommentsSectionProps> = ({ postId, currentUserId }) => {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(false);
+const CommentsSection: React.FC<CommentsSectionProps> = ({
+  postId,
+  currentUserId,
+  initialComments,
+}) => {
+  const [comments, setComments] = useState<Comment[]>(initialComments || []);
+  const [loading, setLoading] = useState(!initialComments);
 
   const fetchComments = async () => {
+    if (initialComments) return; // skip fetching if passed
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/api/comments/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setComments(data || []);
+    //   const token = localStorage.getItem("token");
+    //   const res = await fetch(`${API_URL}/api/comments/${postId}`, {
+    //     headers: { Authorization: `Bearer ${token}` },
+    //   });
+    //   const data = [await res.json()];
+      setComments([]);
     } catch (err) {
       console.error("Failed to fetch comments:", err);
     } finally {
@@ -57,7 +63,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ postId, currentUserId
 
   useEffect(() => {
     fetchComments();
-  }, [postId]);
+  }, [postId, initialComments]);
 
   const addNewComment = (comment: Comment) => {
     if (comment.parent_comment_id) {
