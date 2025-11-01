@@ -1,7 +1,5 @@
-// --- START OF FILE CommentItem.tsx ---
-
 import React, { useState } from "react";
-import { FiMoreHorizontal, FiThumbsUp, FiThumbsDown, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { FiMoreHorizontal, FiThumbsUp, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import AddComment from "./AddComment";
 import { type Comment } from "./CommentsSection";
 
@@ -9,42 +7,75 @@ interface CommentItemProps {
   comment: Comment;
   currentUserId?: number;
   currentUserAvatar?: string;
-  refreshComments: () => void;
+  onCommentAdded: (comment: Comment) => void;
+  onCommentUpdated: (comment: Comment) => void;
+  onCommentDeleted: (commentId: number) => void;
 }
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, currentUserId, currentUserAvatar, refreshComments }) => {
-  // Your original state management
+const CommentItem: React.FC<CommentItemProps> = ({ 
+  comment, 
+  currentUserId, 
+  currentUserAvatar, 
+  onCommentAdded,
+  onCommentUpdated,
+  onCommentDeleted,
+}) => {
   const [showReply, setShowReply] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content || "");
-
-  // New state for collapsible replies
   const [repliesVisible, setRepliesVisible] = useState(false);
 
   const token = localStorage.getItem("token");
   const isOwner = currentUserId === Number(comment.user_id);
 
-  // Your original working functions (unchanged logic)
+  // --- START: CORRECTED handleLike FUNCTION ---
   const handleLike = async () => {
+    const isCurrentlyLiked = comment.liked_by_user;
+    const endpoint = isCurrentlyLiked
+      ? `${API_URL}/api/comments/${comment.id}/unlike`
+      : `${API_URL}/api/comments/${comment.id}/like`;
+
+    const optimisticComment: Comment = {
+      ...comment,
+      like_count: isCurrentlyLiked ? comment.like_count - 1 : comment.like_count + 1,
+      liked_by_user: !isCurrentlyLiked,
+    };
+    
+    // 1. Update the UI immediately with the optimistic state
+    onCommentUpdated(optimisticComment);
+
     try {
-      const endpoint = comment.liked_by_user
-        ? `${API_URL}/api/comments/${comment.id}/unlike`
-        : `${API_URL}/api/comments/${comment.id}/like`;
+      // 2. Send the actual request to the server in the background
       const res = await fetch(endpoint, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error("Failed to like/unlike");
-      refreshComments();
-    } catch (err) { console.error(err); }
+      
+      if (!res.ok) {
+        // If the API call fails, throw an error to be caught below
+        throw new Error("Failed to like/unlike");
+      }
+      
+      // 3. ON SUCCESS, DO NOTHING. The UI is already correct.
+      // We removed the code that processed the successful response `res.json()`.
+
+    } catch (err) {
+      console.error(err);
+      // 4. If anything goes wrong, revert the UI back to the original state
+      onCommentUpdated(comment);
+    }
   };
+  // --- END: CORRECTED handleLike FUNCTION ---
+
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this comment?")) return;
     try {
       const res = await fetch(`${API_URL}/api/comments/${comment.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error("Failed to delete comment");
-      refreshComments();
+      
+      onCommentDeleted(comment.id);
+
     } catch (err) { console.error(err); }
   };
 
@@ -57,16 +88,19 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, currentUserId, curre
         body: JSON.stringify({ content: editContent }),
       });
       if (!res.ok) throw new Error("Failed to edit comment");
+      
+      const updatedComment = await res.json();
       setEditing(false);
-      refreshComments();
+      onCommentUpdated(updatedComment);
+
     } catch (err) { console.error(err); }
   };
 
-  // When a reply is added, we want to refresh and ensure replies are visible.
-  const onReplyAdded = (_newComment: Comment) => {
-    setShowReply(false); // Hide the reply form
-    refreshComments();   // Refresh all comments
-    setRepliesVisible(true); // Make sure the replies section is open
+  const onReplyAdded = (newComment: Comment) => {
+    setShowReply(false);
+    onCommentAdded(newComment);
+
+    setRepliesVisible(true);
   };
 
   return (
@@ -86,7 +120,6 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, currentUserId, curre
             <p className="mt-1 text-gray-800 dark:text-gray-200">{comment.content}</p>
           </div>
         ) : (
-          // EDITING VIEW - using a similar UI to AddComment
           <div className="w-full">
             <textarea
               value={editContent}
@@ -101,15 +134,11 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, currentUserId, curre
           </div>
         )}
 
-        {/* --- ACTIONS --- */}
         {!editing && (
           <div className="flex items-center gap-2 mt-2 text-gray-500 dark:text-gray-400">
             <button onClick={handleLike} className="flex items-center gap-1 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
               <FiThumbsUp size={16} className={comment.liked_by_user ? "text-blue-500" : ""} />
               <span className="text-xs">{comment.like_count > 0 && comment.like_count}</span>
-            </button>
-            <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-              <FiThumbsDown size={16} />
             </button>
             <button onClick={() => setShowReply(!showReply)} className="px-3 py-1.5 text-xs font-semibold rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
               Reply
@@ -117,7 +146,6 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, currentUserId, curre
           </div>
         )}
 
-        {/* --- INLINE REPLY FORM --- */}
         {showReply && (
           <div className="mt-4">
             <AddComment
@@ -130,7 +158,6 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, currentUserId, curre
           </div>
         )}
 
-        {/* --- REPLIES SECTION --- */}
         {(comment.children || []).length > 0 && (
           <div className="mt-3">
             <button
@@ -149,7 +176,9 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, currentUserId, curre
                     comment={child}
                     currentUserId={currentUserId}
                     currentUserAvatar={currentUserAvatar}
-                    refreshComments={refreshComments}
+                    onCommentAdded={onCommentAdded}
+                    onCommentUpdated={onCommentUpdated}
+                    onCommentDeleted={onCommentDeleted}
                   />
                 ))}
               </div>
@@ -158,7 +187,6 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, currentUserId, curre
         )}
       </div>
 
-      {/* --- EDIT/DELETE MENU --- */}
       {isOwner && (
         <div className="relative">
           <button

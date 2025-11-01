@@ -1,5 +1,3 @@
-// --- START OF FILE CommentsSection.tsx ---
-
 import React, { useEffect, useState } from "react";
 import CommentItem from "./CommentItem";
 import AddComment from "./AddComment";
@@ -50,6 +48,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   const [loading, setLoading] = useState(!initialComments);
 
   const fetchComments = async () => {
+    // We keep this function for the initial load but won't use it for updates
     if (initialComments) return;
     setLoading(true);
     try {
@@ -66,13 +65,13 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     fetchComments();
   }, [postId, initialComments]);
 
-  // Your original working function
   const addNewComment = (comment: Comment) => {
     if (comment.parent_comment_id) {
       const updateTree = (nodes: Comment[]): Comment[] =>
         nodes.map((c) => {
           if (c.id === comment.parent_comment_id) {
-            return { ...c, children: [...c.children, comment] };
+            // Add the new comment to the children of the correct parent
+            return { ...c, children: [...(c.children || []), comment] };
           } else if (c.children && c.children.length > 0) {
             return { ...c, children: updateTree(c.children) };
           } else {
@@ -85,18 +84,52 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     }
   };
 
+  // --- START: NEW FUNCTIONS ---
+  // New function to update a comment anywhere in the state tree (for likes, edits)
+  const updateCommentInState = (updatedComment: Comment) => {
+    const updateNode = (nodes: Comment[]): Comment[] => {
+      return nodes.map(node => {
+        if (node.id === updatedComment.id) {
+          return updatedComment; // Replace the old comment with the updated one
+        }
+        if (node.children && node.children.length > 0) {
+          // Recursively search in children
+          return { ...node, children: updateNode(node.children) };
+        }
+        return node;
+      });
+    };
+    setComments(updateNode(comments));
+  };
+  
+  // New function to delete a comment anywhere in the state tree
+  const deleteCommentInState = (commentId: number) => {
+    const removeNode = (nodes: Comment[]): Comment[] => {
+      return nodes
+        .filter(node => node.id !== commentId) // Filter out the deleted comment
+        .map(node => {
+          if (node.children && node.children.length > 0) {
+            // Recursively search and remove from children
+            return { ...node, children: removeNode(node.children) };
+          }
+          return node;
+        });
+    };
+    setComments(removeNode(comments));
+  };
+  // --- END: NEW FUNCTIONS ---
+
   return (
     <div className={`comments-section mt-8 font-sans`}>
       <h3 className="text-lg font-bold mb-4 dark:text-white">{comments.length} Comments</h3>
       
-      {/* Top-level comment input */}
       <div className="mb-6">
           <AddComment
             postId={postId}
             parentCommentId={null}
             onCommentAdded={addNewComment}
             currentUserAvatar={currentUserAvatar}
-            isTopLevel={true} // Differentiate style for top-level input
+            isTopLevel={true}
           />
       </div>
 
@@ -106,7 +139,6 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         <div className="text-gray-400 mt-2 text-sm">No comments yet. Be the first to comment!</div>
       )}
 
-      {/* Renders the list of comments */}
       {!loading && (
         <div className="space-y-5">
             {comments.map((comment) => (
@@ -114,8 +146,11 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                 key={comment.id}
                 comment={comment}
                 currentUserId={currentUserId}
-                refreshComments={fetchComments}
                 currentUserAvatar={currentUserAvatar}
+                // --- Pass down the new state management functions ---
+                onCommentAdded={addNewComment}
+                onCommentUpdated={updateCommentInState}
+                onCommentDeleted={deleteCommentInState}
               />
             ))}
         </div>
