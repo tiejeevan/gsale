@@ -18,7 +18,7 @@ export interface Comment {
   username: string;
   first_name: string;
   last_name: string;
-  avatar_url?: string; // Essential for the YouTube-style UI
+  avatar_url?: string;
   content: string | null;
   attachments: Attachment[] | null;
   like_count: number;
