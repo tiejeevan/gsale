@@ -63,7 +63,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, currentUserId, curre
   };
 
   // When a reply is added, we want to refresh and ensure replies are visible.
-  const onReplyAdded = (newComment: Comment) => {
+  const onReplyAdded = (_newComment: Comment) => {
     setShowReply(false); // Hide the reply form
     refreshComments();   // Refresh all comments
     setRepliesVisible(true); // Make sure the replies section is open
