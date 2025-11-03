@@ -1,16 +1,14 @@
-// --- START OF FILE AddComment.tsx ---
-
 import React, { useState } from "react";
-// import { FiSend } from "react-icons/fi";
 import { type Comment } from "./CommentsSection";
+import { socket } from "../../socket"; // <-- import socket instance
 
 interface AddCommentProps {
   postId: number;
   parentCommentId: number | null;
   onCommentAdded: (comment: Comment) => void;
   currentUserAvatar?: string;
-  isTopLevel?: boolean; // To apply specific styles for the main comment box
-  onCancel?: () => void; // For the reply box
+  isTopLevel?: boolean;
+  onCancel?: () => void;
 }
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -20,7 +18,6 @@ const AddComment: React.FC<AddCommentProps> = ({
   parentCommentId,
   onCommentAdded,
   currentUserAvatar,
-  // isTopLevel = false,
   onCancel,
 }) => {
   const [content, setContent] = useState("");
@@ -31,6 +28,7 @@ const AddComment: React.FC<AddCommentProps> = ({
     e.preventDefault();
     if (!content.trim()) return;
     setLoading(true);
+
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/api/comments`, {
@@ -44,13 +42,16 @@ const AddComment: React.FC<AddCommentProps> = ({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add comment");
-      
-      // Call original callback and reset state
-      onCommentAdded(data); 
+
+      // Call original callback to update UI
+      onCommentAdded(data);
+
+      // Emit to Socket.IO server for real-time update
+      socket.emit(`post_${postId}:comment:new`, data);
+
       setContent("");
       setIsFocused(false);
-      if (onCancel) onCancel(); // Close reply form on success
-
+      if (onCancel) onCancel();
     } catch (err: any) {
       console.error(err.message);
     } finally {
@@ -61,9 +62,7 @@ const AddComment: React.FC<AddCommentProps> = ({
   const handleCancel = () => {
     setContent("");
     setIsFocused(false);
-    if (onCancel) {
-      onCancel();
-    }
+    if (onCancel) onCancel();
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
@@ -6,9 +6,34 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthContext } from "./context/AuthContext";
 import Discover from "./pages/Discover";
+import { socket } from "./socket";
 
 function App() {
-  const { token } = useContext(AuthContext)!;
+  const { token, user } = useContext(AuthContext)!; // make sure 'user' object exists in context
+
+  // ================= Socket.IO connection =================
+  useEffect(() => {
+    if (!token || !user) return;
+
+    // Connect socket
+    socket.connect();
+
+    // Join user-specific room
+    socket.emit("join", `user_${user.id}`);
+    console.log(`Socket connected for user_${user.id}`);
+
+    // Optional: Listen to notifications (can move to notification component later)
+    socket.on("new_comment", (comment) => {
+      console.log("New comment received:", comment);
+      // TODO: Update UI or show toast notification
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socket.disconnect();
+      console.log("Socket disconnected");
+    };
+  }, [token, user]);
 
   return (
     <Routes>
@@ -19,10 +44,16 @@ function App() {
       />
 
       {/* Public routes */}
-      <Route path="/login" element={token ? <Navigate to="/dashboard" /> : <Signin />} />
-      <Route path="/signup" element={token ? <Navigate to="/dashboard" /> : <Signup />} />
+      <Route
+        path="/login"
+        element={token ? <Navigate to="/dashboard" /> : <Signin />}
+      />
+      <Route
+        path="/signup"
+        element={token ? <Navigate to="/dashboard" /> : <Signup />}
+      />
 
-      {/* Protected route */}
+      {/* Protected routes */}
       <Route
         path="/dashboard"
         element={
@@ -31,7 +62,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/discover"
         element={
@@ -41,7 +71,7 @@ function App() {
         }
       />
 
-      {/* Catch-all route: redirect unknown paths to root */}
+      {/* Catch-all */}
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
