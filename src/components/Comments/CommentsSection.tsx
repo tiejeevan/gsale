@@ -89,7 +89,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
     return () => {
       socket.off(`post_${postId}:comment:new`);
-      socket.disconnect();
+      // socket.disconnect();
     };
   }, [postId]);
 

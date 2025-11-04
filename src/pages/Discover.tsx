@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useMemo } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
@@ -23,7 +23,19 @@ interface Post {
   like_count: number;
   is_edited: boolean;
   liked_by_user: boolean;
+  comment_count?: number;
   attachments?: Attachment[];
+}
+
+// 🔥 Calculate “hot” ranking score — Reddit-inspired
+function calculateHotScore(post: Post): number {
+  const hoursSincePost =
+    (Date.now() - new Date(post.created_at).getTime()) / 3600000;
+  const likesWeight = post.like_count * 1.5;
+  const commentsWeight = (post.comment_count || 0) * 1.2;
+  // Newer posts get slight boost
+  const recencyBoost = Math.max(0, 24 - hoursSincePost) * 0.5;
+  return likesWeight + commentsWeight + recencyBoost;
 }
 
 const Discover: React.FC = () => {
@@ -35,13 +47,14 @@ const Discover: React.FC = () => {
   const [error, setError] = useState("");
   const [editModalPost, setEditModalPost] = useState<Post | null>(null);
   const [deleteModalPost, setDeleteModalPost] = useState<Post | null>(null);
+  const [sortMode, setSortMode] = useState<"latest" | "top" | "hot">("hot");
 
   const API_URL = import.meta.env.VITE_API_URL;
 
   if (!auth || !auth.user) return null;
   const { token, user } = auth;
 
-  // Fetch all posts
+  // ✅ Fetch all posts
   const fetchPosts = async () => {
     setLoading(true);
     try {
@@ -50,7 +63,7 @@ const Discover: React.FC = () => {
       });
       const data = await res.json();
       if (!res.ok) setError(data.error || "Failed to fetch posts");
-      else setPosts(data.reverse()); // latest first
+      else setPosts(data);
     } catch (err) {
       console.error(err);
       setError("Something went wrong while fetching posts");
@@ -63,7 +76,25 @@ const Discover: React.FC = () => {
     fetchPosts();
   }, []);
 
-  // Handle edit
+  // ✅ Derived, dynamically sorted posts
+  const sortedPosts = useMemo(() => {
+    const sorted = [...posts];
+    switch (sortMode) {
+      case "latest":
+        return sorted.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime()
+        );
+      case "top":
+        return sorted.sort((a, b) => b.like_count - a.like_count);
+      case "hot":
+      default:
+        return sorted.sort((a, b) => calculateHotScore(b) - calculateHotScore(a));
+    }
+  }, [posts, sortMode]);
+
+  // ✅ Edit post handler
   const handleUpdatePost = async (updated: Post) => {
     try {
       const res = await fetch(`${API_URL}/api/posts/${updated.id}`, {
@@ -86,7 +117,7 @@ const Discover: React.FC = () => {
     }
   };
 
-  // Handle delete
+  // ✅ Delete post handler
   const handleDeletePost = async (post: Post | null) => {
     if (!post) return;
     try {
@@ -103,6 +134,7 @@ const Discover: React.FC = () => {
     }
   };
 
+  // ✅ UI
   if (loading)
     return <p className="text-gray-700 dark:text-gray-300">Loading posts...</p>;
   if (error)
@@ -112,6 +144,7 @@ const Discover: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
+      {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
         className="flex items-center space-x-2 text-indigo-500 hover:text-indigo-700 font-semibold mb-4"
@@ -120,11 +153,27 @@ const Discover: React.FC = () => {
         <span>Back</span>
       </button>
 
-      <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-        Discover
-      </h2>
+      {/* Header + Sort Filter */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
+          Discover
+        </h2>
 
-      {posts.map((post) => (
+        <select
+          value={sortMode}
+          onChange={(e) =>
+            setSortMode(e.target.value as "latest" | "top" | "hot")
+          }
+          className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100"
+        >
+          <option value="hot">🔥 Hot</option>
+          <option value="latest">🕒 Latest</option>
+          <option value="top">⭐ Top</option>
+        </select>
+      </div>
+
+      {/* Posts */}
+      {sortedPosts.map((post) => (
         <PostCard
           key={post.id}
           post={post}
@@ -137,20 +186,20 @@ const Discover: React.FC = () => {
         />
       ))}
 
-      {/* Edit Modal */}
+      {/* Modals */}
       {editModalPost && (
         <EditPostModal
           isOpen={true}
           content={editModalPost.content}
           imageUrl={editModalPost.image_url || ""}
           onClose={() => setEditModalPost(null)}
-          onSave={(updatedContent, updatedImage) => {
+          onSave={(updatedContent, updatedImage) =>
             handleUpdatePost({
               ...editModalPost,
               content: updatedContent,
               image_url: updatedImage,
-            });
-          }}
+            })
+          }
           onChangeContent={(val) =>
             setEditModalPost({ ...editModalPost, content: val })
           }
@@ -160,7 +209,6 @@ const Discover: React.FC = () => {
         />
       )}
 
-      {/* Delete Modal */}
       {deleteModalPost && (
         <DeletePostModal
           isOpen={true}

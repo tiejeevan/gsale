@@ -56,7 +56,6 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const canEdit = post.user_id === currentUserId;
 
-  console.log("+++++post", post);
   return (
     <div
       className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all relative border border-gray-200 dark:border-gray-700 flex flex-col"

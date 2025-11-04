@@ -4,12 +4,16 @@ import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { AuthContext } from "./context/AuthContext";
 import Discover from "./pages/Discover";
+import { AuthContext } from "./context/AuthContext";
+import { NotificationsProvider, useNotifications } from "./NotificationsContext";
 import { socket } from "./socket";
+// import NotificationsBell from "./components/NotificationsBell"; // top menu bell component
+import Navbar from "./pages/Navbar"; // optional: navbar where bell will live
 
-function App() {
-  const { token, user } = useContext(AuthContext)!; // make sure 'user' object exists in context
+function AppContent() {
+  const { token, user } = useContext(AuthContext)!;
+  const { addNotification } = useNotifications();
 
   // ================= Socket.IO connection =================
   useEffect(() => {
@@ -22,10 +26,16 @@ function App() {
     socket.emit("join", `user_${user.id}`);
     console.log(`Socket connected for user_${user.id}`);
 
-    // Optional: Listen to notifications (can move to notification component later)
-    socket.on("new_comment", (comment) => {
+    // Listen to real-time notifications
+    socket.on("notification:new", (notif) => {
+      console.log("New notification:", notif);
+      addNotification(notif); // Add to context state
+    });
+
+    // Listen to other events if needed (optional)
+    socket.on("post:comment:new", (comment) => {
       console.log("New comment received:", comment);
-      // TODO: Update UI or show toast notification
+      // You can also push toast here if desired
     });
 
     // Cleanup on unmount
@@ -33,47 +43,57 @@ function App() {
       socket.disconnect();
       console.log("Socket disconnected");
     };
-  }, [token, user]);
+  }, [token, user, addNotification]);
 
   return (
-    <Routes>
-      {/* Root path redirects based on login state */}
-      <Route
-        path="/"
-        element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
-      />
+    <>
+      {/* Navbar with NotificationsBell */}
+      <Navbar>
 
-      {/* Public routes */}
-      <Route
-        path="/login"
-        element={token ? <Navigate to="/dashboard" /> : <Signin />}
-      />
-      <Route
-        path="/signup"
-        element={token ? <Navigate to="/dashboard" /> : <Signup />}
-      />
+      </Navbar>
 
-      {/* Protected routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/discover"
-        element={
-          <ProtectedRoute>
-            <Discover />
-          </ProtectedRoute>
-        }
-      />
+      {/* Routes */}
+      <Routes>
+        <Route
+          path="/"
+          element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/login"
+          element={token ? <Navigate to="/dashboard" /> : <Signin />}
+        />
+        <Route
+          path="/signup"
+          element={token ? <Navigate to="/dashboard" /> : <Signup />}
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/discover"
+          element={
+            <ProtectedRoute>
+              <Discover />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/login" />} />
+      </Routes>
+    </>
+  );
+}
 
-      {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/login" />} />
-    </Routes>
+// =================== Full App with Notifications Context ===================
+function App() {
+  return (
+    <NotificationsProvider>
+      <AppContent />
+    </NotificationsProvider>
   );
 }
 

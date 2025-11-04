@@ -1,18 +1,23 @@
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = "http://localhost:5001"; // Replace with your backend URL
+const SOCKET_URL = import.meta.env.VITE_API_URL
 
-// Create a single socket instance
+// Create a single shared socket instance
 export const socket: Socket = io(SOCKET_URL, {
-  autoConnect: false, // connect manually later
+  autoConnect: false, // we connect manually from NotificationsContext or Post context
+  transports: ["websocket"], // more stable
 });
 
-// Join a specific post room to receive comments in real-time
+// ✅ Utility to join a post room (for live comments)
 export const joinPostRoom = (postId: number) => {
-  socket.emit("join", `post_${postId}`);
+  if (socket.connected) {
+    socket.emit("join", `post_${postId}`);
+  }
 };
 
-// Join personal user room to receive notifications
+// ✅ Utility to join a user room (for live notifications)
 export const joinUserRoom = (userId: number) => {
-  socket.emit("join", `user_${userId}`);
+  if (socket.connected) {
+    socket.emit("join", `user_${userId}`);
+  }
 };
