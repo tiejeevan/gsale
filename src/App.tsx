@@ -1,19 +1,22 @@
+// App.tsx
 import { useContext, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
 import Dashboard from "./pages/Dashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
 import Discover from "./pages/Discover";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthContext } from "./context/AuthContext";
 import { NotificationsProvider, useNotifications } from "./NotificationsContext";
 import { socket } from "./socket";
-// import NotificationsBell from "./components/NotificationsBell"; // top menu bell component
-import Navbar from "./pages/Navbar"; // optional: navbar where bell will live
+import Navbar from "./pages/Navbar"; // optional navbar
 
 function AppContent() {
-  const { token, user } = useContext(AuthContext)!;
+  const { token, user, loading } = useContext(AuthContext)!;
   const { addNotification } = useNotifications();
+
+  // Wait until auth context initializes
+  if (loading) return null; // Or <LoadingSpinner />
 
   // ================= Socket.IO connection =================
   useEffect(() => {
@@ -27,19 +30,22 @@ function AppContent() {
     console.log(`Socket connected for user_${user.id}`);
 
     // Listen to real-time notifications
-    socket.on("notification:new", (notif) => {
+    const handleNotification = (notif: any) => {
       console.log("New notification:", notif);
-      addNotification(notif); // Add to context state
-    });
+      addNotification(notif);
+    };
 
-    // Listen to other events if needed (optional)
-    socket.on("post:comment:new", (comment) => {
+    const handleComment = (comment: any) => {
       console.log("New comment received:", comment);
-      // You can also push toast here if desired
-    });
+    };
+
+    socket.on("notification:new", handleNotification);
+    socket.on("post:comment:new", handleComment);
 
     // Cleanup on unmount
     return () => {
+      socket.off("notification:new", handleNotification);
+      socket.off("post:comment:new", handleComment);
       socket.disconnect();
       console.log("Socket disconnected");
     };
@@ -47,25 +53,22 @@ function AppContent() {
 
   return (
     <>
-      {/* Navbar with NotificationsBell */}
-      <Navbar>
-
-      </Navbar>
+      {/* Navbar */}
+      <Navbar />
 
       {/* Routes */}
       <Routes>
-        <Route
-          path="/"
-          element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
-        />
+        {/* Public Routes */}
         <Route
           path="/login"
-          element={token ? <Navigate to="/dashboard" /> : <Signin />}
+          element={token ? <Navigate to="/dashboard" replace /> : <Signin />}
         />
         <Route
           path="/signup"
-          element={token ? <Navigate to="/dashboard" /> : <Signup />}
+          element={token ? <Navigate to="/dashboard" replace /> : <Signup />}
         />
+
+        {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
@@ -82,7 +85,12 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/login" />} />
+
+        {/* Root redirect */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );
