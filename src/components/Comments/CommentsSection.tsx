@@ -76,6 +76,9 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
     // --- SOCKET.IO LISTENER ---
     socket.connect(); // ensure socket is connected
+    // Join this post room to receive post-scoped events (comments, likes, etc.)
+    socket.emit('join', `post_${postId}`);
+
     socket.on(`post_${postId}:comment:new`, (newComment: Comment) => {
       // Avoid adding duplicates if we just created the comment ourselves
       setComments(prev => {
@@ -99,8 +102,36 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
       });
     });
 
+    // Listen for like/unlike events to update comment like counts in real time
+    const handleCommentLikeEvent = (likeData: {
+      post_id: number;
+      comment_id: number;
+      user_id: number;
+      reaction_type: 'like' | 'unlike';
+    }) => {
+      if (currentUserId && likeData.user_id === currentUserId) return; // already optimistic locally
+
+      setComments(prev => {
+        const updateNode = (nodes: Comment[]): Comment[] =>
+          nodes.map(node => {
+            if (node.id === likeData.comment_id) {
+              const delta = likeData.reaction_type === 'like' ? 1 : -1;
+              return { ...node, like_count: Math.max(0, (node.like_count || 0) + delta) };
+            }
+            if (node.children && node.children.length > 0) {
+              return { ...node, children: updateNode(node.children) };
+            }
+            return node;
+          });
+        return updateNode(prev);
+      });
+    };
+
+    socket.on(`post_${postId}:comment:like:new`, handleCommentLikeEvent);
+
     return () => {
       socket.off(`post_${postId}:comment:new`);
+      socket.off(`post_${postId}:comment:like:new`, handleCommentLikeEvent);
       // socket.disconnect();
     };
   }, [postId]);
