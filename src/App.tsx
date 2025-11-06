@@ -12,7 +12,7 @@ import { socket } from "./socket";
 import Navbar from "./pages/Navbar"; // optional: navbar where bell will live
 
 function AppContent() {
-  const { token, user } = useContext(AuthContext)!;
+  const { token, user, isLoading } = useContext(AuthContext)!;
   const { addNotification } = useNotifications();
 
   // ================= Socket.IO connection =================
@@ -53,37 +53,43 @@ function AppContent() {
       </Navbar>
 
       {/* Routes */}
-      <Routes>
-        <Route
-          path="/"
-          element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/login"
-          element={token ? <Navigate to="/dashboard" /> : <Signin />}
-        />
-        <Route
-          path="/signup"
-          element={token ? <Navigate to="/dashboard" /> : <Signup />}
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/discover"
-          element={
-            <ProtectedRoute>
-              <Discover />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-lg">Loading...</div>
+        </div>
+      ) : (
+        <Routes>
+          <Route
+            path="/"
+            element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/login"
+            element={token ? <Navigate to="/dashboard" /> : <Signin />}
+          />
+          <Route
+            path="/signup"
+            element={token ? <Navigate to="/dashboard" /> : <Signup />}
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/discover"
+            element={
+              <ProtectedRoute>
+                <Discover />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/login" />} />
+        </Routes>
+      )}
     </>
   );
 }
