@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
+import PostDetail from "./pages/PostDetail";
 import { AuthContext } from "./context/AuthContext";
 import { NotificationsProvider, useNotifications } from "./NotificationsContext";
 import { socket } from "./socket";
@@ -93,6 +94,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/post/:postId"
+            element={
+              <ProtectedRoute>
+                <PostDetail />
               </ProtectedRoute>
             }
           />

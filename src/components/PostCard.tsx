@@ -86,9 +86,11 @@ const PostCard: React.FC<PostCardProps> = ({
       )}
 
       {/* Content */}
-      <p className="text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-line mb-4">
-        {post.content}
-      </p>
+      <Link to={`/post/${post.id}`} className="block group">
+        <p className="text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-line mb-4 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors cursor-pointer">
+          {post.content}
+        </p>
+      </Link>
 
       {/* Image */}
       {post.image_url && (
@@ -137,8 +139,8 @@ const PostCard: React.FC<PostCardProps> = ({
         <LikeButton
           targetType="post"
           targetId={post.id}
-          initialLikesCount={post.like_count}
-          isInitiallyLiked={post.liked_by_user}
+          initialLikesCount={post.like_count || 0}
+          isInitiallyLiked={post.liked_by_user || false}
           token={token}
         />
       </div>
