@@ -1,4 +1,5 @@
 import { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   IconButton,
   Badge,
@@ -26,6 +27,7 @@ import { AuthContext } from "../context/AuthContext";
 const NotificationsBell = () => {
   const { notifications, markAsRead } = useNotifications();
   const { token } = useContext(AuthContext)!;
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [markingAll, setMarkingAll] = useState(false);
   const theme = useTheme();
@@ -43,15 +45,32 @@ const NotificationsBell = () => {
     setAnchorEl(null);
   };
 
-  const handleNotificationClick = async (id: number) => {
-    markAsRead(id); // local update
+  const handleNotificationClick = async (notification: any) => {
+    // Mark as read
+    markAsRead(notification.id);
+    
+    // Close the menu
+    handleClose();
+    
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/${id}/read`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/${notification.id}/read`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {
       console.error("Failed to mark notification as read:", err);
+    }
+
+    // Navigate to the appropriate page based on notification type
+    if (notification.type === 'comment' || notification.type === 'like') {
+      // For comments and likes, navigate to the post
+      const postId = notification.payload?.postId;
+      if (postId) {
+        navigate(`/post/${postId}`);
+      }
+    } else if (notification.type === 'follow') {
+      // For follows, navigate to the actor's profile
+      navigate(`/profile/${notification.actor_user_id}`);
     }
   };
 
@@ -205,7 +224,7 @@ const NotificationsBell = () => {
             recentNotifications.map((n, index) => (
               <Box key={n.id}>
                 <ListItemButton
-                  onClick={() => handleNotificationClick(n.id)}
+                  onClick={() => handleNotificationClick(n)}
                   sx={{
                     px: isMobile ? 2 : 2.5,
                     py: isMobile ? 1 : 1.5,

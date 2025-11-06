@@ -36,7 +36,7 @@ import DeactivateAccountModal from "../components/DeactivateAccountModal.tsx";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { currentUser, isAuthenticated, updateUser } = useUserContext();
+  const { currentUser, isAuthenticated, updateUser, isLoading: userLoading } = useUserContext();
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,11 +50,19 @@ const Profile: React.FC = () => {
 
   // Check if viewing own profile
   const isOwnProfile = !userId || (!!currentUser && userId === currentUser.id.toString());
+  
+  // Add debugging
+  console.log('Profile render:', { userId, currentUser: !!currentUser, isOwnProfile, loading, error });
 
   useEffect(() => {
     const fetchProfile = async () => {
+      // Reset state immediately when userId changes
+      setProfileUser(null);
       setLoading(true);
       setError(null);
+      setEditingFields({});
+      setEditValues({});
+      setSavingFields({});
       
       try {
         if (isOwnProfile && currentUser) {
@@ -67,13 +75,25 @@ const Profile: React.FC = () => {
         }
       } catch (err: any) {
         setError(err.message || "Failed to load profile");
+        setProfileUser(null); // Ensure profileUser is null on error
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
-  }, [userId, currentUser, isOwnProfile]);
+    // Only fetch if we have the necessary data and user context is not loading
+    if (!userLoading) {
+      if (isOwnProfile ? currentUser : userId) {
+        fetchProfile();
+      } else if (!isOwnProfile && !userId) {
+        setError("Profile not found");
+        setLoading(false);
+      } else if (isOwnProfile && !currentUser) {
+        setError("Please log in to view your profile");
+        setLoading(false);
+      }
+    }
+  }, [userId, currentUser, isOwnProfile, userLoading]);
 
   const handleProfileUpdate = (updatedUser: User) => setProfileUser(updatedUser);
 
@@ -537,7 +557,7 @@ const Profile: React.FC = () => {
     return null;
   };
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <Box
         sx={{
@@ -591,6 +611,7 @@ const Profile: React.FC = () => {
 
   return (
     <Box
+      key={userId || 'own-profile'} // Force re-mount when userId changes
       sx={{
         minHeight: '100vh',
         bgcolor: 'background.default',
