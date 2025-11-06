@@ -1,10 +1,25 @@
 import React, { useEffect, useState, useContext, useMemo } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { FiArrowLeft } from "react-icons/fi";
 import EditPostModal from "./EditPostModal";
 import DeletePostModal from "./DeletePostModal";
 import PostCard from "../components/PostCard";
+import {
+  Box,
+  Typography,
+  IconButton,
+  FormControl,
+  Select,
+  MenuItem,
+  useTheme,
+} from "@mui/material";
+import type { SelectChangeEvent } from "@mui/material";
+import {
+  ArrowBack as ArrowBackIcon,
+  Whatshot as WhatshotIcon,
+  Schedule as ScheduleIcon,
+  Star as StarIcon,
+} from "@mui/icons-material";
 
 interface Attachment {
   id: number;
@@ -142,35 +157,94 @@ const Discover: React.FC = () => {
   if (posts.length === 0)
     return <p className="text-gray-700 dark:text-gray-300">No posts yet.</p>;
 
+  const theme = useTheme();
+
+  const handleSortChange = (event: SelectChangeEvent) => {
+    setSortMode(event.target.value as "latest" | "top" | "hot");
+  };
+
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
+    <Box sx={{ maxWidth: 768, mx: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Back Button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center space-x-2 text-indigo-500 hover:text-indigo-700 font-semibold mb-4"
-      >
-        <FiArrowLeft size={20} />
-        <span>Back</span>
-      </button>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <IconButton
+          onClick={() => navigate(-1)}
+          sx={{
+            color: theme.palette.primary.main,
+            '&:hover': {
+              backgroundColor: theme.palette.primary.main + '10',
+              color: theme.palette.primary.dark,
+            },
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography
+          variant="button"
+          sx={{
+            ml: 1,
+            color: theme.palette.primary.main,
+            fontWeight: 600,
+            cursor: 'pointer',
+            '&:hover': {
+              color: theme.palette.primary.dark,
+            },
+          }}
+          onClick={() => navigate(-1)}
+        >
+          Back
+        </Typography>
+      </Box>
 
       {/* Header + Sort Filter */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
-          Discover
-        </h2>
-
-        <select
-          value={sortMode}
-          onChange={(e) =>
-            setSortMode(e.target.value as "latest" | "top" | "hot")
-          }
-          className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100"
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Typography
+          variant="h4"
+          component="h2"
+          sx={{
+            fontWeight: 700,
+            color: theme.palette.text.primary,
+          }}
         >
-          <option value="hot">🔥 Hot</option>
-          <option value="latest">🕒 Latest</option>
-          <option value="top">⭐ Top</option>
-        </select>
-      </div>
+          Discover
+        </Typography>
+
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <Select
+            value={sortMode}
+            onChange={handleSortChange}
+            sx={{
+              borderRadius: 2,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: theme.palette.divider,
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: theme.palette.primary.main,
+              },
+            }}
+          >
+            <MenuItem value="hot">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <WhatshotIcon sx={{ fontSize: 18, color: '#ff6b35' }} />
+                Hot
+              </Box>
+            </MenuItem>
+            <MenuItem value="latest">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ScheduleIcon sx={{ fontSize: 18, color: theme.palette.info.main }} />
+                Latest
+              </Box>
+            </MenuItem>
+            <MenuItem value="top">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <StarIcon sx={{ fontSize: 18, color: '#ffd700' }} />
+                Top
+              </Box>
+            </MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
       {/* Posts */}
       {sortedPosts.map((post) => (
@@ -216,7 +290,7 @@ const Discover: React.FC = () => {
           onDelete={() => handleDeletePost(deleteModalPost)}
         />
       )}
-    </div>
+    </Box>
   );
 };
 

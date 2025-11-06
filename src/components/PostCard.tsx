@@ -159,71 +159,89 @@ const PostCard: React.FC<PostCardProps> = ({
         {/* User Header */}
         {showUsername && post.username && (
           <Box sx={{ mb: 1.5 }}>
-            <Link 
-              to={`/profile/${post.user_id}`}
-              style={{ textDecoration: 'none', color: 'inherit' }}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1.5,
+              }}
             >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  '&:hover': { opacity: 0.8 },
-                  transition: 'opacity 0.2s',
-                }}
+              <Link 
+                to={`/profile/${post.user_id}`}
+                style={{ textDecoration: 'none', color: 'inherit', flex: 1, minWidth: 0 }}
               >
-                <Avatar
+                <Box
                   sx={{
-                    width: 40,
-                    height: 40,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    fontSize: '1rem',
-                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    '&:hover': { opacity: 0.8 },
+                    transition: 'opacity 0.2s',
                   }}
                 >
-                  {post.username.charAt(0).toUpperCase()}
-                </Avatar>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography
-                    variant="subtitle1"
+                  <Avatar
                     sx={{
+                      width: 40,
+                      height: 40,
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      fontSize: '1rem',
                       fontWeight: 600,
-                      color: 'text.primary',
-                      mb: 0,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      fontSize: '0.95rem',
                     }}
                   >
-                    {post.username}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                    {post.username.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography
-                      variant="caption"
+                      variant="subtitle1"
                       sx={{
-                        color: 'text.secondary',
-                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        color: 'text.primary',
+                        mb: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontSize: '0.95rem',
                       }}
                     >
-                      {formatDate(post.created_at)}
+                      {post.username}
                     </Typography>
-                    {post.is_edited && (
-                      <Chip
-                        label="Edited"
-                        size="small"
-                        variant="outlined"
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                      <Typography
+                        variant="caption"
                         sx={{
-                          height: 14,
-                          fontSize: '0.6rem',
-                          '& .MuiChip-label': { px: 0.5, py: 0 },
+                          color: 'text.secondary',
+                          fontSize: '0.75rem',
                         }}
-                      />
-                    )}
+                      >
+                        {formatDate(post.created_at)}
+                      </Typography>
+                      {post.is_edited && (
+                        <Chip
+                          label="Edited"
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            height: 14,
+                            fontSize: '0.6rem',
+                            '& .MuiChip-label': { px: 0.5, py: 0 },
+                          }}
+                        />
+                      )}
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
-            </Link>
+              </Link>
+              
+              {/* Like Button on the right side */}
+              <LikeButton
+                targetType="post"
+                targetId={post.id}
+                initialLikesCount={post.like_count || 0}
+                isInitiallyLiked={post.liked_by_user || false}
+                token={token}
+              />
+            </Box>
           </Box>
         )}
 
@@ -330,35 +348,7 @@ const PostCard: React.FC<PostCardProps> = ({
           </Box>
         )}
 
-        {/* Actions Row - Date on left, Like button on right */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            py: 1,
-            borderTop: '1px solid rgba(148, 163, 184, 0.1)',
-            mt: 1,
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{
-              color: 'text.secondary',
-              fontSize: '0.75rem',
-            }}
-          >
-            {formatDate(post.created_at)}
-          </Typography>
-          
-          <LikeButton
-            targetType="post"
-            targetId={post.id}
-            initialLikesCount={post.like_count || 0}
-            isInitiallyLiked={post.liked_by_user || false}
-            token={token}
-          />
-        </Box>
+
       </CardContent>
 
       {/* Comments Section */}

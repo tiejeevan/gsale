@@ -1,6 +1,19 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { FiArrowLeft, FiEdit2, FiTrash2 } from "react-icons/fi";
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  IconButton,
+  Button,
+  Avatar,
+  Chip,
+  CircularProgress,
+  Alert,
+  Container,
+} from "@mui/material";
+import { ArrowBack, Edit, Delete, Person, Schedule, ThumbUp, Image } from "@mui/icons-material";
 import { getPostById, deletePost, updatePost, type Post } from "../services/postService";
 import { AuthContext } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
@@ -84,172 +97,360 @@ const PostDetail: React.FC = () => {
     }
   };
 
+
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-xl text-gray-600 dark:text-gray-300">Loading post...</div>
-          </div>
-        </div>
-      </div>
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Card
+          sx={{
+            background: 'rgba(30, 41, 59, 0.7)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(148, 163, 184, 0.1)',
+            borderRadius: 2,
+            minHeight: 400,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <CircularProgress size={40} />
+            <Typography variant="h6" color="text.secondary">
+              Loading post...
+            </Typography>
+          </Box>
+        </Card>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-            <div className="text-xl text-red-600 dark:text-red-400">{error}</div>
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <FiArrowLeft size={18} />
-              Go Back
-            </button>
-          </div>
-        </div>
-      </div>
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Card
+          sx={{
+            background: 'rgba(30, 41, 59, 0.7)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(148, 163, 184, 0.1)',
+            borderRadius: 2,
+            minHeight: 400,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <CardContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <Alert severity="error" sx={{ width: '100%' }}>
+                {error}
+              </Alert>
+              <Button
+                variant="contained"
+                startIcon={<ArrowBack />}
+                onClick={() => navigate(-1)}
+                sx={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+                  },
+                }}
+              >
+                Go Back
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      </Container>
     );
   }
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-            <div className="text-xl text-gray-600 dark:text-gray-300">Post not found</div>
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <FiArrowLeft size={18} />
-              Go Back
-            </button>
-          </div>
-        </div>
-      </div>
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Card
+          sx={{
+            background: 'rgba(30, 41, 59, 0.7)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(148, 163, 184, 0.1)',
+            borderRadius: 2,
+            minHeight: 400,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <CardContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <Typography variant="h6" color="text.secondary">
+                Post not found
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<ArrowBack />}
+                onClick={() => navigate(-1)}
+                sx={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+                  },
+                }}
+              >
+                Go Back
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      </Container>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header with back button */}
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-md"
-          >
-            <FiArrowLeft size={18} />
-            Back
-          </button>
-          
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      {/* Header Card */}
+      <Card
+        sx={{
+          mb: 3,
+          background: 'rgba(30, 41, 59, 0.7)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(148, 163, 184, 0.1)',
+          borderRadius: 2,
+        }}
+      >
+        <CardContent sx={{ p: 3 }}>
+          {/* Back Button Row */}
+          <Box sx={{ mb: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBack />}
+              onClick={() => navigate(-1)}
+              sx={{
+                borderColor: 'rgba(148, 163, 184, 0.3)',
+                color: 'text.primary',
+                '&:hover': {
+                  borderColor: 'rgba(148, 163, 184, 0.5)',
+                  backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                },
+              }}
+            >
+              Back
+            </Button>
+          </Box>
+
+          {/* Post Title and Actions Row */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h5" fontWeight={600} color="text.primary">
               Post by {post.username}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              {new Date(post.created_at).toLocaleDateString()}
-            </p>
-          </div>
+            </Typography>
 
-          {/* Quick actions for post owner */}
-          {user?.id === post.user_id && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  console.log("Edit button clicked!");
-                  handleEdit(post);
-                }}
-                className="p-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                title="Edit post"
+            {/* Quick actions for post owner */}
+            {user?.id === post.user_id && (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <IconButton
+                  onClick={() => {
+                    console.log("Edit button clicked!");
+                    handleEdit(post);
+                  }}
+                  sx={{
+                    bgcolor: 'rgba(30, 41, 59, 0.8)',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    '&:hover': { 
+                      bgcolor: 'rgba(30, 41, 59, 0.9)',
+                      color: '#667eea',
+                    },
+                  }}
+                  title="Edit post"
+                >
+                  <Edit />
+                </IconButton>
+                <IconButton
+                  onClick={() => {
+                    console.log("Delete button clicked!");
+                    handleDelete(post);
+                  }}
+                  sx={{
+                    bgcolor: 'rgba(30, 41, 59, 0.8)',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    '&:hover': { 
+                      bgcolor: 'rgba(30, 41, 59, 0.9)',
+                      color: '#ef4444',
+                    },
+                  }}
+                  title="Delete post"
+                >
+                  <Delete />
+                </IconButton>
+              </Box>
+            )}
+          </Box>
+
+          {/* Author Info */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar
+              sx={{
+                width: 48,
+                height: 48,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                fontSize: '1.2rem',
+                fontWeight: 600,
+              }}
+            >
+              {post.username?.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <Link 
+                to={`/profile/${post.user_id}`}
+                style={{ textDecoration: 'none' }}
               >
-                <FiEdit2 size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  console.log("Delete button clicked!");
-                  handleDelete(post);
-                }}
-                className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                title="Delete post"
-              >
-                <FiTrash2 size={20} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Post Content */}
-        <div className="mb-8">
-          <PostCard
-            post={{
-              ...post,
-              like_count: post.like_count || 0,
-              liked_by_user: post.liked_by_user || false,
-            } as any}
-            currentUserId={user?.id}
-            token={token || ""}
-            showUsername={true}
-            showEditDeleteOnHover={false} // We have dedicated buttons above
-            onEdit={undefined} // Disable PostCard edit button
-            onDelete={undefined} // Disable PostCard delete button
-          />
-        </div>
-
-        {/* Additional Info Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Post Details
-          </h2>
-          
-          <div className="grid md:grid-cols-2 gap-4 text-sm">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Post ID:</span>
-                <span className="font-mono text-gray-900 dark:text-white">#{post.id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Author:</span>
-                <Link 
-                  to={`/profile/${post.user_id}`}
-                  className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                <Typography 
+                  variant="subtitle1" 
+                  fontWeight={600}
+                  sx={{ 
+                    color: 'text.primary',
+                    '&:hover': { color: '#667eea' },
+                    transition: 'color 0.2s',
+                  }}
                 >
                   {post.username}
+                </Typography>
+              </Link>
+              <Typography variant="caption" color="text.secondary">
+                {new Date(post.created_at).toLocaleString()}
+              </Typography>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Post Content Card */}
+      <Box sx={{ mb: 3 }}>
+        <PostCard
+          post={{
+            ...post,
+            like_count: post.like_count || 0,
+            liked_by_user: post.liked_by_user || false,
+          } as any}
+          currentUserId={user?.id}
+          token={token || ""}
+          showUsername={false} // We show it in the header card
+          showEditDeleteOnHover={false} // We have dedicated buttons in header
+          onEdit={undefined} // Disable PostCard edit button
+          onDelete={undefined} // Disable PostCard delete button
+        />
+      </Box>
+
+      {/* Post Details Card */}
+      <Card
+        sx={{
+          background: 'rgba(30, 41, 59, 0.7)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(148, 163, 184, 0.1)',
+          borderRadius: 2,
+        }}
+      >
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight={600} color="text.primary" sx={{ mb: 3 }}>
+            Post Details
+          </Typography>
+          
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
+            gap: 3 
+          }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Post ID:
+                </Typography>
+                <Chip 
+                  label={`#${post.id}`} 
+                  size="small" 
+                  variant="outlined"
+                  sx={{ fontFamily: 'monospace' }}
+                />
+              </Box>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Author:
+                </Typography>
+                <Link 
+                  to={`/profile/${post.user_id}`}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <Chip 
+                    icon={<Person />}
+                    label={post.username}
+                    size="small"
+                    clickable
+                    sx={{ 
+                      '&:hover': { backgroundColor: 'rgba(102, 126, 234, 0.1)' },
+                      color: '#667eea',
+                    }}
+                  />
                 </Link>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Created:</span>
-                <span className="text-gray-900 dark:text-white">
-                  {new Date(post.created_at).toLocaleString()}
-                </span>
-              </div>
-            </div>
+              </Box>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Created:
+                </Typography>
+                <Chip 
+                  icon={<Schedule />}
+                  label={new Date(post.created_at).toLocaleString()}
+                  size="small"
+                  variant="outlined"
+                />
+              </Box>
+            </Box>
             
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Likes:</span>
-                <span className="text-gray-900 dark:text-white">{post.like_count}</span>
-              </div>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Likes:
+                </Typography>
+                <Chip 
+                  icon={<ThumbUp />}
+                  label={post.like_count}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                />
+              </Box>
+              
               {post.is_edited && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Status:</span>
-                  <span className="text-orange-600 dark:text-orange-400">Edited</span>
-                </div>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Status:
+                  </Typography>
+                  <Chip 
+                    label="Edited"
+                    size="small"
+                    color="warning"
+                    variant="outlined"
+                  />
+                </Box>
               )}
+              
               {post.attachments && post.attachments.length > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Attachments:</span>
-                  <span className="text-gray-900 dark:text-white">{post.attachments.length}</span>
-                </div>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Attachments:
+                  </Typography>
+                  <Chip 
+                    icon={<Image />}
+                    label={post.attachments.length}
+                    size="small"
+                    color="info"
+                    variant="outlined"
+                  />
+                </Box>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
 
       {/* Edit Modal */}
       <EditPostModal
@@ -261,7 +462,7 @@ const PostDetail: React.FC = () => {
         onChangeContent={handleChangeContent}
         onChangeImage={handleChangeImage}
       />
-    </div>
+    </Container>
   );
 };
 

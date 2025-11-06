@@ -11,9 +11,7 @@ const Dashboard: React.FC = () => {
 
       {/* Main content */}
       <main className="flex-1 p-6">
-        <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 space-y-6 transition-colors duration-300">
-          <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Welcome</h3>
-
+        <div className="max-w-3xl mx-auto space-y-6">
           {/* Create Post */}
           <CreatePost />
 

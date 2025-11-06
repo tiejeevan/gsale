@@ -73,7 +73,7 @@ const Navbar: React.FC = () => {
               mr: 4,
             }}
           >
-            Gsale
+            GSALE
           </Typography>
 
           {/* Discover - Always visible */}

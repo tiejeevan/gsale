@@ -8,7 +8,7 @@ const CreatePost: React.FC = () => {
   const API_URL = import.meta.env.VITE_API_URL;
 
   if (!auth) return null;
-  const { token } = auth;
+  const { token, user } = auth;
 
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -61,7 +61,9 @@ const CreatePost: React.FC = () => {
 
   return (
     <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300">
-      <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Create a New Post</h2>
+      <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
+        Welcome {user?.first_name || user?.username || 'User'}
+      </h2>
       {message && (
         <div className={`mb-3 text-sm ${
           message.startsWith("✅") ? "text-green-600" :
