@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiX, FiSave, FiUpload } from "react-icons/fi";
+import { FiX, FiSave } from "react-icons/fi";
 import { useUserContext } from "../context/UserContext";
 import { type User } from "../services/userService";
 
