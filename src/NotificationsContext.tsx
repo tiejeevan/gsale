@@ -71,44 +71,30 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
     // Connect socket if not already connected
     if (!socket.connected) {
-      console.log("🔌 Connecting socket for user:", user.id);
       socket.connect();
       socket.once("connect", () => {
-        console.log("✅ Socket connected for user:", user.id, "Socket ID:", socket.id);
         // Add a small delay to ensure backend is ready
         setTimeout(() => {
-          console.log("🎯 About to join user room for notifications...");
           joinUserRoom(user.id);
         }, 100);
       });
     } else {
-      console.log("🔌 Socket already connected, joining user room:", user.id);
-      console.log("🎯 About to join user room for notifications...");
       joinUserRoom(user.id);
     }
 
-    // Test if we can receive the notification event directly
-    socket.on("test_notification_received", (data: any) => {
-      console.log("🧪 Test notification received from backend:", data);
-      handleNewNotification(data);
-    });
+
 
     // Add connection error handling
     socket.on("connect_error", (error) => {
-      console.error("❌ Socket connection error:", error);
+      console.error("Socket connection error:", error);
     });
 
     socket.on("disconnect", (reason) => {
-      console.log("🔌 Socket disconnected:", reason);
+      console.log("Socket disconnected:", reason);
     });
 
     // Listen for all new notifications
     const handleNewNotification = async (notif: any) => {
-      console.log("📩 New notification received:", notif);
-      
-      // Backend sends simplified notification object:
-      // { notificationId: '83', recipient: 21, actor: 22, type: 'comment' }
-      
       // Fetch actor name since backend doesn't include it
       let actorName = "Someone";
       const actorId = notif.actor || notif.actor_user_id;
@@ -141,63 +127,14 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     };
     socket.on("notification:new", handleNewNotification);
 
-    // Add a separate listener just for debugging (can be removed later)
-    socket.on("notification:new", (data: any) => {
-      console.log("🚨 DIRECT notification:new listener triggered!", data);
-    });
 
-    // Test listener for custom events (bypassing socket)
-    const handleTestNotification = (event: any) => {
-      console.log("🧪 Test notification received via custom event:", event.detail);
-      handleNewNotification(event.detail);
-    };
-    window.addEventListener('test-notification', handleTestNotification);
-
-    // Debug: log all socket events
-    const logAny = (event: string, payload: any) => {
-      console.log("🔍 Socket event received:", event, payload);
-      if (event === "notification:new") {
-        console.log("🎯 NOTIFICATION EVENT DETECTED!", payload);
-      }
-      if (event.includes("comment")) {
-        console.log("💬 Comment-related event:", event, payload);
-      }
-    };
-    socket.onAny(logAny);
-
-    // Add specific listeners for debugging
-    socket.on("connect", () => {
-      console.log("🔗 Socket connect event fired");
-    });
-
-    socket.on("error", (error: any) => {
-      console.error("🚨 Socket error:", error);
-    });
-
-    // Additional debugging for room joining
-    socket.on("joined", (room: string) => {
-      console.log("✅ Successfully joined room:", room);
-    });
-
-    socket.on("left", (room: string) => {
-      console.log("👋 Left room:", room);
-    });
 
     // Cleanup on unmount
     return () => {
       socket.off("notification:new", handleNewNotification);
-      socket.off("notification:new"); // Remove the debug listener too
-      socket.off("test_notification_received");
       socket.off("connect_error");
       socket.off("disconnect");
-      socket.off("joined");
-      socket.off("left");
-      socket.off("connect");
-      socket.off("error");
-      socket.offAny(logAny);
-      window.removeEventListener('test-notification', handleTestNotification);
       if (socket.connected) {
-        console.log("🔌 Leaving user room:", user.id);
         socket.emit("leave", `user_${user.id}`);
       }
     };

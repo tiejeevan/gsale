@@ -2,7 +2,6 @@ import React from "react";
 // import Sidebar from "./Sidebar";
 import CreatePost from "./CreatePost";
 import UserPosts from "./UserPosts";
-import NotificationDebugger from "../components/NotificationDebugger";
 
 const Dashboard: React.FC = () => {
   return (
@@ -13,9 +12,6 @@ const Dashboard: React.FC = () => {
       {/* Main content */}
       <main className="flex-1 p-6">
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* Notification Debugger - Remove this after testing */}
-          <NotificationDebugger />
-          
           {/* Create Post */}
           <CreatePost />
 
