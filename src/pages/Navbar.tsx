@@ -12,11 +12,6 @@ import {
   MenuItem,
   useMediaQuery,
   useTheme,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -28,8 +23,8 @@ import { AuthContext } from "../context/AuthContext";
 
 const Navbar: React.FC = () => {
   const { user, logout } = useContext(AuthContext)!;
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileMenuAnchorEl, setMobileMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -52,8 +47,22 @@ const Navbar: React.FC = () => {
     handleProfileMenuClose();
   };
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
+  const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setMobileMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMobileMenuClose = () => {
+    setMobileMenuAnchorEl(null);
+  };
+
+  const handleMobileProfileClick = () => {
+    navigate('/profile');
+    handleMobileMenuClose();
+  };
+
+  const handleMobileLogout = () => {
+    logout();
+    handleMobileMenuClose();
   };
 
   return (
@@ -134,7 +143,7 @@ const Navbar: React.FC = () => {
               <IconButton
                 edge="end"
                 color="inherit"
-                onClick={toggleMobileMenu}
+                onClick={handleMobileMenuOpen}
               >
                 <MenuIcon />
               </IconButton>
@@ -160,64 +169,54 @@ const Navbar: React.FC = () => {
         <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
       </Menu>
 
-      {/* Mobile Drawer */}
-      <Drawer
-        anchor="right"
-        open={mobileMenuOpen}
-        onClose={toggleMobileMenu}
+      {/* Mobile Menu */}
+      <Menu
+        anchorEl={mobileMenuAnchorEl}
+        open={Boolean(mobileMenuAnchorEl)}
+        onClose={handleMobileMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        PaperProps={{
+          sx: {
+            minWidth: 200,
+            mt: 1,
+          },
+        }}
       >
-        <Box sx={{ width: 250 }} role="presentation">
-          <List>
-            {user && (
-              <>
-                {/* User Info */}
-                <ListItem>
-                  <Button
-                    onClick={() => {
-                      navigate('/profile');
-                      setMobileMenuOpen(false);
-                    }}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      textTransform: 'none',
-                      color: 'inherit',
-                      width: '100%',
-                      justifyContent: 'flex-start',
-                    }}
-                  >
-                    <Avatar
-                      src="https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
-                      alt="User avatar"
-                      sx={{ width: 40, height: 40 }}
-                    />
-                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                      {user.first_name}
-                    </Typography>
-                  </Button>
-                </ListItem>
-
-                {/* Logout */}
-                <ListItem disablePadding>
-                  <ListItemButton
-                    onClick={() => {
-                      logout();
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <LogoutIcon sx={{ mr: 2, color: 'error.main' }} />
-                    <ListItemText 
-                      primary="Logout" 
-                      sx={{ color: 'error.main' }}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              </>
-            )}
-          </List>
-        </Box>
-      </Drawer>
+        {user && (
+          <>
+            {/* Profile MenuItem */}
+            <MenuItem onClick={handleMobileProfileClick}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                <Avatar
+                  src="https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
+                  alt="User avatar"
+                  sx={{ width: 32, height: 32 }}
+                />
+                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                  {user.first_name}
+                </Typography>
+              </Box>
+            </MenuItem>
+            
+            {/* Logout MenuItem */}
+            <MenuItem onClick={handleMobileLogout}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                <LogoutIcon sx={{ color: 'error.main', fontSize: 20 }} />
+                <Typography variant="body2" sx={{ color: 'error.main' }}>
+                  Logout
+                </Typography>
+              </Box>
+            </MenuItem>
+          </>
+        )}
+      </Menu>
     </>
   );
 };

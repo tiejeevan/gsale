@@ -1,6 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { FiEdit2, FiSettings, FiMapPin, FiLink, FiCalendar, FiMail, FiPhone, FiSave, FiX, FiPlus } from "react-icons/fi";
+import {
+  Box,
+  Container,
+  Paper,
+  Avatar,
+  Typography,
+  Button,
+  IconButton,
+  TextField,
+  Stack,
+  Chip,
+  CircularProgress,
+  Alert,
+  Link as MuiLink,
+} from "@mui/material";
+import {
+  Edit as EditIcon,
+  Settings as SettingsIcon,
+  LocationOn,
+  Link as LinkIcon,
+  CalendarToday,
+  Email,
+  Phone,
+  Save,
+  Close,
+  Add,
+  CheckCircle,
+} from "@mui/icons-material";
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { useUserContext } from "../context/UserContext";
 import { userService, type User } from "../services/userService";
@@ -112,8 +139,7 @@ const Profile: React.FC = () => {
     placeholder: string;
     icon: React.ReactNode;
     type?: 'text' | 'url' | 'email' | 'tel';
-    multiline?: boolean;
-  }> = ({ field, value, placeholder, icon, type = 'text', multiline = false }) => {
+  }> = ({ field, value, placeholder, icon, type = 'text' }) => {
     const isEditing = editingFields[field];
     const isSaving = savingFields[field];
     const isEmpty = isFieldEmpty(value);
@@ -121,91 +147,132 @@ const Profile: React.FC = () => {
     if (!isOwnProfile && isEmpty) return null;
 
     return (
-      <div className="flex items-start gap-3 text-gray-600 dark:text-gray-300 group py-2">
-        <div className="mt-1">{icon}</div>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 2,
+          py: 1.5,
+          '&:hover .edit-button': {
+            opacity: 1,
+          },
+        }}
+      >
+        <Box sx={{ mt: 0.5, color: 'primary.main' }}>{icon}</Box>
         {isEditing ? (
-          <div className="flex-1 flex items-start gap-2">
-            {multiline ? (
-              <input
-                type="text"
-                value={editValues[field] || ''}
-                onChange={(e) => setEditValues(prev => ({ ...prev, [field]: e.target.value }))}
-                placeholder={placeholder}
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
-                autoFocus
-                dir="ltr"
-              />
-            ) : (
-              <input
-                type={type}
-                value={editValues[field] || ''}
-                onChange={(e) => setEditValues(prev => ({ ...prev, [field]: e.target.value }))}
-                placeholder={placeholder}
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                autoFocus
-                dir="ltr"
-              />
-            )}
-            <div className="flex gap-1 mt-1">
-              <button
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <TextField
+              type={type}
+              value={editValues[field] || ''}
+              onChange={(e) => setEditValues(prev => ({ ...prev, [field]: e.target.value }))}
+              placeholder={placeholder}
+              size="small"
+              fullWidth
+              autoFocus
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: 'background.default',
+                  '& fieldset': {
+                    borderColor: 'divider',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
+              }}
+            />
+            <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }}>
+              <IconButton
                 onClick={() => saveField(field)}
                 disabled={isSaving || !editValues[field]?.trim()}
-                className="p-2 text-green-600 hover:text-green-700 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
+                size="small"
+                sx={{ color: 'success.main' }}
               >
-                <FiSave size={16} />
-              </button>
-              <button
+                <Save fontSize="small" />
+              </IconButton>
+              <IconButton
                 onClick={() => cancelEditing(field)}
                 disabled={isSaving}
-                className="p-2 text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                size="small"
+                sx={{ color: 'text.secondary' }}
               >
-                <FiX size={16} />
-              </button>
-            </div>
-          </div>
+                <Close fontSize="small" />
+              </IconButton>
+            </Stack>
+          </Box>
         ) : (
-          <div className="flex-1 flex items-center justify-between">
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             {isEmpty ? (
               isOwnProfile && (
-                <button
+                <Button
                   onClick={() => startEditing(field)}
-                  className="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                  startIcon={<Add />}
+                  size="small"
+                  sx={{
+                    textTransform: 'none',
+                    color: 'text.secondary',
+                    borderColor: 'divider',
+                    '&:hover': {
+                      color: 'primary.main',
+                      bgcolor: 'rgba(102, 126, 234, 0.08)',
+                      borderColor: 'primary.main',
+                    },
+                  }}
                 >
-                  <FiPlus size={16} />
-                  <span>Add {placeholder.toLowerCase()}</span>
-                </button>
+                  Add {placeholder.toLowerCase()}
+                </Button>
               )
             ) : (
               <>
                 {type === 'url' ? (
-                  <a
+                  <MuiLink
                     href={value}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                    sx={{
+                      color: 'primary.main',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
                   >
                     {value}
-                  </a>
+                  </MuiLink>
                 ) : (
-                  <span>{value}</span>
+                  <Typography variant="body2" color="text.primary">
+                    {value}
+                  </Typography>
                 )}
                 {isOwnProfile && (
-                  <button
+                  <IconButton
                     onClick={() => startEditing(field, value)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all rounded"
+                    size="small"
+                    className="edit-button"
+                    sx={{
+                      opacity: 0,
+                      transition: 'opacity 0.2s',
+                      color: 'text.secondary',
+                      '&:hover': {
+                        color: 'primary.main',
+                      },
+                    }}
                   >
-                    <FiEdit2 size={14} />
-                  </button>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
                 )}
               </>
             )}
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   };
 
-  // Dedicated Bio/About components with proper text direction
+  // Dedicated Bio/About components
   const BioField: React.FC = () => {
     const isEditing = editingFields['bio'];
     const isSaving = savingFields['bio'];
@@ -213,70 +280,119 @@ const Profile: React.FC = () => {
 
     if (isEditing) {
       return (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Bio</h3>
-          <div className="flex gap-2">
-            <input
-            type="text"
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            Bio
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
               value={editValues['bio'] || ''}
               onChange={(e) => setEditValues(prev => ({ ...prev, bio: e.target.value }))}
               placeholder="Tell people about yourself..."
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+              fullWidth
+              multiline
+              rows={3}
               autoFocus
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: 'background.default',
+                  '& fieldset': {
+                    borderColor: 'divider',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
+              }}
             />
-            <div className="flex flex-col gap-1">
-              <button
+            <Stack spacing={0.5}>
+              <IconButton
                 onClick={() => saveField('bio')}
                 disabled={isSaving || !editValues['bio']?.trim()}
-                className="p-2 text-green-600 hover:text-green-700 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
+                sx={{ color: 'success.main' }}
               >
-                <FiSave size={18} />
-              </button>
-              <button
+                <Save />
+              </IconButton>
+              <IconButton
                 onClick={() => cancelEditing('bio')}
                 disabled={isSaving}
-                className="p-2 text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                sx={{ color: 'text.secondary' }}
               >
-                <FiX size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
+                <Close />
+              </IconButton>
+            </Stack>
+          </Box>
+        </Box>
       );
     }
 
     if (isEmpty && isOwnProfile) {
       return (
-        <div className="mb-8">
-          <button
+        <Box sx={{ mb: 4 }}>
+          <Button
             onClick={() => startEditing('bio')}
-            className="w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center justify-center gap-2"
+            fullWidth
+            variant="outlined"
+            startIcon={<Add />}
+            sx={{
+              py: 2,
+              borderStyle: 'dashed',
+              textTransform: 'none',
+              color: 'text.secondary',
+              borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                borderStyle: 'dashed',
+                bgcolor: 'rgba(102, 126, 234, 0.08)',
+              },
+            }}
           >
-            <FiPlus size={20} />
-            <span>Add a bio</span>
-          </button>
-        </div>
+            Add a bio
+          </Button>
+        </Box>
       );
     }
 
     if (!isEmpty) {
       return (
-        <div className="mb-8 group">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Bio</h3>
+        <Box
+          sx={{
+            mb: 4,
+            '&:hover .edit-button': {
+              opacity: 1,
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Bio
+            </Typography>
             {isOwnProfile && (
-              <button
+              <IconButton
                 onClick={() => startEditing('bio', profileUser?.bio || '')}
-                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all rounded"
+                size="small"
+                className="edit-button"
+                sx={{
+                  opacity: 0,
+                  transition: 'opacity 0.2s',
+                  color: 'text.secondary',
+                  '&:hover': {
+                    color: 'primary.main',
+                  },
+                }}
               >
-                <FiEdit2 size={16} />
-              </button>
+                <EditIcon fontSize="small" />
+              </IconButton>
             )}
-          </div>
-          <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">
+          </Box>
+          <Typography variant="body1" sx={{ lineHeight: 1.8, color: 'text.secondary' }}>
             {profileUser?.bio}
-          </p>
-        </div>
+          </Typography>
+        </Box>
       );
     }
 
@@ -290,73 +406,131 @@ const Profile: React.FC = () => {
 
     if (isEditing) {
       return (
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">About</h3>
-          <div className="flex gap-2">
-            <input
-            type="text"
+        <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 4 }}>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+            About
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
               value={editValues['about'] || ''}
               onChange={(e) => setEditValues(prev => ({ ...prev, about: e.target.value }))}
               placeholder="Write a longer description about yourself, your interests, experience, etc..."
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+              fullWidth
+              multiline
+              rows={5}
               autoFocus
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: 'background.default',
+                  '& fieldset': {
+                    borderColor: 'divider',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
+              }}
             />
-            <div className="flex flex-col gap-1">
-              <button
+            <Stack spacing={0.5}>
+              <IconButton
                 onClick={() => saveField('about')}
                 disabled={isSaving || !editValues['about']?.trim()}
-                className="p-2 text-green-600 hover:text-green-700 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
+                sx={{ color: 'success.main' }}
               >
-                <FiSave size={18} />
-              </button>
-              <button
+                <Save />
+              </IconButton>
+              <IconButton
                 onClick={() => cancelEditing('about')}
                 disabled={isSaving}
-                className="p-2 text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                sx={{ color: 'text.secondary' }}
               >
-                <FiX size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
+                <Close />
+              </IconButton>
+            </Stack>
+          </Box>
+        </Box>
       );
     }
 
     if (isEmpty && isOwnProfile) {
       return (
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">About</h3>
-          <button
+        <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 4 }}>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+            About
+          </Typography>
+          <Button
             onClick={() => startEditing('about')}
-            className="w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center justify-center gap-2"
+            fullWidth
+            variant="outlined"
+            startIcon={<Add />}
+            sx={{
+              py: 3,
+              borderStyle: 'dashed',
+              textTransform: 'none',
+              color: 'text.secondary',
+              borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                borderStyle: 'dashed',
+                bgcolor: 'rgba(102, 126, 234, 0.08)',
+              },
+            }}
           >
-            <FiPlus size={20} />
-            <span>Add about section</span>
-          </button>
-        </div>
+            Add about section
+          </Button>
+        </Box>
       );
     }
 
     if (!isEmpty) {
       return (
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-8 group">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">About</h3>
+        <Box
+          sx={{
+            borderTop: 1,
+            borderColor: 'divider',
+            pt: 4,
+            '&:hover .edit-button': {
+              opacity: 1,
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              About
+            </Typography>
             {isOwnProfile && (
-              <button
+              <IconButton
                 onClick={() => startEditing('about', profileUser?.about || '')}
-                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all rounded"
+                size="small"
+                className="edit-button"
+                sx={{
+                  opacity: 0,
+                  transition: 'opacity 0.2s',
+                  color: 'text.secondary',
+                  '&:hover': {
+                    color: 'primary.main',
+                  },
+                }}
               >
-                <FiEdit2 size={16} />
-              </button>
+                <EditIcon fontSize="small" />
+              </IconButton>
             )}
-          </div>
-          <div className="prose dark:prose-invert max-w-none">
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-              {profileUser?.about}
-            </p>
-          </div>
-        </div>
+          </Box>
+          <Typography
+            variant="body1"
+            sx={{
+              lineHeight: 1.8,
+              color: 'text.secondary',
+              whiteSpace: 'pre-line',
+            }}
+          >
+            {profileUser?.about}
+          </Typography>
+        </Box>
       );
     }
 
@@ -365,111 +539,227 @@ const Profile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-xl text-gray-600 dark:text-gray-300">Loading profile...</div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-xl text-red-600 dark:text-red-400">{error}</div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <Alert severity="error" sx={{ fontSize: '1.1rem' }}>
+          {error}
+        </Alert>
+      </Box>
     );
   }
 
   if (!profileUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-xl text-gray-600 dark:text-gray-300">Profile not found</div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <Typography variant="h6" color="text.secondary">
+          Profile not found
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        pb: 4,
+      }}
+    >
+      <Container maxWidth="md" sx={{ pt: 4 }}>
         {/* Cover Image */}
-        <div className="relative h-64 bg-gradient-to-r from-purple-500 to-pink-500 rounded-t-2xl overflow-hidden">
-          {profileUser.cover_image ? (
-            <img
+        <Paper
+          elevation={0}
+          sx={(theme) => ({
+            position: 'relative',
+            height: 256,
+            borderRadius: '16px 16px 0 0',
+            overflow: 'hidden',
+            background: profileUser.cover_image
+              ? `url(${profileUser.cover_image}) center/cover`
+              : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+          })}
+        >
+          {profileUser.cover_image && (
+            <Box
+              component="img"
               src={profileUser.cover_image}
               alt="Cover"
-              className="w-full h-full object-cover"
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
             />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-purple-500 to-pink-500" />
           )}
           
           {/* Action Buttons */}
           {isOwnProfile && isAuthenticated && (
-            <div className="absolute top-4 right-4 flex gap-2">
-              <button
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                display: 'flex',
+                gap: 1,
+              }}
+            >
+              <IconButton
                 onClick={() => setShowEditModal(true)}
-                className="bg-white/90 hover:bg-white text-gray-700 p-2 rounded-full shadow-lg transition-all"
+                sx={{
+                  bgcolor: 'background.paper',
+                  color: 'primary.main',
+                  '&:hover': {
+                    bgcolor: 'background.default',
+                    color: 'primary.dark',
+                  },
+                }}
               >
-                <FiEdit2 size={20} />
-              </button>
-              <button
+                <EditIcon />
+              </IconButton>
+              <IconButton
                 onClick={() => setShowDeactivateModal(true)}
-                className="bg-red-500/90 hover:bg-red-500 text-white p-2 rounded-full shadow-lg transition-all"
+                sx={{
+                  bgcolor: 'error.main',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'error.dark',
+                  },
+                }}
               >
-                <FiSettings size={20} />
-              </button>
-            </div>
+                <SettingsIcon />
+              </IconButton>
+            </Box>
           )}
-        </div>
+        </Paper>
 
         {/* Profile Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-b-2xl shadow-xl p-8 -mt-16 relative z-10">
+        <Paper
+          elevation={8}
+          sx={{
+            borderRadius: '0 0 16px 16px',
+            mt: -8,
+            position: 'relative',
+            zIndex: 1,
+            p: 4,
+            bgcolor: 'background.paper',
+          }}
+        >
           {/* Profile Image & Basic Info */}
-          <div className="flex flex-col md:flex-row items-center md:items-end gap-6 mb-8">
-            <div className="relative">
-              <img
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              alignItems: { xs: 'center', md: 'flex-end' },
+              gap: 3,
+              mb: 4,
+            }}
+          >
+            <Box sx={{ position: 'relative' }}>
+              <Avatar
                 src={profileUser.profile_image || `https://ui-avatars.com/api/?name=${profileUser.display_name || profileUser.username}&size=128&background=6366f1&color=ffffff`}
                 alt={profileUser.display_name || profileUser.username}
-                className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-700 shadow-lg"
+                sx={{
+                  width: 128,
+                  height: 128,
+                  border: 4,
+                  borderColor: 'background.paper',
+                  boxShadow: 3,
+                }}
               />
               {profileUser.is_verified && (
-                <div className="absolute -bottom-2 -right-2 bg-blue-500 text-white rounded-full p-1">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: -4,
+                    right: -4,
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    borderRadius: '50%',
+                    p: 0.5,
+                  }}
+                >
+                  <CheckCircle sx={{ fontSize: 20 }} />
+                </Box>
               )}
-            </div>
+            </Box>
 
-            <div className="text-center md:text-left flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <Box sx={{ textAlign: { xs: 'center', md: 'left' }, flex: 1 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
                 {profileUser.display_name || profileUser.username}
-              </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-300 mb-1">
+              </Typography>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                 @{profileUser.username}
-              </p>
+              </Typography>
               {profileUser.role && (
-                <span className="inline-block bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium">
-                  {profileUser.role}
-                </span>
+                <Chip
+                  label={profileUser.role}
+                  size="small"
+                  sx={{
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                    },
+                  }}
+                />
               )}
-            </div>
-          </div>
+            </Box>
+          </Box>
 
           {/* Bio Section */}
           <BioField />
 
           {/* Contact Info */}
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 4,
+              mb: 4,
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                 Contact Information
-              </h3>
+              </Typography>
               
               <InlineEditField
                 field="email"
                 value={profileUser.email || ''}
                 placeholder="Email"
-                icon={<FiMail className="text-indigo-500" size={20} />}
+                icon={<Email sx={{ fontSize: 20 }} />}
                 type="email"
               />
               
@@ -477,7 +767,7 @@ const Profile: React.FC = () => {
                 field="phone"
                 value={profileUser.phone || ''}
                 placeholder="Phone"
-                icon={<FiPhone className="text-indigo-500" size={20} />}
+                icon={<Phone sx={{ fontSize: 20 }} />}
                 type="tel"
               />
               
@@ -485,36 +775,38 @@ const Profile: React.FC = () => {
                 field="location"
                 value={profileUser.location || ''}
                 placeholder="Location"
-                icon={<FiMapPin className="text-indigo-500" size={20} />}
+                icon={<LocationOn sx={{ fontSize: 20 }} />}
               />
               
               <InlineEditField
                 field="website"
                 value={profileUser.website || ''}
                 placeholder="Website"
-                icon={<FiLink className="text-indigo-500" size={20} />}
+                icon={<LinkIcon sx={{ fontSize: 20 }} />}
                 type="url"
               />
               
               {profileUser.created_at && (
-                <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300 py-2">
-                  <FiCalendar className="text-indigo-500" size={20} />
-                  <span>Joined {new Date(profileUser.created_at).toLocaleDateString()}</span>
-                </div>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5 }}>
+                  <CalendarToday sx={{ fontSize: 20, color: 'primary.main' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Joined {new Date(profileUser.created_at).toLocaleDateString()}
+                  </Typography>
+                </Box>
               )}
-            </div>
+            </Box>
 
             {/* Social Links */}
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                 Social Links
-              </h3>
+              </Typography>
               
               <InlineEditField
                 field="social_facebook"
                 value={profileUser.social_links?.facebook || ''}
                 placeholder="Facebook URL"
-                icon={<FaFacebook className="text-blue-600" size={20} />}
+                icon={<FaFacebook size={20} style={{ color: '#1877F2' }} />}
                 type="url"
               />
               
@@ -522,7 +814,7 @@ const Profile: React.FC = () => {
                 field="social_twitter"
                 value={profileUser.social_links?.twitter || ''}
                 placeholder="Twitter URL"
-                icon={<FaTwitter className="text-blue-400" size={20} />}
+                icon={<FaTwitter size={20} style={{ color: '#1DA1F2' }} />}
                 type="url"
               />
               
@@ -530,7 +822,7 @@ const Profile: React.FC = () => {
                 field="social_instagram"
                 value={profileUser.social_links?.instagram || ''}
                 placeholder="Instagram URL"
-                icon={<FaInstagram className="text-pink-500" size={20} />}
+                icon={<FaInstagram size={20} style={{ color: '#E4405F' }} />}
                 type="url"
               />
               
@@ -538,16 +830,16 @@ const Profile: React.FC = () => {
                 field="social_linkedin"
                 value={profileUser.social_links?.linkedin || ''}
                 placeholder="LinkedIn URL"
-                icon={<FaLinkedin className="text-blue-700" size={20} />}
+                icon={<FaLinkedin size={20} style={{ color: '#0077B5' }} />}
                 type="url"
               />
-            </div>
-          </div>
+            </Box>
+          </Box>
 
           {/* About Section */}
           <AboutField />
-        </div>
-      </div>
+        </Paper>
+      </Container>
 
       {/* Modals */}
       {showEditModal && (
@@ -563,7 +855,7 @@ const Profile: React.FC = () => {
           onClose={() => setShowDeactivateModal(false)}
         />
       )}
-    </div>
+    </Box>
   );
 };
 
