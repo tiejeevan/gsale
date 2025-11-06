@@ -1,35 +1,38 @@
-import { useState, useContext, useRef, useEffect } from "react";
-import { FiBell } from "react-icons/fi";
+import { useState, useContext } from "react";
+import {
+  IconButton,
+  Badge,
+  Menu,
+  MenuItem,
+  Typography,
+  Box,
+  Button,
+  Divider,
+  ListItemText,
+  ListItemButton,
+} from "@mui/material";
+import { Notifications as NotificationsIcon } from "@mui/icons-material";
 import { useNotifications } from "../NotificationsContext";
 import { AuthContext } from "../context/AuthContext";
 
 const NotificationsBell = () => {
   const { notifications, markAsRead } = useNotifications();
   const { token } = useContext(AuthContext)!;
-  const [open, setOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [markingAll, setMarkingAll] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
+  const open = Boolean(anchorEl);
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Close dropdown if click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
 
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
-  const handleClick = async (id: number) => {
+  const handleNotificationClick = async (id: number) => {
     markAsRead(id); // local update
     try {
       await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/${id}/read`, {
@@ -58,63 +61,98 @@ const NotificationsBell = () => {
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      {/* Bell button */}
-      <button
-        onClick={() => setOpen(prev => !prev)}
-        className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+    <>
+      {/* Bell Icon Button with Badge */}
+      <IconButton
+        onClick={handleClick}
+        color="inherit"
+        aria-label="notifications"
       >
-        <FiBell size={24} />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-            {unreadCount}
-          </span>
-        )}
-      </button>
+        <Badge badgeContent={unreadCount} color="error">
+          <NotificationsIcon />
+        </Badge>
+      </IconButton>
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute right-0 mt-2 min-w-[250px] max-w-[90vw] max-h-[500px] overflow-y-auto bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-2xl rounded-lg z-50 animate-fade-in">
-          {/* Header */}
-          <div className="flex justify-between items-center px-5 py-3 text-sm text-gray-500 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
-            <span className="font-medium">{unreadCount} unread</span>
-            <button
+      {/* Notifications Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        PaperProps={{
+          sx: {
+            minWidth: 320,
+            maxWidth: '90vw',
+            maxHeight: 500,
+          },
+        }}
+      >
+        {/* Header */}
+        <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              {unreadCount} unread
+            </Typography>
+            <Button
+              size="small"
               onClick={markAllAsRead}
               disabled={markingAll}
-              className="text-indigo-500 hover:text-indigo-700 font-medium disabled:opacity-50 text-sm"
+              sx={{ textTransform: 'none' }}
             >
               Mark all as read
-            </button>
-          </div>
+            </Button>
+          </Box>
+        </Box>
 
-          {/* Notifications list */}
-          {notifications.length === 0 ? (
-            <div className="p-6 text-gray-600 dark:text-gray-300 text-sm text-center">
+        {/* Notifications List */}
+        {notifications.length === 0 ? (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
               No notifications
-            </div>
-          ) : (
-            notifications.map(n => (
-              <div
-                key={n.id}
-                onClick={() => handleClick(n.id)}
-                className={`cursor-pointer px-5 py-4 border-b dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition ${
-                  !n.read ? "bg-blue-50 dark:bg-blue-900/30" : ""
-                }`}
+            </Typography>
+          </Box>
+        ) : (
+          notifications.map((n, index) => (
+            <Box key={n.id}>
+              <ListItemButton
+                onClick={() => handleNotificationClick(n.id)}
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  backgroundColor: !n.read ? 'action.hover' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: 'action.selected',
+                  },
+                }}
               >
-                <div className="text-sm font-medium text-gray-800 dark:text-gray-100">
-                  {n.type === "like" && `${n.actor_name} liked your post`}
-                  {n.type === "comment" && `${n.actor_name} commented: "${n.payload.text}"`}
-                  {n.type === "follow" && `${n.actor_name} started following you`}
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  {new Date(n.created_at).toLocaleString()}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-    </div>
+                <ListItemText
+                  primary={
+                    <Typography variant="body2" sx={{ fontWeight: !n.read ? 'medium' : 'normal' }}>
+                      {n.type === "like" && `${n.actor_name} liked your post`}
+                      {n.type === "comment" && `${n.actor_name} commented: "${n.payload.text}"`}
+                      {n.type === "follow" && `${n.actor_name} started following you`}
+                    </Typography>
+                  }
+                  secondary={
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(n.created_at).toLocaleString()}
+                    </Typography>
+                  }
+                />
+              </ListItemButton>
+              {index < notifications.length - 1 && <Divider />}
+            </Box>
+          ))
+        )}
+      </Menu>
+    </>
   );
 };
 

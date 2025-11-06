@@ -1,133 +1,224 @@
-import React, { useContext, useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { FiMenu, FiX } from "react-icons/fi";
+import React, { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Avatar,
+  Box,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+  useTheme,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+} from "@mui/material";
+import {
+  Menu as MenuIcon,
+  Logout as LogoutIcon,
+  Explore as ExploreIcon,
+} from "@mui/icons-material";
 import NotificationsBell from "../components/NotificationsBell";
 import { AuthContext } from "../context/AuthContext";
 
 const Navbar: React.FC = () => {
   const { user, logout } = useContext(AuthContext)!;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
 
-  // Close mobile menu if click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(event.target as Node)
-      ) {
-        setMobileMenuOpen(false);
-      }
-    };
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
+  };
 
-    if (mobileMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
+  const handleProfileClick = () => {
+    navigate('/profile');
+    handleProfileMenuClose();
+  };
 
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [mobileMenuOpen]);
+  const handleLogout = () => {
+    logout();
+    handleProfileMenuClose();
+  };
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
 
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Left: Logo + Discover */}
-          <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="text-xl font-bold text-gray-800 dark:text-white">
-              Gsale
-            </Link>
-            <div className="hidden md:flex gap-4">
-              <Link to="/discover" className="text-gray-600 dark:text-gray-300 hover:underline">
-                Discover
-              </Link>
-              <Link to="/profile" className="text-gray-600 dark:text-gray-300 hover:underline">
-                Profile
-              </Link>
-            </div>
-          </div>
+    <>
+      <AppBar position="sticky" color="default" elevation={1}>
+        <Toolbar>
+          {/* Logo */}
+          <Typography
+            variant="h6"
+            component={Link}
+            to="/dashboard"
+            sx={{
+              flexGrow: 0,
+              textDecoration: 'none',
+              color: 'inherit',
+              fontWeight: 'bold',
+              mr: 4,
+            }}
+          >
+            Gsale
+          </Typography>
 
-          {/* Right: Desktop */}
-          <div className="hidden md:flex items-center gap-4">
-            {user && <NotificationsBell />}
+          {/* Discover - Always visible */}
+          <Button
+            component={Link}
+            to="/discover"
+            startIcon={<ExploreIcon />}
+            sx={{ mr: 2 }}
+          >
+            Discover
+          </Button>
+
+          {/* Spacer */}
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* Desktop Navigation */}
+          {!isMobile && user && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <NotificationsBell />
+              
+              {/* Profile Avatar & Name - Clickable */}
+              <Button
+                onClick={handleProfileMenuOpen}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  textTransform: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <Avatar
+                  src="https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
+                  alt="User avatar"
+                  sx={{ width: 32, height: 32 }}
+                />
+                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                  {user.first_name}
+                </Typography>
+              </Button>
+
+              {/* Logout Icon */}
+              <IconButton
+                onClick={handleLogout}
+                color="error"
+                title="Logout"
+                sx={{ ml: 1 }}
+              >
+                <LogoutIcon />
+              </IconButton>
+            </Box>
+          )}
+
+          {/* Mobile Menu Button */}
+          {isMobile && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {user && <NotificationsBell />}
+              <IconButton
+                edge="end"
+                color="inherit"
+                onClick={toggleMobileMenu}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Box>
+          )}
+        </Toolbar>
+      </AppBar>
+
+      {/* Profile Menu for Desktop */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleProfileMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
+      </Menu>
+
+      {/* Mobile Drawer */}
+      <Drawer
+        anchor="right"
+        open={mobileMenuOpen}
+        onClose={toggleMobileMenu}
+      >
+        <Box sx={{ width: 250 }} role="presentation">
+          <List>
             {user && (
-              <div className="flex items-center gap-2">
-                <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                  <img
-                    src={"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
-                    alt="User avatar"
-                    className="w-8 h-8 rounded-full border-2 border-indigo-500"
-                  />
-                  <span className="text-gray-700 dark:text-gray-200 font-medium">{user.first_name}</span>
-                </Link>
-                <button onClick={logout} className="text-sm text-red-500 hover:underline">
-                  Logout
-                </button>
-              </div>
+              <>
+                {/* User Info */}
+                <ListItem>
+                  <Button
+                    onClick={() => {
+                      navigate('/profile');
+                      setMobileMenuOpen(false);
+                    }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      textTransform: 'none',
+                      color: 'inherit',
+                      width: '100%',
+                      justifyContent: 'flex-start',
+                    }}
+                  >
+                    <Avatar
+                      src="https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
+                      alt="User avatar"
+                      sx={{ width: 40, height: 40 }}
+                    />
+                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                      {user.first_name}
+                    </Typography>
+                  </Button>
+                </ListItem>
+
+                {/* Logout */}
+                <ListItem disablePadding>
+                  <ListItemButton
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogoutIcon sx={{ mr: 2, color: 'error.main' }} />
+                    <ListItemText 
+                      primary="Logout" 
+                      sx={{ color: 'error.main' }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              </>
             )}
-          </div>
-
-          {/* Mobile Hamburger */}
-          <div className="flex md:hidden items-center gap-2">
-            {user && <NotificationsBell />}
-            <button
-              onClick={toggleMobileMenu}
-              className="text-gray-700 dark:text-gray-200 p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none"
-            >
-              {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div ref={mobileMenuRef} className="md:hidden bg-white dark:bg-gray-900 border-t dark:border-gray-700 shadow-md">
-          <div className="flex flex-col gap-2 px-4 py-2">
-            <Link
-              to="/discover"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 rounded-md"
-            >
-              Discover
-            </Link>
-            <Link
-              to="/profile"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 rounded-md"
-            >
-              Profile
-            </Link>
-
-            {user && (
-              <div className="flex items-center gap-2 px-3 py-2 border-t dark:border-gray-700">
-                <Link 
-                  to="/profile" 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                >
-                  <img
-                    src={"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
-                    alt="User avatar"
-                    className="w-8 h-8 rounded-full border-2 border-indigo-500"
-                  />
-                  <span className="text-gray-700 dark:text-gray-200 font-medium">{user.first_name}</span>
-                </Link>
-                <button
-                  onClick={() => { logout(); setMobileMenuOpen(false); }}
-                  className="ml-auto text-sm text-red-500 hover:underline"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </nav>
+          </List>
+        </Box>
+      </Drawer>
+    </>
   );
 };
 
