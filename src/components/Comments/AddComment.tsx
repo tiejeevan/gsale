@@ -76,11 +76,12 @@ const AddComment: React.FC<AddCommentProps> = ({
     if (onCancel) onCancel();
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!loading && content.trim()) {
-        handleSubmit(e as any);
+        const formEvent = new Event('submit') as any;
+        handleSubmit(formEvent);
       }
     }
   };
