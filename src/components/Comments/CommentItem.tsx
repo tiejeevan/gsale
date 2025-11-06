@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { FiMoreHorizontal, FiThumbsUp, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import AddComment from "./AddComment";
 import { type Comment } from "./CommentsSection";
@@ -105,16 +106,23 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
   return (
     <div className="flex items-start gap-3">
-      <img
-        src={comment.avatar_url || 'https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg'}
-        alt={`${comment.username}'s avatar`}
-        className="w-10 h-10 rounded-full"
-      />
+      <Link to={`/profile/${comment.user_id}`} className="hover:opacity-80 transition-opacity">
+        <img
+          src={comment.avatar_url || 'https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg'}
+          alt={`${comment.username}'s avatar`}
+          className="w-10 h-10 rounded-full hover:scale-105 transition-transform"
+        />
+      </Link>
       <div className="flex-1">
         {!editing ? (
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm dark:text-white">{comment.username}</span>
+              <Link 
+                to={`/profile/${comment.user_id}`}
+                className="font-semibold text-sm dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                {comment.username}
+              </Link>
               <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(comment.created_at).toLocaleString()}</span>
             </div>
             <p className="mt-1 text-gray-800 dark:text-gray-200">{comment.content}</p>

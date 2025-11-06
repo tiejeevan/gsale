@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import LikeButton from "./LikeButton";
 import CommentsSection, { type Comment } from "./Comments/CommentsSection";
@@ -65,17 +66,22 @@ const PostCard: React.FC<PostCardProps> = ({
       {/* User Info */}
       {showUsername && post.username && (
         <div className="flex items-center space-x-4 mb-4">
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg">
-            {post.username.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <p className="text-gray-900 dark:text-gray-100 font-semibold text-lg">
-              {post.username}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {new Date(post.created_at).toLocaleString()}
-            </p>
-          </div>
+          <Link 
+            to={`/profile/${post.user_id}`}
+            className="flex items-center space-x-4 hover:opacity-80 transition-opacity group"
+          >
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform">
+              {post.username.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="text-gray-900 dark:text-gray-100 font-semibold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                {post.username}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {new Date(post.created_at).toLocaleString()}
+              </p>
+            </div>
+          </Link>
         </div>
       )}
 

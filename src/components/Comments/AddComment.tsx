@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { type Comment } from "./CommentsSection";
 import { socket } from "../../socket"; // <-- import socket instance
 
@@ -67,11 +68,13 @@ const AddComment: React.FC<AddCommentProps> = ({
 
   return (
     <div className="flex items-start gap-3 w-full">
-      <img
-        src={currentUserAvatar || 'https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg'}
-        alt="Your avatar"
-        className="w-10 h-10 rounded-full"
-      />
+      <Link to="/profile" className="hover:opacity-80 transition-opacity">
+        <img
+          src={currentUserAvatar || 'https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg'}
+          alt="Your avatar"
+          className="w-10 h-10 rounded-full hover:scale-105 transition-transform"
+        />
+      </Link>
       <form onSubmit={handleSubmit} className="w-full">
         <div className="w-full">
           <textarea

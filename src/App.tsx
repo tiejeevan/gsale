@@ -5,6 +5,7 @@ import Signin from "./pages/Signin";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Discover from "./pages/Discover";
+import Profile from "./pages/Profile";
 import { AuthContext } from "./context/AuthContext";
 import { NotificationsProvider, useNotifications } from "./NotificationsContext";
 import { socket } from "./socket";
@@ -84,6 +85,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Discover />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/:userId?"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

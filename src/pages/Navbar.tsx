@@ -44,6 +44,9 @@ const Navbar: React.FC = () => {
               <Link to="/discover" className="text-gray-600 dark:text-gray-300 hover:underline">
                 Discover
               </Link>
+              <Link to="/profile" className="text-gray-600 dark:text-gray-300 hover:underline">
+                Profile
+              </Link>
             </div>
           </div>
 
@@ -52,12 +55,14 @@ const Navbar: React.FC = () => {
             {user && <NotificationsBell />}
             {user && (
               <div className="flex items-center gap-2">
-                <img
-                  src={"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
-                  alt="User avatar"
-                  className="w-8 h-8 rounded-full border-2 border-indigo-500"
-                />
-                <span className="text-gray-700 dark:text-gray-200 font-medium">{user.first_name}</span>
+                <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                  <img
+                    src={"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
+                    alt="User avatar"
+                    className="w-8 h-8 rounded-full border-2 border-indigo-500"
+                  />
+                  <span className="text-gray-700 dark:text-gray-200 font-medium">{user.first_name}</span>
+                </Link>
                 <button onClick={logout} className="text-sm text-red-500 hover:underline">
                   Logout
                 </button>
@@ -89,15 +94,28 @@ const Navbar: React.FC = () => {
             >
               Discover
             </Link>
+            <Link
+              to="/profile"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 rounded-md"
+            >
+              Profile
+            </Link>
 
             {user && (
               <div className="flex items-center gap-2 px-3 py-2 border-t dark:border-gray-700">
-                <img
-                  src={"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
-                  alt="User avatar"
-                  className="w-8 h-8 rounded-full border-2 border-indigo-500"
-                />
-                <span className="text-gray-700 dark:text-gray-200 font-medium">{user.first_name}</span>
+                <Link 
+                  to="/profile" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                  <img
+                    src={"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
+                    alt="User avatar"
+                    className="w-8 h-8 rounded-full border-2 border-indigo-500"
+                  />
+                  <span className="text-gray-700 dark:text-gray-200 font-medium">{user.first_name}</span>
+                </Link>
                 <button
                   onClick={() => { logout(); setMobileMenuOpen(false); }}
                   className="ml-auto text-sm text-red-500 hover:underline"
