@@ -1,5 +1,13 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  Box,
+  Avatar,
+  TextField,
+  Button,
+  CircularProgress,
+} from "@mui/material";
+import { Send } from "@mui/icons-material";
 import { type Comment } from "./CommentsSection";
 import { socket } from "../../socket"; // <-- import socket instance
 
@@ -67,45 +75,94 @@ const AddComment: React.FC<AddCommentProps> = ({
   };
 
   return (
-    <div className="flex items-start gap-3 w-full">
-      <Link to="/profile" className="hover:opacity-80 transition-opacity">
-        <img
+    <Box sx={{ display: 'flex', gap: 1.5, width: '100%' }}>
+      {/* Avatar */}
+      <Link to="/profile" style={{ textDecoration: 'none' }}>
+        <Avatar
           src={currentUserAvatar || 'https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg'}
           alt="Your avatar"
-          className="w-10 h-10 rounded-full hover:scale-105 transition-transform"
+          sx={{
+            width: 32,
+            height: 32,
+            transition: 'transform 0.2s',
+            '&:hover': { transform: 'scale(1.05)' },
+          }}
         />
       </Link>
-      <form onSubmit={handleSubmit} className="w-full">
-        <div className="w-full">
-          <textarea
-            placeholder="Add a comment..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            className="w-full bg-transparent border-b-2 p-1 focus:border-blue-500 focus:outline-none dark:text-white dark:border-gray-600 transition-colors"
-            rows={isFocused || content ? 2 : 1}
-          />
-        </div>
+
+      {/* Comment Form */}
+      <Box component="form" onSubmit={handleSubmit} sx={{ flex: 1 }}>
+        <TextField
+          multiline
+          placeholder="Add a comment..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          variant="outlined"
+          size="small"
+          fullWidth
+          rows={isFocused || content ? 2 : 1}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: 'transparent',
+              fontSize: '0.85rem',
+              '& fieldset': {
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+              },
+              '&:hover fieldset': {
+                borderColor: 'rgba(255, 255, 255, 0.2)',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: 'primary.main',
+              },
+            },
+            '& .MuiInputBase-input::placeholder': {
+              color: 'text.secondary',
+              opacity: 0.7,
+            },
+          }}
+        />
+
+        {/* Action Buttons */}
         {(isFocused || content) && (
-          <div className="flex justify-end gap-2 mt-2">
-            <button
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+            <Button
               type="button"
+              size="small"
               onClick={handleCancel}
-              className="px-4 py-2 text-sm font-semibold rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+              disabled={loading}
+              sx={{
+                fontSize: '0.75rem',
+                textTransform: 'none',
+                color: 'text.secondary',
+              }}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              size="small"
+              variant="contained"
               disabled={loading || !content.trim()}
-              className="px-4 py-2 text-sm font-semibold bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600"
+              startIcon={
+                loading ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <Send fontSize="small" />
+                )
+              }
+              sx={{
+                fontSize: '0.75rem',
+                textTransform: 'none',
+                minWidth: 80,
+              }}
             >
-              {loading ? "Commenting..." : parentCommentId ? "Reply" : "Comment"}
-            </button>
-          </div>
+              {loading ? "Posting..." : parentCommentId ? "Reply" : "Comment"}
+            </Button>
+          </Box>
         )}
-      </form>
-    </div>
+      </Box>
+    </Box>
   );
 };
 

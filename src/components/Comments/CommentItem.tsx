@@ -1,6 +1,24 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiMoreHorizontal, FiThumbsUp, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import {
+  Box,
+  Avatar,
+  Typography,
+  IconButton,
+  Button,
+  Menu,
+  MenuItem,
+  TextField,
+  Collapse,
+} from "@mui/material";
+import {
+  MoreVert,
+  ThumbUp,
+  ThumbUpOutlined,
+  ExpandMore,
+  ExpandLess,
+  Reply,
+} from "@mui/icons-material";
 import AddComment from "./AddComment";
 import { type Comment } from "./CommentsSection";
 
@@ -24,10 +42,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onCommentDeleted,
 }) => {
   const [showReply, setShowReply] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content || "");
   const [repliesVisible, setRepliesVisible] = useState(false);
+  
+  const showMenu = Boolean(menuAnchor);
 
   const token = localStorage.getItem("token");
   const isOwner = currentUserId === Number(comment.user_id);
@@ -71,6 +91,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this comment?")) return;
+    setMenuAnchor(null);
     try {
       const res = await fetch(`${API_URL}/api/comments/${comment.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error("Failed to delete comment");
@@ -92,9 +113,26 @@ const CommentItem: React.FC<CommentItemProps> = ({
       
       const updatedComment = await res.json();
       setEditing(false);
+      setMenuAnchor(null);
       onCommentUpdated(updatedComment);
 
     } catch (err) { console.error(err); }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)}h ago`;
+    } else if (diffInHours < 168) { // 7 days
+      return `${Math.floor(diffInHours / 24)}d ago`;
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
   };
 
   const onReplyAdded = (newComment: Comment) => {
@@ -105,57 +143,154 @@ const CommentItem: React.FC<CommentItemProps> = ({
   };
 
   return (
-    <div className="flex items-start gap-3">
-      <Link to={`/profile/${comment.user_id}`} className="hover:opacity-80 transition-opacity">
-        <img
+    <Box sx={{ display: 'flex', gap: 1.5, width: '100%' }}>
+      {/* Avatar */}
+      <Link to={`/profile/${comment.user_id}`} style={{ textDecoration: 'none' }}>
+        <Avatar
           src={comment.avatar_url || 'https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg'}
           alt={`${comment.username}'s avatar`}
-          className="w-10 h-10 rounded-full hover:scale-105 transition-transform"
+          sx={{
+            width: 32,
+            height: 32,
+            transition: 'transform 0.2s',
+            '&:hover': { transform: 'scale(1.05)' },
+          }}
         />
       </Link>
-      <div className="flex-1">
+
+      {/* Comment Content */}
+      <Box sx={{ flex: 1, minWidth: 0 }}>
         {!editing ? (
-          <div>
-            <div className="flex items-center gap-2">
+          <Box>
+            {/* Header */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
               <Link 
                 to={`/profile/${comment.user_id}`}
-                className="font-semibold text-sm dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                style={{ textDecoration: 'none' }}
               >
-                {comment.username}
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontWeight: 600,
+                    color: 'text.primary',
+                    fontSize: '0.85rem',
+                    '&:hover': { color: 'primary.main' },
+                    transition: 'color 0.2s',
+                  }}
+                >
+                  {comment.username}
+                </Typography>
               </Link>
-              <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(comment.created_at).toLocaleString()}</span>
-            </div>
-            <p className="mt-1 text-gray-800 dark:text-gray-200">{comment.content}</p>
-          </div>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.7rem',
+                }}
+              >
+                {formatDate(comment.created_at)}
+              </Typography>
+            </Box>
+
+            {/* Content */}
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.primary',
+                fontSize: '0.85rem',
+                lineHeight: 1.4,
+                mb: 1,
+              }}
+            >
+              {comment.content}
+            </Typography>
+          </Box>
         ) : (
-          <div className="w-full">
-            <textarea
+          /* Edit Mode */
+          <Box sx={{ width: '100%' }}>
+            <TextField
+              multiline
+              rows={2}
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              className="w-full bg-transparent border-b-2 p-1 focus:border-blue-500 focus:outline-none dark:text-white dark:border-gray-600"
-              rows={2}
+              variant="outlined"
+              size="small"
+              fullWidth
+              sx={{
+                mb: 1,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'transparent',
+                  fontSize: '0.85rem',
+                },
+              }}
             />
-            <div className="flex justify-end gap-2 mt-2">
-              <button onClick={() => setEditing(false)} className="px-4 py-2 text-sm font-semibold rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">Cancel</button>
-              <button onClick={handleEdit} className="px-4 py-2 text-sm font-semibold bg-blue-500 text-white rounded-full hover:bg-blue-600">Save</button>
-            </div>
-          </div>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+              <Button
+                size="small"
+                onClick={() => setEditing(false)}
+                sx={{ fontSize: '0.75rem', textTransform: 'none' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                onClick={handleEdit}
+                disabled={!editContent.trim()}
+                sx={{ fontSize: '0.75rem', textTransform: 'none' }}
+              >
+                Save
+              </Button>
+            </Box>
+          </Box>
         )}
 
+        {/* Actions */}
         {!editing && (
-          <div className="flex items-center gap-2 mt-2 text-gray-500 dark:text-gray-400">
-            <button onClick={handleLike} className="flex items-center gap-1 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-              <FiThumbsUp size={16} className={comment.liked_by_user ? "text-blue-500" : ""} />
-              <span className="text-xs">{comment.like_count > 0 && comment.like_count}</span>
-            </button>
-            <button onClick={() => setShowReply(!showReply)} className="px-3 py-1.5 text-xs font-semibold rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+            {/* Like Button */}
+            <IconButton
+              size="small"
+              onClick={handleLike}
+              sx={{
+                color: comment.liked_by_user ? 'primary.main' : 'text.secondary',
+                p: 0.5,
+                '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+              }}
+            >
+              {comment.liked_by_user ? (
+                <ThumbUp fontSize="small" />
+              ) : (
+                <ThumbUpOutlined fontSize="small" />
+              )}
+            </IconButton>
+            {comment.like_count > 0 && (
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem', mr: 1 }}>
+                {comment.like_count}
+              </Typography>
+            )}
+
+            {/* Reply Button */}
+            <Button
+              size="small"
+              startIcon={<Reply fontSize="small" />}
+              onClick={() => setShowReply(!showReply)}
+              sx={{
+                fontSize: '0.7rem',
+                textTransform: 'none',
+                color: 'text.secondary',
+                minWidth: 'auto',
+                p: 0.5,
+              }}
+            >
               Reply
-            </button>
-          </div>
+            </Button>
+          </Box>
         )}
 
-        {showReply && (
-          <div className="mt-4">
+        {/* Reply Form */}
+        <Collapse in={showReply}>
+          <Box sx={{ mt: 2 }}>
             <AddComment
               postId={comment.post_id}
               parentCommentId={comment.id}
@@ -163,21 +298,30 @@ const CommentItem: React.FC<CommentItemProps> = ({
               currentUserAvatar={currentUserAvatar}
               onCancel={() => setShowReply(false)}
             />
-          </div>
-        )}
+          </Box>
+        </Collapse>
 
+        {/* Replies */}
         {(comment.children || []).length > 0 && (
-          <div className="mt-3">
-            <button
+          <Box sx={{ mt: 1.5 }}>
+            <Button
+              size="small"
+              startIcon={repliesVisible ? <ExpandLess /> : <ExpandMore />}
               onClick={() => setRepliesVisible(!repliesVisible)}
-              className="flex items-center gap-1 text-sm font-bold text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full px-3 py-1.5"
+              sx={{
+                fontSize: '0.75rem',
+                textTransform: 'none',
+                color: 'primary.main',
+                fontWeight: 600,
+                p: 0.5,
+                minWidth: 'auto',
+              }}
             >
-              {repliesVisible ? <FiChevronUp/> : <FiChevronDown/>}
               {comment.children.length} {comment.children.length > 1 ? 'replies' : 'reply'}
-            </button>
+            </Button>
 
-            {repliesVisible && (
-              <div className="mt-3 space-y-5">
+            <Collapse in={repliesVisible}>
+              <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 2, pl: 1 }}>
                 {(comment.children || []).map((child) => (
                   <CommentItem
                     key={child.id}
@@ -189,29 +333,56 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     onCommentDeleted={onCommentDeleted}
                   />
                 ))}
-              </div>
-            )}
-          </div>
+              </Box>
+            </Collapse>
+          </Box>
         )}
-      </div>
+      </Box>
 
+      {/* Menu */}
       {isOwner && (
-        <div className="relative">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+        <Box>
+          <IconButton
+            size="small"
+            onClick={(e) => setMenuAnchor(e.currentTarget)}
+            sx={{
+              color: 'text.secondary',
+              opacity: 0.7,
+              '&:hover': { opacity: 1 },
+            }}
           >
-            <FiMoreHorizontal />
-          </button>
-          {showMenu && (
-            <div className="absolute right-0 top-10 bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-lg rounded-md z-10 w-32">
-              <button onClick={() => { setEditing(true); setShowMenu(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Edit</button>
-              <button onClick={handleDelete} className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700">Delete</button>
-            </div>
-          )}
-        </div>
+            <MoreVert fontSize="small" />
+          </IconButton>
+          <Menu
+            anchorEl={menuAnchor}
+            open={showMenu}
+            onClose={() => setMenuAnchor(null)}
+            PaperProps={{
+              sx: {
+                minWidth: 120,
+                boxShadow: 3,
+              },
+            }}
+          >
+            <MenuItem
+              onClick={() => {
+                setEditing(true);
+                setMenuAnchor(null);
+              }}
+              sx={{ fontSize: '0.85rem' }}
+            >
+              Edit
+            </MenuItem>
+            <MenuItem
+              onClick={handleDelete}
+              sx={{ fontSize: '0.85rem', color: 'error.main' }}
+            >
+              Delete
+            </MenuItem>
+          </Menu>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 

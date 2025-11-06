@@ -1,6 +1,18 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiEdit2, FiTrash2 } from "react-icons/fi";
+import {
+  Card,
+  CardContent,
+  Avatar,
+  Typography,
+  Box,
+  IconButton,
+  Chip,
+  useTheme,
+  useMediaQuery,
+  Fade,
+} from "@mui/material";
+import { Edit, Delete } from "@mui/icons-material";
 import LikeButton from "./LikeButton";
 import CommentsSection, { type Comment } from "./Comments/CommentsSection";
 
@@ -49,6 +61,8 @@ const PostCard: React.FC<PostCardProps> = ({
   onDelete,
 }) => {
   const [hovered, setHovered] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const getPublicUrl = (file_url: string) => {
     const filename = file_url.split("/").pop();
@@ -57,130 +71,305 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const canEdit = post.user_id === currentUserId;
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInHours < 168) { // 7 days
+      return date.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+  };
+
   return (
-    <div
-      className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all relative border border-gray-200 dark:border-gray-700 flex flex-col"
+    <Card
+      elevation={hovered ? 4 : 1}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      sx={{
+        maxWidth: '100%',
+        mb: 2,
+        borderRadius: 2,
+        position: 'relative',
+        transition: 'all 0.2s ease-in-out',
+        transform: hovered ? 'translateY(-1px)' : 'translateY(0)',
+        background: 'rgba(30, 41, 59, 0.7)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(148, 163, 184, 0.1)',
+      }}
     >
-      {/* User Info */}
-      {showUsername && post.username && (
-        <div className="flex items-center space-x-4 mb-4">
-          <Link 
-            to={`/profile/${post.user_id}`}
-            className="flex items-center space-x-4 hover:opacity-80 transition-opacity group"
-          >
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform">
-              {post.username.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <p className="text-gray-900 dark:text-gray-100 font-semibold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                {post.username}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {new Date(post.created_at).toLocaleString()}
-              </p>
-            </div>
-          </Link>
-        </div>
-      )}
-
-      {/* Content */}
-      <Link to={`/post/${post.id}`} className="block group">
-        <p className="text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-line mb-4 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors cursor-pointer">
-          {post.content}
-        </p>
-      </Link>
-
-      {/* Image */}
-      {post.image_url && (
-        <img
-          src={getPublicUrl(post.image_url)}
-          alt="Post"
-          className="rounded-xl w-full max-h-80 object-cover shadow-lg border border-gray-200 dark:border-gray-700 mb-4 transition-transform hover:scale-105"
-        />
-      )}
-
-      {/* Attachments */}
-      {post.attachments && post.attachments.length > 0 && (
-        <div className="flex flex-wrap gap-3 mb-4">
-          {post.attachments.map((att) => {
-            const fileUrl = getPublicUrl(att.file_url);
-            const isImage = /\.(jpe?g|png|gif|webp|bmp)$/i.test(att.file_name);
-            return isImage ? (
-              <img
-                key={att.id}
-                src={fileUrl}
-                alt={att.file_name}
-                className="rounded-lg max-h-48 w-auto object-cover border border-gray-300 dark:border-gray-600 hover:shadow-xl cursor-pointer transition-all"
-                onClick={() => window.open(fileUrl, "_blank")}
-              />
-            ) : (
-              <a
-                key={att.id}
-                href={fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1 bg-indigo-100 dark:bg-indigo-700 text-indigo-800 dark:text-white rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-600 transition-colors"
-              >
-                {att.file_name}
-              </a>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="flex justify-between items-center mt-2 mb-4">
-        <div className="text-sm text-gray-500 dark:text-gray-400">
-          {post.is_edited && <span>Edited • </span>}
-          {new Date(post.created_at).toLocaleString()}
-        </div>
-        <LikeButton
-          targetType="post"
-          targetId={post.id}
-          initialLikesCount={post.like_count || 0}
-          isInitiallyLiked={post.liked_by_user || false}
-          token={token}
-        />
-      </div>
-
-      {/* Edit/Delete */}
+      {/* Edit/Delete Actions */}
       {canEdit && (
-        <div
-          className={`absolute top-4 right-4 flex space-x-2 transition-opacity ${
-            showEditDeleteOnHover ? (hovered ? "opacity-100" : "opacity-0") : "opacity-100"
-          }`}
-        >
-          {onEdit && (
-            <button
-              onClick={() => onEdit(post)}
-              className="text-indigo-500 hover:text-indigo-700 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              <FiEdit2 size={20} />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={() => onDelete(post)}
-              className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              <FiTrash2 size={20} />
-            </button>
-          )}
-        </div>
+        <Fade in={showEditDeleteOnHover ? hovered : true}>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              zIndex: 10,
+              display: 'flex',
+              gap: 0.5,
+            }}
+          >
+            {onEdit && (
+              <IconButton
+                size="small"
+                onClick={() => onEdit(post)}
+                sx={{
+                  bgcolor: 'rgba(30, 41, 59, 0.8)',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&:hover': { 
+                    bgcolor: 'rgba(30, 41, 59, 0.9)',
+                    color: '#667eea',
+                  },
+                  width: 28,
+                  height: 28,
+                }}
+              >
+                <Edit fontSize="small" />
+              </IconButton>
+            )}
+            {onDelete && (
+              <IconButton
+                size="small"
+                onClick={() => onDelete(post)}
+                sx={{
+                  bgcolor: 'rgba(30, 41, 59, 0.8)',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&:hover': { 
+                    bgcolor: 'rgba(30, 41, 59, 0.9)',
+                    color: '#ef4444',
+                  },
+                  width: 28,
+                  height: 28,
+                }}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            )}
+          </Box>
+        </Fade>
       )}
+
+      <CardContent sx={{ p: 2, pb: 0 }}>
+        {/* User Header */}
+        {showUsername && post.username && (
+          <Box sx={{ mb: 1.5 }}>
+            <Link 
+              to={`/profile/${post.user_id}`}
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  '&:hover': { opacity: 0.8 },
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                <Avatar
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {post.username.charAt(0).toUpperCase()}
+                </Avatar>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      mb: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontSize: '0.95rem',
+                    }}
+                  >
+                    {post.username}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.secondary',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      {formatDate(post.created_at)}
+                    </Typography>
+                    {post.is_edited && (
+                      <Chip
+                        label="Edited"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          height: 14,
+                          fontSize: '0.6rem',
+                          '& .MuiChip-label': { px: 0.5, py: 0 },
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+            </Link>
+          </Box>
+        )}
+
+        {/* Post Content */}
+        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Typography
+            variant="body1"
+            sx={{
+              mb: 1.5,
+              lineHeight: 1.5,
+              whiteSpace: 'pre-line',
+              cursor: 'pointer',
+              '&:hover': { color: 'text.secondary' },
+              transition: 'color 0.2s',
+              fontSize: '0.95rem',
+            }}
+          >
+            {post.content}
+          </Typography>
+        </Link>
+
+        {/* Post Image */}
+        {post.image_url && (
+          <Box sx={{ mb: 1.5 }}>
+            <img
+              src={getPublicUrl(post.image_url)}
+              alt="Post"
+              style={{
+                width: '100%',
+                maxHeight: isMobile ? '200px' : '300px',
+                objectFit: 'cover',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.01)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+              onClick={() => window.open(getPublicUrl(post.image_url!), '_blank')}
+            />
+          </Box>
+        )}
+
+        {/* Attachments */}
+        {post.attachments && post.attachments.length > 0 && (
+          <Box sx={{ mb: 1.5 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 1,
+              }}
+            >
+              {post.attachments.map((att) => {
+                const fileUrl = getPublicUrl(att.file_url);
+                const isImage = /\.(jpe?g|png|gif|webp|bmp)$/i.test(att.file_name);
+                
+                return isImage ? (
+                  <img
+                    key={att.id}
+                    src={fileUrl}
+                    alt={att.file_name}
+                    style={{
+                      maxHeight: isMobile ? '100px' : '140px',
+                      width: 'auto',
+                      objectFit: 'cover',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.03)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    onClick={() => window.open(fileUrl, "_blank")}
+                  />
+                ) : (
+                  <Chip
+                    key={att.id}
+                    label={att.file_name}
+                    component="a"
+                    href={fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    clickable
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      maxWidth: isMobile ? '180px' : '250px',
+                      '& .MuiChip-label': {
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      },
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          </Box>
+        )}
+
+        {/* Actions Row - Date on left, Like button on right */}
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            py: 1,
+            borderTop: '1px solid rgba(148, 163, 184, 0.1)',
+            mt: 1,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+              fontSize: '0.75rem',
+            }}
+          >
+            {formatDate(post.created_at)}
+          </Typography>
+          
+          <LikeButton
+            targetType="post"
+            targetId={post.id}
+            initialLikesCount={post.like_count || 0}
+            isInitiallyLiked={post.liked_by_user || false}
+            token={token}
+          />
+        </Box>
+      </CardContent>
 
       {/* Comments Section */}
-      <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+      <Box sx={{ borderTop: '1px solid rgba(148, 163, 184, 0.1)', mt: 0.5 }}>
         <CommentsSection
           postId={post.id}
           currentUserId={currentUserId}
-          initialComments={post.comments} 
-          className="sticky bottom-0 w-full"
+          initialComments={post.comments}
         />
-      </div>
-    </div>
+      </Box>
+    </Card>
   );
 };
 

@@ -1,4 +1,11 @@
 import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  Divider,
+  CircularProgress,
+} from "@mui/material";
+import { ChatBubbleOutline } from "@mui/icons-material";
 import CommentItem from "./CommentItem";
 import AddComment from "./AddComment";
 import { socket } from "../../socket"; // <-- import socket instance
@@ -135,10 +142,26 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   };
 
   return (
-    <div className={`comments-section mt-8 font-sans`}>
-      <h3 className="text-lg font-bold mb-4 dark:text-white">{comments.length} Comments</h3>
+    <Box sx={{ p: 2 }}>
+      {/* Comments Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+        <ChatBubbleOutline fontSize="small" sx={{ color: 'text.secondary' }} />
+        <Typography
+          variant="subtitle1"
+          sx={{
+            fontWeight: 600,
+            color: 'text.primary',
+            fontSize: '0.95rem',
+          }}
+        >
+          {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
+        </Typography>
+      </Box>
 
-      <div className="mb-6">
+      <Divider sx={{ mb: 2, opacity: 0.3 }} />
+
+      {/* Add Comment */}
+      <Box sx={{ mb: 3 }}>
         <AddComment
           postId={postId}
           parentCommentId={null}
@@ -146,16 +169,34 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
           currentUserAvatar={currentUserAvatar}
           isTopLevel={true}
         />
-      </div>
+      </Box>
 
-      {loading && <div className="text-gray-500 mt-2">Loading comments...</div>}
-
-      {!loading && comments.length === 0 && (
-        <div className="text-gray-400 mt-2 text-sm">No comments yet. Be the first to comment!</div>
+      {/* Loading State */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+          <CircularProgress size={24} />
+        </Box>
       )}
 
-      {!loading && (
-        <div className="space-y-5">
+      {/* Empty State */}
+      {!loading && comments.length === 0 && (
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: 4,
+            color: 'text.secondary',
+          }}
+        >
+          <ChatBubbleOutline sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
+          <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+            No comments yet. Be the first to comment!
+          </Typography>
+        </Box>
+      )}
+
+      {/* Comments List */}
+      {!loading && comments.length > 0 && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {comments.map((comment) => (
             <CommentItem
               key={comment.id}
@@ -167,9 +208,9 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
               onCommentDeleted={deleteCommentInState}
             />
           ))}
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 

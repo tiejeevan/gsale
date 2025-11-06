@@ -1,9 +1,9 @@
 // src/components/LikeButton.tsx
-import React, { useState, useEffect } from "react";
-import { FaHeart } from "react-icons/fa";
+import React, { useState, useEffect, useContext } from "react";
+import { IconButton, Typography, Box, Fade } from "@mui/material";
+import { Favorite, FavoriteBorder } from "@mui/icons-material";
 import { addLike, removeLike } from "../services/likeService";
 import { socket } from "../socket"; // <-- shared socket instance
-import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 
 interface LikeButtonProps {
@@ -96,27 +96,62 @@ const LikeButton: React.FC<LikeButtonProps> = ({
   };
 
   return (
-    <button
-      onClick={handleLikeClick}
-      disabled={isLoading}
-      className={`
-        flex items-center gap-2 px-4 py-2 rounded-full font-semibold
-        transition-all duration-300 transform
-        ${isLiked
-          ? "bg-gradient-to-r from-orange-400 to-pink-500 text-white shadow-lg scale-105"
-          : "bg-gray-100 text-gray-700 hover:bg-gray-200"}
-        ${isLoading ? "cursor-wait opacity-70" : "cursor-pointer"}
-      `}
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+      }}
     >
-      <FaHeart
-        className={`
-          ${isLiked ? "text-white animate-pulse" : "text-pink-500"}
-          transition-transform duration-200
-          ${isLiked ? "scale-125" : "scale-100"}
-        `}
-      />
-      <span>{likesCount}</span>
-    </button>
+      <IconButton
+        onClick={handleLikeClick}
+        disabled={isLoading}
+        size="small"
+        sx={{
+          color: isLiked ? '#ef4444' : 'rgba(255, 255, 255, 0.6)',
+          transition: 'all 0.2s ease-in-out',
+          transform: isLiked ? 'scale(1.1)' : 'scale(1)',
+          '&:hover': {
+            color: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            transform: 'scale(1.1)',
+          },
+          '&:disabled': {
+            opacity: 0.7,
+          },
+          p: 0.5,
+        }}
+      >
+        <Fade in={!isLoading} timeout={200}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {isLiked ? (
+              <Favorite 
+                fontSize="small" 
+                sx={{ 
+                  color: '#ef4444',
+                  filter: 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.4))',
+                }} 
+              />
+            ) : (
+              <FavoriteBorder fontSize="small" />
+            )}
+          </Box>
+        </Fade>
+      </IconButton>
+      
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.secondary',
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          minWidth: '20px',
+          textAlign: 'center',
+        }}
+      >
+        {likesCount}
+      </Typography>
+    </Box>
   );
 };
 
