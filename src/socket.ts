@@ -11,13 +11,30 @@ export const socket: Socket = io(SOCKET_URL, {
 // ✅ Utility to join a post room (for live comments)
 export const joinPostRoom = (postId: number) => {
   if (socket.connected) {
+    console.log("📝 Joining post room:", `post_${postId}`);
     socket.emit("join", `post_${postId}`);
+  } else {
+    console.warn("⚠️ Cannot join post room - socket not connected");
   }
 };
 
 // ✅ Utility to join a user room (for live notifications)
 export const joinUserRoom = (userId: number) => {
   if (socket.connected) {
-    socket.emit("join", `user_${userId}`);
+    const roomName = `user_${userId.toString()}`;
+    console.log("🏠 Joining user room:", roomName);
+    socket.emit("join", roomName);
+    
+    // Add confirmation listener
+    socket.once("room_joined", (data: any) => {
+      console.log("✅ Room join confirmed:", data);
+    });
+    
+    // Also listen for generic join confirmation
+    socket.once("joined", (room: string) => {
+      console.log("✅ Generic join confirmation for room:", room);
+    });
+  } else {
+    console.warn("⚠️ Cannot join user room - socket not connected");
   }
 };

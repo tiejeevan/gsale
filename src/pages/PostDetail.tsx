@@ -19,6 +19,7 @@ import { getPostById, deletePost, updatePost, type Post } from "../services/post
 import { AuthContext } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
 import EditPostModal from "./EditPostModal";
+import { socket, joinPostRoom } from "../socket";
 
 const PostDetail: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -45,6 +46,16 @@ const PostDetail: React.FC = () => {
         setError(null);
         const postData = await getPostById(parseInt(postId), token, user?.id);
         setPost(postData);
+        
+        // Join post room for real-time updates
+        if (socket.connected) {
+          joinPostRoom(parseInt(postId));
+        } else {
+          socket.connect();
+          socket.once("connect", () => {
+            joinPostRoom(parseInt(postId));
+          });
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load post");
       } finally {
@@ -53,6 +64,13 @@ const PostDetail: React.FC = () => {
     };
 
     fetchPost();
+
+    // Cleanup: leave post room when component unmounts
+    return () => {
+      if (postId && socket.connected) {
+        socket.emit("leave", `post_${postId}`);
+      }
+    };
   }, [postId, token]);
 
   const handleEdit = (post: Post) => {

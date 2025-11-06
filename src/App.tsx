@@ -1,4 +1,4 @@
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
@@ -8,44 +8,11 @@ import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
 import PostDetail from "./pages/PostDetail";
 import { AuthContext } from "./context/AuthContext";
-import { NotificationsProvider, useNotifications } from "./NotificationsContext";
-import { socket } from "./socket";
-// import NotificationsBell from "./components/NotificationsBell"; // top menu bell component
-import Navbar from "./pages/Navbar"; // optional: navbar where bell will live
+import { NotificationsProvider } from "./NotificationsContext";
+import Navbar from "./pages/Navbar";
 
 function AppContent() {
-  const { token, user, isLoading } = useContext(AuthContext)!;
-  const { addNotification } = useNotifications();
-
-  // ================= Socket.IO connection =================
-  useEffect(() => {
-    if (!token || !user) return;
-
-    // Connect socket
-    socket.connect();
-
-    // Join user-specific room
-    socket.emit("join", `user_${user.id}`);
-    console.log(`Socket connected for user_${user.id}`);
-
-    // Listen to real-time notifications
-    socket.on("notification:new", (notif) => {
-      console.log("New notification:", notif);
-      addNotification(notif); // Add to context state
-    });
-
-    // Listen to other events if needed (optional)
-    socket.on("post:comment:new", (comment) => {
-      console.log("New comment received:", comment);
-      // You can also push toast here if desired
-    });
-
-    // Cleanup on unmount
-    return () => {
-      socket.disconnect();
-      console.log("Socket disconnected");
-    };
-  }, [token, user, addNotification]);
+  const { token, isLoading } = useContext(AuthContext)!;
 
   return (
     <>

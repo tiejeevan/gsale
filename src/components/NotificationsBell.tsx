@@ -135,7 +135,7 @@ const NotificationsBell = () => {
                   primary={
                     <Typography variant="body2" sx={{ fontWeight: !n.read ? 'medium' : 'normal' }}>
                       {n.type === "like" && `${n.actor_name} liked your post`}
-                      {n.type === "comment" && `${n.actor_name} commented: "${n.payload.text}"`}
+                      {n.type === "comment" && `${n.actor_name} commented${n.payload?.text ? `: "${n.payload.text}"` : " on your post"}`}
                       {n.type === "follow" && `${n.actor_name} started following you`}
                     </Typography>
                   }
