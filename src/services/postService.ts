@@ -114,11 +114,12 @@ export const getPostById = async (postId: number, token: string, currentUserId?:
 export const createPost = async (
   token: string,
   content: string,
-  files: File[]
+  files: File[],
+  visibility: "public" | "private" | "follows" = "public"
 ): Promise<Post> => {
   const formData = new FormData();
   formData.append("content", content);
-  formData.append("visibility", "public");
+  formData.append("visibility", visibility);
 
   files.forEach((file) => formData.append("files", file));
 
@@ -142,7 +143,8 @@ export const updatePost = async (
   token: string,
   postId: number,
   content: string,
-  image_url?: string
+  image_url?: string,
+  visibility?: "public" | "private" | "follows"
 ): Promise<Post> => {
   const res = await fetch(`${API_URL}/api/posts/${postId}`, {
     method: "PUT",
@@ -150,7 +152,7 @@ export const updatePost = async (
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ content, image_url }),
+    body: JSON.stringify({ content, image_url, visibility }),
   });
   if (!res.ok) {
     const err = await res.json();

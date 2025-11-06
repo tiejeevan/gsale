@@ -47,6 +47,7 @@ interface PostCardProps {
   onEdit?: (post: Post) => void;
   onDelete?: (post: Post) => void;
   r2PublicUrl?: string;
+  collapseComments?: boolean;
 }
 
 const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
@@ -59,6 +60,7 @@ const PostCard: React.FC<PostCardProps> = ({
   showEditDeleteOnHover = true,
   onEdit,
   onDelete,
+  collapseComments = true,
 }) => {
   const [hovered, setHovered] = useState(false);
   const theme = useTheme();
@@ -357,6 +359,8 @@ const PostCard: React.FC<PostCardProps> = ({
           postId={post.id}
           currentUserId={currentUserId}
           initialComments={post.comments}
+          collapseTopLevel={collapseComments}
+          initialVisibleCount={2}
         />
       </Box>
     </Card>

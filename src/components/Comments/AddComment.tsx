@@ -18,6 +18,7 @@ interface AddCommentProps {
   currentUserAvatar?: string;
   isTopLevel?: boolean;
   onCancel?: () => void;
+  placeholder?: string;
 }
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -28,6 +29,7 @@ const AddComment: React.FC<AddCommentProps> = ({
   onCommentAdded,
   currentUserAvatar,
   onCancel,
+  placeholder,
 }) => {
   const [content, setContent] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -94,7 +96,7 @@ const AddComment: React.FC<AddCommentProps> = ({
       <Box component="form" onSubmit={handleSubmit} sx={{ flex: 1 }}>
         <TextField
           multiline
-          placeholder="Add a comment..."
+          placeholder={placeholder || "Add a comment..."}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onFocus={() => setIsFocused(true)}

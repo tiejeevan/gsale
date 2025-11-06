@@ -42,6 +42,8 @@ interface CommentsSectionProps {
   currentUserAvatar?: string;
   className?: string;
   initialComments?: Comment[];
+  collapseTopLevel?: boolean;
+  initialVisibleCount?: number;
 }
 
 const CommentsSection: React.FC<CommentsSectionProps> = ({
@@ -49,9 +51,12 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   currentUserId,
   currentUserAvatar,
   initialComments,
+  collapseTopLevel = false,
+  initialVisibleCount = 2,
 }) => {
   const [comments, setComments] = useState<Comment[]>(initialComments || []);
   const [loading, setLoading] = useState(!initialComments);
+  const [visibleCount, setVisibleCount] = useState<number>(initialVisibleCount);
 
   const fetchComments = async () => {
     if (initialComments) return;
@@ -168,6 +173,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
           onCommentAdded={addNewComment}
           currentUserAvatar={currentUserAvatar}
           isTopLevel={true}
+          placeholder={!loading && comments.length === 0 ? "Be first to comment..." : "Add a comment..."}
         />
       </Box>
 
@@ -178,26 +184,12 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         </Box>
       )}
 
-      {/* Empty State */}
-      {!loading && comments.length === 0 && (
-        <Box
-          sx={{
-            textAlign: 'center',
-            py: 4,
-            color: 'text.secondary',
-          }}
-        >
-          <ChatBubbleOutline sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
-          <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-            No comments yet. Be the first to comment!
-          </Typography>
-        </Box>
-      )}
+      
 
       {/* Comments List */}
       {!loading && comments.length > 0 && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {comments.map((comment) => (
+          {(collapseTopLevel ? comments.slice(0, Math.min(visibleCount, comments.length)) : comments).map((comment) => (
             <CommentItem
               key={comment.id}
               comment={comment}
@@ -208,6 +200,17 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
               onCommentDeleted={deleteCommentInState}
             />
           ))}
+          {collapseTopLevel && comments.length > visibleCount && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ cursor: 'pointer', color: 'primary.main', fontWeight: 600 }}
+                onClick={() => setVisibleCount(comments.length)}
+              >
+                View {comments.length - visibleCount} more {comments.length - visibleCount > 1 ? 'comments' : 'comment'}
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
     </Box>

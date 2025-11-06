@@ -13,7 +13,8 @@ import {
   Alert,
   Container,
 } from "@mui/material";
-import { ArrowBack, Edit, Delete, Person, Schedule, ThumbUp, Image } from "@mui/icons-material";
+import { ArrowBack, Edit, Delete, Person, Schedule, ThumbUp, Image, Public, Group, Lock } from "@mui/icons-material";
+import { Menu, MenuItem, Tooltip } from "@mui/material";
 import { getPostById, deletePost, updatePost, type Post } from "../services/postService";
 import { AuthContext } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
@@ -29,6 +30,7 @@ const PostDetail: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
+  const [visibilityAnchorEl, setVisibilityAnchorEl] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -84,6 +86,26 @@ const PostDetail: React.FC = () => {
 
   const handleChangeImage = (value: string) => {
     setEditImageUrl(value);
+  };
+
+  const openVisibilityMenu = (e: React.MouseEvent<HTMLElement>) => setVisibilityAnchorEl(e.currentTarget);
+  const closeVisibilityMenu = () => setVisibilityAnchorEl(null);
+  const currentVisibility = (post?.visibility as "public" | "private" | "follows") || "public";
+  const renderVisibilityIcon = () => {
+    if (currentVisibility === "private") return <Lock fontSize="small" />;
+    if (currentVisibility === "follows") return <Group fontSize="small" />;
+    return <Public fontSize="small" />;
+  };
+  const changeVisibility = async (vis: "public" | "private" | "follows") => {
+    if (!post || !token) return;
+    try {
+      const updated = await updatePost(token, post.id, post.content, post.image_url || undefined, vis);
+      setPost(updated);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      closeVisibilityMenu();
+    }
   };
 
   const handleDelete = async (post: Post) => {
@@ -280,6 +302,48 @@ const PostDetail: React.FC = () => {
                 >
                   <Delete />
                 </IconButton>
+                <Tooltip title={currentVisibility === 'public' ? 'Public' : currentVisibility === 'follows' ? 'Follows' : 'Private'} arrow>
+                  <IconButton
+                    onClick={openVisibilityMenu}
+                    sx={{
+                      bgcolor: 'rgba(30, 41, 59, 0.8)',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      '&:hover': { 
+                        bgcolor: 'rgba(30, 41, 59, 0.9)',
+                        color: '#90caf9',
+                      },
+                    }}
+                    title="Change visibility"
+                  >
+                    {renderVisibilityIcon()}
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  anchorEl={visibilityAnchorEl}
+                  open={Boolean(visibilityAnchorEl)}
+                  onClose={closeVisibilityMenu}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                  <MenuItem onClick={() => changeVisibility('public')}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Public fontSize="small" />
+                      <Typography variant="body2">Public</Typography>
+                    </Box>
+                  </MenuItem>
+                  <MenuItem onClick={() => changeVisibility('follows')}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Group fontSize="small" />
+                      <Typography variant="body2">Follows</Typography>
+                    </Box>
+                  </MenuItem>
+                  <MenuItem onClick={() => changeVisibility('private')}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Lock fontSize="small" />
+                      <Typography variant="body2">Private</Typography>
+                    </Box>
+                  </MenuItem>
+                </Menu>
               </Box>
             )}
           </Box>
@@ -336,6 +400,7 @@ const PostDetail: React.FC = () => {
           showEditDeleteOnHover={false} // We have dedicated buttons in header
           onEdit={undefined} // Disable PostCard edit button
           onDelete={undefined} // Disable PostCard delete button
+          collapseComments={false}
         />
       </Box>
 

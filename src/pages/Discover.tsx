@@ -254,9 +254,7 @@ const Discover: React.FC = () => {
           token={token as string}
           currentUserId={user.id}
           showUsername={true}
-          showEditDeleteOnHover={true}
-          onEdit={(p) => setEditModalPost(p)}
-          onDelete={(p) => setDeleteModalPost(p)}
+          showEditDeleteOnHover={false}
         />
       ))}
 

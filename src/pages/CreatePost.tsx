@@ -1,4 +1,8 @@
 import React, { useState, useContext } from "react";
+import { IconButton, Menu, MenuItem, Tooltip } from "@mui/material";
+import PublicIcon from "@mui/icons-material/Public";
+import LockIcon from "@mui/icons-material/Lock";
+import GroupIcon from "@mui/icons-material/Group";
 import { AuthContext } from "../context/AuthContext";
 import { FiImage, FiLoader, FiSend } from "react-icons/fi";
 import { triggerPostCreated } from "../utils/eventBus";
@@ -13,6 +17,21 @@ const CreatePost: React.FC = () => {
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [message, setMessage] = useState("");
+  const [visibility, setVisibility] = useState<"public" | "private" | "follows">("public");
+  const [visibilityAnchorEl, setVisibilityAnchorEl] = useState<null | HTMLElement>(null);
+
+  const openVisibilityMenu = (e: React.MouseEvent<HTMLElement>) => setVisibilityAnchorEl(e.currentTarget);
+  const closeVisibilityMenu = () => setVisibilityAnchorEl(null);
+  const selectVisibility = (value: "public" | "private" | "follows") => {
+    setVisibility(value);
+    closeVisibilityMenu();
+  };
+
+  const renderVisibilityIcon = (size: "small" | "medium" = "small") => {
+    if (visibility === "private") return <LockIcon fontSize={size} />;
+    if (visibility === "follows") return <GroupIcon fontSize={size} />;
+    return <PublicIcon fontSize={size} />;
+  };
   const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,7 +51,7 @@ const CreatePost: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append("content", content);
-      formData.append("visibility", "public");
+      formData.append("visibility", visibility);
       files.forEach((file) => formData.append("files", file));
 
       const res = await fetch(`${API_URL}/api/posts/`, {
@@ -71,12 +90,54 @@ const CreatePost: React.FC = () => {
         }`}>{message}</div>
       )}
 
-      <textarea
-        className="w-full p-3 mb-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none min-h-[100px]"
-        placeholder="What's on your mind?"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-      />
+      <div className="relative mb-4">
+        <textarea
+          className="w-full p-3 pr-10 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none min-h-[100px]"
+          placeholder="What's on your mind?"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+
+        <div className="absolute bottom-2 right-2">
+          <Tooltip title={visibility === "public" ? "Public" : visibility === "follows" ? "Follows" : "Private"} arrow>
+            <IconButton size="small" onClick={openVisibilityMenu} sx={{ backgroundColor: 'rgba(0,0,0,0.05)' }}>
+              {renderVisibilityIcon("small")}
+            </IconButton>
+          </Tooltip>
+          <Menu
+            anchorEl={visibilityAnchorEl}
+            open={Boolean(visibilityAnchorEl)}
+            onClose={closeVisibilityMenu}
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          >
+            <MenuItem onClick={() => selectVisibility("public")}>
+              <Tooltip title="Public" placement="left" arrow>
+                <div className="flex items-center gap-2">
+                  <PublicIcon fontSize="small" />
+                  <span className="text-sm">Public</span>
+                </div>
+              </Tooltip>
+            </MenuItem>
+            <MenuItem onClick={() => selectVisibility("follows")}>
+              <Tooltip title="Follows" placement="left" arrow>
+                <div className="flex items-center gap-2">
+                  <GroupIcon fontSize="small" />
+                  <span className="text-sm">Follows</span>
+                </div>
+              </Tooltip>
+            </MenuItem>
+            <MenuItem onClick={() => selectVisibility("private")}>
+              <Tooltip title="Private" placement="left" arrow>
+                <div className="flex items-center gap-2">
+                  <LockIcon fontSize="small" />
+                  <span className="text-sm">Private</span>
+                </div>
+              </Tooltip>
+            </MenuItem>
+          </Menu>
+        </div>
+      </div>
 
       <div className="flex items-center justify-between mb-3">
         <label className="flex items-center gap-2 px-4 py-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 rounded-xl cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-all duration-200">
