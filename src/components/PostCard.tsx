@@ -169,18 +169,16 @@ const PostCard: React.FC<PostCardProps> = ({
                 gap: 1.5,
               }}
             >
-              <Link 
-                to={`/profile/${post.user_id}`}
-                style={{ textDecoration: 'none', color: 'inherit', flex: 1, minWidth: 0 }}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                }}
               >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    '&:hover': { opacity: 0.8 },
-                    transition: 'opacity 0.2s',
-                  }}
+                <Link 
+                  to={`/profile/${post.user_id}`}
+                  style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex' }}
                 >
                   <Avatar
                     sx={{
@@ -193,47 +191,53 @@ const PostCard: React.FC<PostCardProps> = ({
                   >
                     {post.username.charAt(0).toUpperCase()}
                   </Avatar>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                </Link>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Link 
+                    to={`/profile/${post.user_id}`}
+                    style={{ textDecoration: 'none', color: 'inherit', display: 'inline' }}
+                  >
                     <Typography
                       variant="subtitle1"
+                      component="span"
                       sx={{
                         fontWeight: 600,
                         color: 'text.primary',
                         mb: 0,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
+                        display: 'inline',
                         fontSize: '0.95rem',
+                        '&:hover': { opacity: 0.8 },
+                        transition: 'opacity 0.2s',
                       }}
                     >
                       {post.username}
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
-                      <Typography
-                        variant="caption"
+                  </Link>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.secondary',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      {formatDate(post.created_at)}
+                    </Typography>
+                    {post.is_edited && (
+                      <Chip
+                        label="Edited"
+                        size="small"
+                        variant="outlined"
                         sx={{
-                          color: 'text.secondary',
-                          fontSize: '0.75rem',
+                          height: 14,
+                          fontSize: '0.6rem',
+                          '& .MuiChip-label': { px: 0.5, py: 0 },
                         }}
-                      >
-                        {formatDate(post.created_at)}
-                      </Typography>
-                      {post.is_edited && (
-                        <Chip
-                          label="Edited"
-                          size="small"
-                          variant="outlined"
-                          sx={{
-                            height: 14,
-                            fontSize: '0.6rem',
-                            '& .MuiChip-label': { px: 0.5, py: 0 },
-                          }}
-                        />
-                      )}
-                    </Box>
+                      />
+                    )}
                   </Box>
                 </Box>
-              </Link>
+              </Box>
               
               {/* Like Button on the right side */}
               <LikeButton
