@@ -32,7 +32,13 @@ const UserPosts: React.FC = () => {
         return;
       }
       const data = await getUserPosts(user.id, token);
-      setPosts(data);
+      // Transform data to ensure compatibility with PostCard interface
+      const transformedData = data.map(post => ({
+        ...post,
+        like_count: post.like_count || 0,
+        liked_by_user: post.liked_by_user || false,
+      })) as Post[];
+      setPosts(transformedData);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to fetch posts");

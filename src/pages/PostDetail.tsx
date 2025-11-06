@@ -148,9 +148,13 @@ const PostDetail: React.FC = () => {
         {/* Post Content */}
         <div className="mb-8">
           <PostCard
-            post={post}
+            post={{
+              ...post,
+              like_count: post.like_count || 0,
+              liked_by_user: post.liked_by_user || false,
+            } as any}
             currentUserId={user?.id}
-            token={token}
+            token={token || ""}
             showUsername={true}
             showEditDeleteOnHover={false} // We have dedicated buttons above
             onEdit={handleEdit}
