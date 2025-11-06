@@ -78,6 +78,15 @@ const CreatePost: React.FC = () => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!loading && (content.trim() || files.length > 0)) {
+        createPost();
+      }
+    }
+  };
+
   return (
     <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300">
       <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
@@ -93,9 +102,10 @@ const CreatePost: React.FC = () => {
       <div className="relative mb-4">
         <textarea
           className="w-full p-3 pr-10 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none min-h-[100px]"
-          placeholder="What's on your mind?"
+          placeholder="What's on your mind? (Press Enter to post, Shift+Enter for new line)"
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
 
         <div className="absolute bottom-2 right-2">

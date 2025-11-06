@@ -76,6 +76,15 @@ const AddComment: React.FC<AddCommentProps> = ({
     if (onCancel) onCancel();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!loading && content.trim()) {
+        handleSubmit(e as any);
+      }
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', gap: 1.5, width: '100%' }}>
       {/* Avatar */}
@@ -96,10 +105,11 @@ const AddComment: React.FC<AddCommentProps> = ({
       <Box component="form" onSubmit={handleSubmit} sx={{ flex: 1 }}>
         <TextField
           multiline
-          placeholder={placeholder || "Add a comment..."}
+          placeholder={placeholder || "Add a comment... (Press Enter to post, Shift+Enter for new line)"}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onFocus={() => setIsFocused(true)}
+          onKeyDown={handleKeyDown}
           variant="outlined"
           size="small"
           fullWidth
