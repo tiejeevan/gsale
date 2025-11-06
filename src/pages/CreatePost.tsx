@@ -150,17 +150,68 @@ const CreatePost: React.FC = () => {
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <label className="flex items-center gap-2 px-4 py-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 rounded-xl cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-all duration-200">
-          <FiImage className="text-lg" /> <span className="text-sm font-medium">Attach Files</span>
-          <input type="file" multiple onChange={handleFileChange} className="hidden" />
+        <label 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            backgroundColor: '#e0e7ff',
+            color: '#3730a3',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            transition: 'all 0.2s ease',
+            border: 'none',
+            WebkitAppearance: 'none',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#c7d2fe';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#e0e7ff';
+          }}
+        >
+          <FiImage style={{ fontSize: '16px' }} /> 
+          <span>Attach Files</span>
+          <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} />
         </label>
 
         <button
           onClick={createPost}
           disabled={loading}
-          className={`flex items-center gap-2 px-5 py-2 rounded-xl text-white font-semibold transition-all duration-200 ${
-            loading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 transform hover:scale-105 shadow-md"
-          }`}
+          style={{
+            backgroundColor: loading ? '#a5b4fc' : '#4f46e5',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '8px 20px',
+            fontWeight: '600',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: loading ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            WebkitAppearance: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            outline: 'none',
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) {
+              e.currentTarget.style.backgroundColor = '#3730a3';
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!loading) {
+              e.currentTarget.style.backgroundColor = '#4f46e5';
+              e.currentTarget.style.transform = 'scale(1)';
+            }
+          }}
         >
           {loading ? <><FiLoader className="animate-spin" /> Posting...</> : <><FiSend /> Post</>}
         </button>
