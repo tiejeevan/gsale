@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { FiArrowLeft, FiEdit2, FiTrash2 } from "react-icons/fi";
-import { getPostById, deletePost, type Post } from "../services/postService";
+import { getPostById, deletePost, updatePost, type Post } from "../services/postService";
 import { AuthContext } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
+import EditPostModal from "./EditPostModal";
 
 const PostDetail: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -12,6 +13,9 @@ const PostDetail: React.FC = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [editImageUrl, setEditImageUrl] = useState("");
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -37,8 +41,36 @@ const PostDetail: React.FC = () => {
   }, [postId, token]);
 
   const handleEdit = (post: Post) => {
-    // You can implement edit functionality here
-    console.log("Edit post:", post);
+    console.log("Edit button clicked! Post:", post);
+    setEditContent(post.content);
+    setEditImageUrl(post.image_url || "");
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (newContent: string, newImageUrl: string) => {
+    if (!post || !token) return;
+    
+    try {
+      const updatedPost = await updatePost(token, post.id, newContent, newImageUrl || undefined);
+      setPost(updatedPost);
+      setShowEditModal(false);
+    } catch (error) {
+      console.error("Failed to update post:", error);
+    }
+  };
+
+  const handleCloseEdit = () => {
+    setShowEditModal(false);
+    setEditContent("");
+    setEditImageUrl("");
+  };
+
+  const handleChangeContent = (value: string) => {
+    setEditContent(value);
+  };
+
+  const handleChangeImage = (value: string) => {
+    setEditImageUrl(value);
   };
 
   const handleDelete = async (post: Post) => {
@@ -128,14 +160,20 @@ const PostDetail: React.FC = () => {
           {user?.id === post.user_id && (
             <div className="flex gap-2">
               <button
-                onClick={() => handleEdit(post)}
+                onClick={() => {
+                  console.log("Edit button clicked!");
+                  handleEdit(post);
+                }}
                 className="p-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
                 title="Edit post"
               >
                 <FiEdit2 size={20} />
               </button>
               <button
-                onClick={() => handleDelete(post)}
+                onClick={() => {
+                  console.log("Delete button clicked!");
+                  handleDelete(post);
+                }}
                 className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                 title="Delete post"
               >
@@ -157,8 +195,8 @@ const PostDetail: React.FC = () => {
             token={token || ""}
             showUsername={true}
             showEditDeleteOnHover={false} // We have dedicated buttons above
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={undefined} // Disable PostCard edit button
+            onDelete={undefined} // Disable PostCard delete button
           />
         </div>
 
@@ -212,6 +250,17 @@ const PostDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      <EditPostModal
+        isOpen={showEditModal}
+        content={editContent}
+        imageUrl={editImageUrl}
+        onSave={handleSaveEdit}
+        onClose={handleCloseEdit}
+        onChangeContent={handleChangeContent}
+        onChangeImage={handleChangeImage}
+      />
     </div>
   );
 };
