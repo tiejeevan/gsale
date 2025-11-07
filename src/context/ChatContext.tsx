@@ -229,7 +229,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     };
 
     // New message notification (for chats not yet in list or when user is not in chat room)
-    const handleChatNewMessage = ({ chatId, message }: { chatId: number; message: Message }) => {
+    const handleChatNewMessage = ({ chatId }: { chatId: number }) => {
       // Check if chat exists in list
       const chatExists = chats.some(c => c.id === chatId);
       
