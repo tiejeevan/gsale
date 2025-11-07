@@ -189,33 +189,29 @@ const Navbar: React.FC = () => {
           },
         }}
       >
-        {user && (
-          <>
-            {/* Profile MenuItem */}
-            <MenuItem onClick={handleMobileProfileClick}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                <Avatar
-                  src="https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
-                  alt="User avatar"
-                  sx={{ width: 32, height: 32 }}
-                />
-                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                  {user.first_name}
-                </Typography>
-              </Box>
-            </MenuItem>
-            
-            {/* Logout MenuItem */}
-            <MenuItem onClick={handleMobileLogout}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                <LogoutIcon sx={{ color: 'error.main', fontSize: 20 }} />
-                <Typography variant="body2" sx={{ color: 'error.main' }}>
-                  Logout
-                </Typography>
-              </Box>
-            </MenuItem>
-          </>
-        )}
+        {user && [
+          <MenuItem key="profile" onClick={handleMobileProfileClick}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+              <Avatar
+                src="https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
+                alt="User avatar"
+                sx={{ width: 32, height: 32 }}
+              />
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {user.first_name}
+              </Typography>
+            </Box>
+          </MenuItem>,
+          
+          <MenuItem key="logout" onClick={handleMobileLogout}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+              <LogoutIcon sx={{ color: 'error.main', fontSize: 20 }} />
+              <Typography variant="body2" sx={{ color: 'error.main' }}>
+                Logout
+              </Typography>
+            </Box>
+          </MenuItem>
+        ]}
       </Menu>
     </>
   );

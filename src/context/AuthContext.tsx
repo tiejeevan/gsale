@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface User {
   id: number;
@@ -19,6 +20,7 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,8 +47,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    // Remove hard reload
-    // window.location.href = "/login";
+    // Redirect to login page
+    navigate('/login');
   };
 
   return (

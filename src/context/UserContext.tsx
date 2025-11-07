@@ -1,5 +1,6 @@
 // src/context/UserContext.tsx
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { type User, userService } from "../services/userService";
 
 interface UserContextType {
@@ -18,6 +19,7 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("token"));
   const [isLoading, setIsLoading] = useState(true);
@@ -31,14 +33,33 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchMe = async () => {
-    if (!token) return;
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
+      console.log("Fetching user with token...");
       const user = await userService.getMe(token);
+      console.log("User fetched successfully:", user);
       setCurrentUser(user);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch user:", err);
-      setCurrentUser(null);
+      console.log("Error status:", err.status);
+      console.log("Error message:", err.message);
+      
+      // If unauthorized (401), token is expired - logout user
+      if (err.status === 401 || err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+        console.log("🚨 Token expired (401), logging out and redirecting...");
+        setCurrentUser(null);
+        setToken(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login', { replace: true });
+      } else {
+        console.log("Non-401 error, clearing user but not redirecting");
+        setCurrentUser(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -64,12 +85,21 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setCurrentUser(null);
     setToken(null);
+    // Redirect to login page
+    navigate('/login');
   };
 
   // On mount, fetch user if token exists
   useEffect(() => {
-    if (token) fetchMe();
-    else setIsLoading(false);
+    if (token) {
+      fetchMe();
+    } else {
+      setIsLoading(false);
+      // If no token and not on login/signup page, redirect to login
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+        navigate('/login');
+      }
+    }
   }, [token]);
 
   return (

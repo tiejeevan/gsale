@@ -40,7 +40,10 @@ export interface User {
 const handleResponse = async <T>(res: Response): Promise<T> => {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data?.message || "API request failed");
+    const error: any = new Error(data?.message || "API request failed");
+    error.status = res.status;
+    error.statusText = res.statusText;
+    throw error;
   }
   return data;
 };
