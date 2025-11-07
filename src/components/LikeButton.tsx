@@ -1,10 +1,10 @@
 // src/components/LikeButton.tsx
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { IconButton, Typography, Box, Fade } from "@mui/material";
 import { Favorite, FavoriteBorder } from "@mui/icons-material";
 import { addLike, removeLike } from "../services/likeService";
 import { socket } from "../socket"; // <-- shared socket instance
-import { AuthContext } from "../context/AuthContext";
+import { useUserContext } from "../context/UserContext";
 
 interface LikeButtonProps {
   initialLikesCount: number;
@@ -24,7 +24,7 @@ const LikeButton: React.FC<LikeButtonProps> = ({
   const [isLiked, setIsLiked] = useState(isInitiallyLiked);
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useContext(AuthContext)!;
+  const { currentUser: user } = useUserContext();
 
 
   // Initialize state if props change

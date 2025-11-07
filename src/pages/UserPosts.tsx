@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useContext, useRef } from "react";
-import { AuthContext } from "../context/AuthContext";
+import React, { useEffect, useState, useRef } from "react";
+import { useUserContext } from "../context/UserContext";
 import { getUserPosts } from "../services/postService";
 import { onPostCreated } from "../utils/eventBus";
 import PostCard, { type Post } from "../components/PostCard";
 
 const UserPosts: React.FC = () => {
-  const auth = useContext(AuthContext);
+  const { currentUser: user, token } = useUserContext();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
@@ -15,8 +15,7 @@ const UserPosts: React.FC = () => {
   const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
   const fetchPostsRef = useRef(false);
 
-  if (!auth || !auth.user) return null;
-  const { user, token } = auth;
+  if (!user) return null;
 
   const fetchPosts = async () => {
     setLoading(true);

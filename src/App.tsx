@@ -1,4 +1,3 @@
-import { useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
@@ -7,12 +6,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
 import PostDetail from "./pages/PostDetail";
-import { AuthContext } from "./context/AuthContext";
+import { useUserContext } from "./context/UserContext";
 import { NotificationsProvider } from "./NotificationsContext";
 import Navbar from "./pages/Navbar";
 
 function AppContent() {
-  const { token, isLoading } = useContext(AuthContext)!;
+  const { token, isLoading } = useUserContext();
 
   return (
     <>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Box,
@@ -16,7 +16,7 @@ import {
 import { ArrowBack, Edit, Delete, Person, Schedule, ThumbUp, Image, Public, Group, Lock } from "@mui/icons-material";
 import { Menu, MenuItem, Tooltip } from "@mui/material";
 import { getPostById, deletePost, updatePost, type Post } from "../services/postService";
-import { AuthContext } from "../context/AuthContext";
+import { useUserContext } from "../context/UserContext";
 import PostCard from "../components/PostCard";
 import EditPostModal from "./EditPostModal";
 import { socket, joinPostRoom } from "../socket";
@@ -24,7 +24,7 @@ import { socket, joinPostRoom } from "../socket";
 const PostDetail: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
-  const { token, user } = useContext(AuthContext)!;
+  const { token, currentUser: user } = useUserContext();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

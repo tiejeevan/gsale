@@ -1,6 +1,6 @@
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { useUserContext } from "../context/UserContext";
 import { FiHome, FiCompass, FiSettings, FiMenu, FiX, FiLogOut } from "react-icons/fi";
 
 const navItems = [
@@ -10,12 +10,11 @@ const navItems = [
 ];
 
 const Sidebar: React.FC = () => {
-  const auth = useContext(AuthContext);
+  const { currentUser: user, logout } = useUserContext();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false); // mobile toggle
 
-  if (!auth) return null;
-  const { user, logout } = auth;
+  if (!user) return null;
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 

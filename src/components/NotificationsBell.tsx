@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   IconButton,
@@ -22,11 +22,11 @@ import {
   Circle as CircleIcon,
 } from "@mui/icons-material";
 import { useNotifications } from "../NotificationsContext";
-import { AuthContext } from "../context/AuthContext";
+import { useUserContext } from "../context/UserContext";
 
 const NotificationsBell = () => {
   const { notifications, markAsRead } = useNotifications();
-  const { token } = useContext(AuthContext)!;
+  const { token } = useUserContext();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [markingAll, setMarkingAll] = useState(false);

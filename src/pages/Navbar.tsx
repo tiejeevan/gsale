@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AppBar,
@@ -19,10 +19,10 @@ import {
   Explore as ExploreIcon,
 } from "@mui/icons-material";
 import NotificationsBell from "../components/NotificationsBell";
-import { AuthContext } from "../context/AuthContext";
+import { useUserContext } from "../context/UserContext";
 
 const Navbar: React.FC = () => {
-  const { user, logout } = useContext(AuthContext)!;
+  const { currentUser: user, logout } = useUserContext();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuAnchorEl, setMobileMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();

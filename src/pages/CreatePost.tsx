@@ -1,18 +1,17 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { IconButton, Menu, MenuItem, Tooltip } from "@mui/material";
 import PublicIcon from "@mui/icons-material/Public";
 import LockIcon from "@mui/icons-material/Lock";
 import GroupIcon from "@mui/icons-material/Group";
-import { AuthContext } from "../context/AuthContext";
+import { useUserContext } from "../context/UserContext";
 import { FiImage, FiLoader, FiSend } from "react-icons/fi";
 import { triggerPostCreated } from "../utils/eventBus";
 
 const CreatePost: React.FC = () => {
-  const auth = useContext(AuthContext);
+  const { token, currentUser: user } = useUserContext();
   const API_URL = import.meta.env.VITE_API_URL;
 
-  if (!auth) return null;
-  const { token, user } = auth;
+  if (!user) return null;
 
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]);

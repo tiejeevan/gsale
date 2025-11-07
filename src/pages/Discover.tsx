@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useContext, useMemo } from "react";
-import { AuthContext } from "../context/AuthContext";
+import React, { useEffect, useState, useMemo } from "react";
+import { useUserContext } from "../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import EditPostModal from "./EditPostModal";
 import DeletePostModal from "./DeletePostModal";
@@ -54,7 +54,7 @@ function calculateHotScore(post: Post): number {
 }
 
 const Discover: React.FC = () => {
-  const auth = useContext(AuthContext);
+  const { token, currentUser: user } = useUserContext();
   const navigate = useNavigate();
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -66,8 +66,7 @@ const Discover: React.FC = () => {
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-  if (!auth || !auth.user) return null;
-  const { token, user } = auth;
+  if (!user) return null;
 
   // ✅ Fetch all posts
   const fetchPosts = async () => {

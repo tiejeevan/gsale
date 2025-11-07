@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Snackbar, Alert, AlertTitle } from "@mui/material";
 import { socket, joinUserRoom } from "./socket";
-import { AuthContext } from "./context/AuthContext";
+import { useUserContext } from "./context/UserContext";
 import { userService } from "./services/userService";
 
 export interface Notification {
@@ -40,7 +40,7 @@ export const useNotifications = () => {
 };
 
 export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user, token } = useContext(AuthContext)!;
+  const { currentUser: user, token } = useUserContext();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastNotification, setToastNotification] = useState<Notification | null>(null);

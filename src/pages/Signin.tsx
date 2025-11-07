@@ -1,6 +1,6 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { useUserContext } from "../context/UserContext";
 import { ShoppingBagIcon, UserIcon } from "@heroicons/react/24/outline";
 
 
@@ -10,7 +10,7 @@ const Signin: React.FC = () => {
   const [message, setMessage] = useState("");
 
   const navigate = useNavigate();
-  const { setAuth } = useContext(AuthContext)!;
+  const { setToken } = useUserContext();
   const API_URL = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +29,7 @@ const Signin: React.FC = () => {
         return;
       }
 
-      setAuth(data.user, data.token);
+      setToken(data.token);
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
