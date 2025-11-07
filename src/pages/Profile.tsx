@@ -31,6 +31,7 @@ import {
   CheckCircle,
   Info as InfoIcon,
   Feed as FeedIcon,
+  Chat as ChatIcon,
 } from "@mui/icons-material";
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { useUserContext } from "../context/UserContext";
@@ -39,6 +40,7 @@ import { getUserPosts } from "../services/postService";
 import EditProfileModal from "../components/EditProfileModal.tsx";
 import DeactivateAccountModal from "../components/DeactivateAccountModal.tsx";
 import PostCard, { type Post } from "../components/PostCard";
+import FloatingChatPopup from "../components/chat/FloatingChatPopup";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -48,6 +50,7 @@ const Profile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [showChatPopup, setShowChatPopup] = useState(false);
   
   // Tab state
   const [activeTab, setActiveTab] = useState(1);
@@ -793,9 +796,27 @@ const Profile: React.FC = () => {
             </Box>
 
             <Box sx={{ textAlign: { xs: 'center', md: 'left' }, flex: 1 }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-                {profileUser.display_name || profileUser.username}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                  {profileUser.display_name || profileUser.username}
+                </Typography>
+                {!isOwnProfile && (
+                  <IconButton
+                    onClick={() => setShowChatPopup(true)}
+                    size="small"
+                    sx={{
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      '&:hover': {
+                        bgcolor: 'primary.dark',
+                      },
+                    }}
+                    title="Send message"
+                  >
+                    <ChatIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
               <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                 @{profileUser.username}
               </Typography>
@@ -992,6 +1013,16 @@ const Profile: React.FC = () => {
       {showDeactivateModal && (
         <DeactivateAccountModal
           onClose={() => setShowDeactivateModal(false)}
+        />
+      )}
+
+      {/* Floating Chat Popup */}
+      {showChatPopup && !isOwnProfile && profileUser && (
+        <FloatingChatPopup
+          userId={typeof profileUser.id === 'string' ? parseInt(profileUser.id) : profileUser.id}
+          username={profileUser.display_name || profileUser.username}
+          avatarUrl={profileUser.profile_image}
+          onClose={() => setShowChatPopup(false)}
         />
       )}
     </Box>

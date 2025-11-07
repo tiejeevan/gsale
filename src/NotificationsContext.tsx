@@ -82,16 +82,23 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       joinUserRoom(user.id);
     }
 
+    // Add connection error handling with exponential backoff awareness
+    const handleConnectError = (error: any) => {
+      console.warn("Socket connection error (will retry):", error.message);
+    };
 
-
-    // Add connection error handling
-    socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
-    });
-
-    socket.on("disconnect", (reason) => {
+    const handleDisconnect = (reason: string) => {
       console.log("Socket disconnected:", reason);
-    });
+      // Only log, don't try to reconnect manually - socket.io handles it
+    };
+
+    const handleReconnectFailed = () => {
+      console.error("Socket reconnection failed after max attempts. Please refresh the page.");
+    };
+
+    socket.on("connect_error", handleConnectError);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("reconnect_failed", handleReconnectFailed);
 
     // Listen for all new notifications
     const handleNewNotification = async (notif: any) => {
@@ -132,8 +139,9 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     // Cleanup on unmount
     return () => {
       socket.off("notification:new", handleNewNotification);
-      socket.off("connect_error");
-      socket.off("disconnect");
+      socket.off("connect_error", handleConnectError);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("reconnect_failed", handleReconnectFailed);
       if (socket.connected) {
         socket.emit("leave", `user_${user.id}`);
       }

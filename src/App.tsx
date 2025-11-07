@@ -8,7 +8,9 @@ import Profile from "./pages/Profile";
 import PostDetail from "./pages/PostDetail";
 import { useUserContext } from "./context/UserContext";
 import { NotificationsProvider } from "./NotificationsContext";
+import { ChatProvider } from "./context/ChatContext";
 import Navbar from "./pages/Navbar";
+import MessagesTab from "./components/chat/MessagesTab";
 
 function AppContent() {
   const { token, isLoading } = useUserContext();
@@ -26,7 +28,8 @@ function AppContent() {
           <div className="text-lg">Loading...</div>
         </div>
       ) : (
-        <Routes>
+        <>
+          <Routes>
           <Route
             path="/"
             element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
@@ -73,16 +76,22 @@ function AppContent() {
           />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
+
+        {/* Messages Tab - Show only when logged in */}
+        {token && <MessagesTab />}
+        </>
       )}
     </>
   );
 }
 
-// =================== Full App with Notifications Context ===================
+// =================== Full App with Notifications and Chat Context ===================
 function App() {
   return (
     <NotificationsProvider>
-      <AppContent />
+      <ChatProvider>
+        <AppContent />
+      </ChatProvider>
     </NotificationsProvider>
   );
 }

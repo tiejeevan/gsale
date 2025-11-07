@@ -139,7 +139,9 @@ const Navbar: React.FC = () => {
           {/* Mobile Menu Button */}
           {isMobile && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {user && <NotificationsBell />}
+              {user && (
+                <NotificationsBell />
+              )}
               <IconButton
                 edge="end"
                 color="inherit"

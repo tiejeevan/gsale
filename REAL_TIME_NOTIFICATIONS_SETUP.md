@@ -132,11 +132,80 @@ The real-time notification system is now working seamlessly with your backend!
 - ✅ Notification dropdown updates
 - ✅ Proper socket room management
 - ✅ Clean, production-ready code
+- ✅ **Real-time chat message notifications** (NEW!)
 
 ### Cleanup Completed:
 - ✅ Removed NotificationDebugger component
 - ✅ Cleaned up debug console logs
 - ✅ Simplified socket utilities
 - ✅ Production-ready codebase
+
+## 🆕 Chat Message Notification Fix (Nov 7, 2024)
+
+### Problem
+When messaging a new person for the first time, the recipient wouldn't receive a notification or see the message until they refreshed the page. This happened because:
+1. The new message was only emitted to the chat room (`chat_${chatId}`)
+2. The recipient hadn't joined that chat room yet (they didn't have the chat in their list)
+3. They needed to refresh to fetch the new chat and join its room
+
+### Solution
+Added dual notification system for chat messages:
+1. **Chat room emission** (existing): For users already in the chat
+2. **User room emission** (NEW): For all chat participants via their personal user rooms
+
+### Backend Changes (`gsaleback/controllers/messageController.js`)
+```javascript
+// After sending message, emit to both chat room AND user rooms
+io.to(`chat_${chatId}`).emit('message:new', enrichedMessage);
+
+// NEW: Also notify participants in their user rooms
+const participantsResult = await pool.query(`
+    SELECT user_id FROM chat_participants
+    WHERE chat_id = $1 AND user_id != $2 AND left_at IS NULL
+`, [chatId, userId]);
+
+participantsResult.rows.forEach(participant => {
+    io.to(`user_${participant.user_id}`).emit('chat:new_message', {
+        chatId,
+        message: enrichedMessage
+    });
+});
+```
+
+### Frontend Changes (`gsale/src/context/ChatContext.tsx`)
+```javascript
+// NEW: Listen for chat:new_message event
+const handleChatNewMessage = ({ chatId, message }) => {
+  const chatExists = chats.some(c => c.id === chatId);
+  
+  if (!chatExists) {
+    // New chat - refresh the entire list to get it
+    refreshChats();
+  } else {
+    // Chat exists but user might not be in the room - handle the message
+    handleNewMessage(message);
+  }
+};
+
+socket.on('chat:new_message', handleChatNewMessage);
+```
+
+### How It Works Now
+1. User A sends first message to User B
+2. Backend creates the chat and message
+3. Backend emits to:
+   - `chat_${chatId}` room (for users already in chat)
+   - `user_${userB.id}` room (for User B's personal notifications)
+4. User B's frontend receives `chat:new_message` event
+5. Frontend detects it's a new chat and refreshes the chat list
+6. User B sees the new chat and message immediately
+7. Message tab badge updates with unread count
+
+### Benefits
+- ✅ Instant notification for first-time messages
+- ✅ No page refresh needed
+- ✅ Works for both new and existing chats
+- ✅ Unread count updates in real-time
+- ✅ Seamless user experience
 
 The system is ready for production use!
