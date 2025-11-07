@@ -11,8 +11,9 @@ import {
   useTheme,
   useMediaQuery,
   Fade,
+  Tooltip,
 } from "@mui/material";
-import { Edit, Delete } from "@mui/icons-material";
+import { Edit, Delete, PushPin, PushPinOutlined } from "@mui/icons-material";
 import LikeButton from "./LikeButton";
 import CommentsSection, { type Comment } from "./Comments/CommentsSection";
 
@@ -27,14 +28,21 @@ export interface Post {
   id: number;
   user_id: number;
   username?: string;
+  first_name?: string;
+  last_name?: string;
+  profile_image?: string;
   content: string;
-  image_url: string | null;
+  title?: string | null;
+  image_url?: string | null;
   created_at: string;
   like_count: number;
   is_edited: boolean;
+  is_pinned?: boolean;
   liked_by_user: boolean;
+  visibility?: string;
   attachments?: Attachment[];
   comments?: Comment[];
+  view_count?: number;
 }
 
 interface PostCardProps {
@@ -46,6 +54,7 @@ interface PostCardProps {
   showEditDeleteOnHover?: boolean;
   onEdit?: (post: Post) => void;
   onDelete?: (post: Post) => void;
+  onPin?: (post: Post) => void;
   r2PublicUrl?: string;
   collapseComments?: boolean;
 }
@@ -60,6 +69,7 @@ const PostCard: React.FC<PostCardProps> = ({
   showEditDeleteOnHover = true,
   onEdit,
   onDelete,
+  onPin,
   collapseComments = true,
 }) => {
   const [hovered, setHovered] = useState(false);
@@ -104,7 +114,7 @@ const PostCard: React.FC<PostCardProps> = ({
         border: '1px solid rgba(148, 163, 184, 0.1)',
       }}
     >
-      {/* Edit/Delete Actions */}
+      {/* Edit/Delete/Pin Actions */}
       {canEdit && (
         <Fade in={showEditDeleteOnHover ? hovered : true}>
           <Box
@@ -117,41 +127,65 @@ const PostCard: React.FC<PostCardProps> = ({
               gap: 0.5,
             }}
           >
+            {onPin && (
+              <Tooltip title={post.is_pinned ? "Unpin post" : "Pin post"}>
+                <IconButton
+                  size="small"
+                  onClick={() => onPin(post)}
+                  sx={{
+                    bgcolor: 'rgba(30, 41, 59, 0.8)',
+                    color: post.is_pinned ? '#fbbf24' : 'rgba(255, 255, 255, 0.7)',
+                    '&:hover': { 
+                      bgcolor: 'rgba(30, 41, 59, 0.9)',
+                      color: '#fbbf24',
+                    },
+                    width: 28,
+                    height: 28,
+                  }}
+                >
+                  {post.is_pinned ? <PushPin fontSize="small" /> : <PushPinOutlined fontSize="small" />}
+                </IconButton>
+              </Tooltip>
+            )}
             {onEdit && (
-              <IconButton
-                size="small"
-                onClick={() => onEdit(post)}
-                sx={{
-                  bgcolor: 'rgba(30, 41, 59, 0.8)',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(30, 41, 59, 0.9)',
-                    color: '#667eea',
-                  },
-                  width: 28,
-                  height: 28,
-                }}
-              >
-                <Edit fontSize="small" />
-              </IconButton>
+              <Tooltip title="Edit post">
+                <IconButton
+                  size="small"
+                  onClick={() => onEdit(post)}
+                  sx={{
+                    bgcolor: 'rgba(30, 41, 59, 0.8)',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    '&:hover': { 
+                      bgcolor: 'rgba(30, 41, 59, 0.9)',
+                      color: '#667eea',
+                    },
+                    width: 28,
+                    height: 28,
+                  }}
+                >
+                  <Edit fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
             {onDelete && (
-              <IconButton
-                size="small"
-                onClick={() => onDelete(post)}
-                sx={{
-                  bgcolor: 'rgba(30, 41, 59, 0.8)',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(30, 41, 59, 0.9)',
-                    color: '#ef4444',
-                  },
-                  width: 28,
-                  height: 28,
-                }}
-              >
-                <Delete fontSize="small" />
-              </IconButton>
+              <Tooltip title="Delete post">
+                <IconButton
+                  size="small"
+                  onClick={() => onDelete(post)}
+                  sx={{
+                    bgcolor: 'rgba(30, 41, 59, 0.8)',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    '&:hover': { 
+                      bgcolor: 'rgba(30, 41, 59, 0.9)',
+                      color: '#ef4444',
+                    },
+                    width: 28,
+                    height: 28,
+                  }}
+                >
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
           </Box>
         </Fade>
@@ -223,6 +257,17 @@ const PostCard: React.FC<PostCardProps> = ({
                     >
                       {formatDate(post.created_at)}
                     </Typography>
+                    {post.is_pinned && (
+                      <Tooltip title="Pinned post" arrow>
+                        <PushPin 
+                          sx={{ 
+                            fontSize: '0.75rem', 
+                            color: '#fbbf24',
+                            verticalAlign: 'middle',
+                          }} 
+                        />
+                      </Tooltip>
+                    )}
                     {post.is_edited && (
                       <Chip
                         label="Edited"
@@ -249,6 +294,24 @@ const PostCard: React.FC<PostCardProps> = ({
               />
             </Box>
           </Box>
+        )}
+
+        {/* Post Title */}
+        {post.title && (
+          <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 1,
+                fontWeight: 600,
+                cursor: 'pointer',
+                '&:hover': { color: '#667eea' },
+                transition: 'color 0.2s',
+              }}
+            >
+              {post.title}
+            </Typography>
+          </Link>
         )}
 
         {/* Post Content */}

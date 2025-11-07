@@ -6,18 +6,20 @@ import GroupIcon from "@mui/icons-material/Group";
 import { useUserContext } from "../context/UserContext";
 import { FiImage, FiLoader, FiSend } from "react-icons/fi";
 import { triggerPostCreated } from "../utils/eventBus";
+import { createPost as createPostService } from "../services/postService";
 
 const CreatePost: React.FC = () => {
   const { token, currentUser: user } = useUserContext();
-  const API_URL = import.meta.env.VITE_API_URL;
 
   if (!user) return null;
 
   const [content, setContent] = useState("");
+  const [title, setTitle] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [message, setMessage] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private" | "follows">("public");
   const [visibilityAnchorEl, setVisibilityAnchorEl] = useState<null | HTMLElement>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const openVisibilityMenu = (e: React.MouseEvent<HTMLElement>) => setVisibilityAnchorEl(e.currentTarget);
   const closeVisibilityMenu = () => setVisibilityAnchorEl(null);
@@ -48,30 +50,23 @@ const CreatePost: React.FC = () => {
     setMessage("");
 
     try {
-      const formData = new FormData();
-      formData.append("content", content);
-      formData.append("visibility", visibility);
-      files.forEach((file) => formData.append("files", file));
-
-      const res = await fetch(`${API_URL}/api/posts/`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
+      await createPostService(token!, {
+        content,
+        title: title || undefined,
+        visibility,
+        files,
+        comments_enabled: true,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setMessage(data.error || "❌ Failed to create post");
-      } else {
-        setMessage("✅ Post created successfully!");
-        setContent("");
-        setFiles([]);
-        triggerPostCreated(); // ✅ Notify UserPosts to refresh
-      }
-    } catch (err) {
+      setMessage("✅ Post created successfully!");
+      setContent("");
+      setTitle("");
+      setFiles([]);
+      setShowAdvanced(false);
+      triggerPostCreated(); // ✅ Notify UserPosts to refresh
+    } catch (err: any) {
       console.error(err);
-      setMessage("⚠️ Something went wrong. Try again.");
+      setMessage(err.message || "⚠️ Something went wrong. Try again.");
     } finally {
       setLoading(false);
     }
@@ -96,6 +91,19 @@ const CreatePost: React.FC = () => {
           message.startsWith("✅") ? "text-green-600" :
           message.startsWith("❌") ? "text-red-500" : "text-yellow-600"
         }`}>{message}</div>
+      )}
+
+      {/* Title Input (Optional) */}
+      {showAdvanced && (
+        <div className="mb-3">
+          <input
+            type="text"
+            className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="Post title (optional)"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
       )}
 
       <div className="relative mb-4">
@@ -148,35 +156,54 @@ const CreatePost: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-3">
-        <label 
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            backgroundColor: '#e0e7ff',
-            color: '#3730a3',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '500',
-            transition: 'all 0.2s ease',
-            border: 'none',
-            WebkitAppearance: 'none',
-            WebkitTapHighlightColor: 'transparent',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#c7d2fe';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#e0e7ff';
-          }}
-        >
-          <FiImage style={{ fontSize: '16px' }} /> 
-          <span>Attach Files</span>
-          <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} />
-        </label>
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <label 
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              backgroundColor: '#e0e7ff',
+              color: '#3730a3',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              border: 'none',
+              WebkitAppearance: 'none',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#c7d2fe';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#e0e7ff';
+            }}
+          >
+            <FiImage style={{ fontSize: '16px' }} /> 
+            <span>Attach Files</span>
+            <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} />
+          </label>
+
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: showAdvanced ? '#c7d2fe' : '#f3f4f6',
+              color: showAdvanced ? '#3730a3' : '#6b7280',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              border: 'none',
+            }}
+          >
+            {showAdvanced ? 'Less' : 'More'}
+          </button>
+        </div>
 
         <button
           onClick={createPost}

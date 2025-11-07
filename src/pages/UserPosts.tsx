@@ -10,8 +10,6 @@ const UserPosts: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
-  
-
   const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
   const fetchPostsRef = useRef(false);
 
@@ -31,7 +29,18 @@ const UserPosts: React.FC = () => {
         like_count: post.like_count || 0,
         liked_by_user: post.liked_by_user || false,
       })) as Post[];
-      setPosts(transformedData);
+      
+      // Sort posts: pinned posts first, then by creation date (newest first)
+      const sortedPosts = transformedData.sort((a, b) => {
+        // If one is pinned and the other isn't, pinned comes first
+        if (a.is_pinned && !b.is_pinned) return -1;
+        if (!a.is_pinned && b.is_pinned) return 1;
+        
+        // If both have same pin status, sort by creation date (newest first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      setPosts(sortedPosts);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to fetch posts");
@@ -52,8 +61,6 @@ const UserPosts: React.FC = () => {
     return unsubscribe;
   }, []);
 
-  
-
   if (loading) return <p className="text-gray-700 dark:text-gray-300">Loading posts...</p>;
   if (error) return <p className="text-red-500 dark:text-red-400">{error}</p>;
   if (posts.length === 0) return <p className="text-gray-700 dark:text-gray-300">No posts yet.</p>;
@@ -64,7 +71,7 @@ const UserPosts: React.FC = () => {
         <PostCard
           key={post.id}
           post={post}
-          token={token ?? ""} // ✅ Fix type issue: token is string | null
+          token={token ?? ""}
           userId={user.id}
           showUsername={true}
           r2PublicUrl={R2_PUBLIC_URL}
@@ -72,8 +79,6 @@ const UserPosts: React.FC = () => {
           showEditDeleteOnHover={false}
         />
       ))}
-
-      
     </div>
   );
 };

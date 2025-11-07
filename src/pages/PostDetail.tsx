@@ -13,9 +13,9 @@ import {
   Alert,
   Container,
 } from "@mui/material";
-import { ArrowBack, Edit, Delete, Person, Schedule, ThumbUp, Image, Public, Group, Lock } from "@mui/icons-material";
+import { ArrowBack, Edit, Delete, Person, Schedule, ThumbUp, Image, Public, Group, Lock, PushPin, PushPinOutlined } from "@mui/icons-material";
 import { Menu, MenuItem, Tooltip } from "@mui/material";
-import { getPostById, deletePost, updatePost, type Post } from "../services/postService";
+import { getPostById, deletePost, updatePost, pinPost, unpinPost, type Post } from "../services/postService";
 import { useUserContext } from "../context/UserContext";
 import PostCard from "../components/PostCard";
 import EditPostModal from "./EditPostModal";
@@ -80,11 +80,11 @@ const PostDetail: React.FC = () => {
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = async (newContent: string, newImageUrl: string) => {
+  const handleSaveEdit = async (newContent: string) => {
     if (!post || !token) return;
     
     try {
-      const updatedPost = await updatePost(token, post.id, newContent, newImageUrl || undefined);
+      const updatedPost = await updatePost(token, post.id, { content: newContent });
       setPost(updatedPost);
       setShowEditModal(false);
     } catch (error) {
@@ -117,7 +117,7 @@ const PostDetail: React.FC = () => {
   const changeVisibility = async (vis: "public" | "private" | "follows") => {
     if (!post || !token) return;
     try {
-      const updated = await updatePost(token, post.id, post.content, post.image_url || undefined, vis);
+      const updated = await updatePost(token, post.id, { visibility: vis });
       setPost(updated);
     } catch (e) {
       console.error(e);
@@ -134,6 +134,23 @@ const PostDetail: React.FC = () => {
       navigate("/dashboard"); // Redirect to dashboard after deletion
     } catch (error) {
       console.error("Failed to delete post:", error);
+    }
+  };
+
+  const handleTogglePin = async () => {
+    if (!post || !token) return;
+    
+    try {
+      if (post.is_pinned) {
+        await unpinPost(token, post.id);
+      } else {
+        await pinPost(token, post.id);
+      }
+      // Refresh post data
+      const updatedPost = await getPostById(parseInt(postId!), token, user?.id);
+      setPost(updatedPost);
+    } catch (error) {
+      console.error("Failed to toggle pin:", error);
     }
   };
 
@@ -286,40 +303,57 @@ const PostDetail: React.FC = () => {
             {/* Quick actions for post owner */}
             {user?.id === post.user_id && (
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <IconButton
-                  onClick={() => {
-                    console.log("Edit button clicked!");
-                    handleEdit(post);
-                  }}
-                  sx={{
-                    bgcolor: 'rgba(30, 41, 59, 0.8)',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    '&:hover': { 
-                      bgcolor: 'rgba(30, 41, 59, 0.9)',
-                      color: '#667eea',
-                    },
-                  }}
-                  title="Edit post"
-                >
-                  <Edit />
-                </IconButton>
-                <IconButton
-                  onClick={() => {
-                    console.log("Delete button clicked!");
-                    handleDelete(post);
-                  }}
-                  sx={{
-                    bgcolor: 'rgba(30, 41, 59, 0.8)',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    '&:hover': { 
-                      bgcolor: 'rgba(30, 41, 59, 0.9)',
-                      color: '#ef4444',
-                    },
-                  }}
-                  title="Delete post"
-                >
-                  <Delete />
-                </IconButton>
+                <Tooltip title={post.is_pinned ? "Unpin post" : "Pin post"} arrow>
+                  <IconButton
+                    onClick={handleTogglePin}
+                    sx={{
+                      bgcolor: 'rgba(30, 41, 59, 0.8)',
+                      color: post.is_pinned ? '#fbbf24' : 'rgba(255, 255, 255, 0.7)',
+                      '&:hover': { 
+                        bgcolor: 'rgba(30, 41, 59, 0.9)',
+                        color: '#fbbf24',
+                      },
+                    }}
+                  >
+                    {post.is_pinned ? <PushPin /> : <PushPinOutlined />}
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Edit post" arrow>
+                  <IconButton
+                    onClick={() => {
+                      console.log("Edit button clicked!");
+                      handleEdit(post);
+                    }}
+                    sx={{
+                      bgcolor: 'rgba(30, 41, 59, 0.8)',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      '&:hover': { 
+                        bgcolor: 'rgba(30, 41, 59, 0.9)',
+                        color: '#667eea',
+                      },
+                    }}
+                  >
+                    <Edit />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete post" arrow>
+                  <IconButton
+                    onClick={() => {
+                      console.log("Delete button clicked!");
+                      handleDelete(post);
+                    }}
+                    sx={{
+                      bgcolor: 'rgba(30, 41, 59, 0.8)',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      '&:hover': { 
+                        bgcolor: 'rgba(30, 41, 59, 0.9)',
+                        color: '#ef4444',
+                      },
+                    }}
+                  >
+                    <Delete />
+                  </IconButton>
+                </Tooltip>
                 <Tooltip title={currentVisibility === 'public' ? 'Public' : currentVisibility === 'follows' ? 'Follows' : 'Private'} arrow>
                   <IconButton
                     onClick={openVisibilityMenu}
@@ -331,7 +365,6 @@ const PostDetail: React.FC = () => {
                         color: '#90caf9',
                       },
                     }}
-                    title="Change visibility"
                   >
                     {renderVisibilityIcon()}
                   </IconButton>

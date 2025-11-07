@@ -14,6 +14,8 @@ import {
   CircularProgress,
   Alert,
   Link as MuiLink,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -27,21 +29,33 @@ import {
   Close,
   Add,
   CheckCircle,
+  Info as InfoIcon,
+  Feed as FeedIcon,
 } from "@mui/icons-material";
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { useUserContext } from "../context/UserContext";
 import { userService, type User } from "../services/userService";
+import { getUserPosts } from "../services/postService";
 import EditProfileModal from "../components/EditProfileModal.tsx";
 import DeactivateAccountModal from "../components/DeactivateAccountModal.tsx";
+import PostCard, { type Post } from "../components/PostCard";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { currentUser, isAuthenticated, updateUser, isLoading: userLoading } = useUserContext();
+  const { currentUser, isAuthenticated, updateUser, isLoading: userLoading, token } = useUserContext();
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState(1);
+  
+  // Posts state
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postsError, setPostsError] = useState<string | null>(null);
   
   // Inline editing state
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
@@ -51,8 +65,41 @@ const Profile: React.FC = () => {
   // Check if viewing own profile
   const isOwnProfile = !userId || (!!currentUser && userId === currentUser.id.toString());
   
+  const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
+  
   // Add debugging
   console.log('Profile render:', { userId, currentUser: !!currentUser, isOwnProfile, loading, error });
+
+  // Fetch posts function
+  const fetchPosts = async (targetUserId: number) => {
+    if (!token) return;
+    
+    setPostsLoading(true);
+    setPostsError(null);
+    
+    try {
+      const data = await getUserPosts(targetUserId, token);
+      const transformedData = data.map(post => ({
+        ...post,
+        like_count: post.like_count || 0,
+        liked_by_user: post.liked_by_user || false,
+      })) as Post[];
+      
+      // Sort posts: pinned posts first, then by creation date (newest first)
+      const sortedPosts = transformedData.sort((a, b) => {
+        if (a.is_pinned && !b.is_pinned) return -1;
+        if (!a.is_pinned && b.is_pinned) return 1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      setPosts(sortedPosts);
+    } catch (err: any) {
+      console.error('Failed to fetch posts:', err);
+      setPostsError(err.message || "Failed to fetch posts");
+    } finally {
+      setPostsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -63,6 +110,8 @@ const Profile: React.FC = () => {
       setEditingFields({});
       setEditValues({});
       setSavingFields({});
+      setPosts([]);
+      setActiveTab(1);
       
       try {
         if (isOwnProfile && currentUser) {
@@ -94,6 +143,13 @@ const Profile: React.FC = () => {
       }
     }
   }, [userId, currentUser, isOwnProfile, userLoading]);
+
+  // Fetch posts when Feed tab is selected
+  useEffect(() => {
+    if (activeTab === 1 && profileUser && posts.length === 0 && !postsLoading) {
+      fetchPosts(profileUser.id);
+    }
+  }, [activeTab, profileUser]);
 
   const handleProfileUpdate = (updatedUser: User) => setProfileUser(updatedUser);
 
@@ -762,103 +818,165 @@ const Profile: React.FC = () => {
           {/* Bio Section */}
           <BioField />
 
-          {/* Contact Info */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: 4,
-              mb: 4,
-            }}
-          >
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                Contact Information
-              </Typography>
-              
-              <InlineEditField
-                field="email"
-                value={profileUser.email || ''}
-                placeholder="Email"
-                icon={<Email sx={{ fontSize: 20 }} />}
-                type="email"
-              />
-              
-              <InlineEditField
-                field="phone"
-                value={profileUser.phone || ''}
-                placeholder="Phone"
-                icon={<Phone sx={{ fontSize: 20 }} />}
-                type="tel"
-              />
-              
-              <InlineEditField
-                field="location"
-                value={profileUser.location || ''}
-                placeholder="Location"
-                icon={<LocationOn sx={{ fontSize: 20 }} />}
-              />
-              
-              <InlineEditField
-                field="website"
-                value={profileUser.website || ''}
-                placeholder="Website"
-                icon={<LinkIcon sx={{ fontSize: 20 }} />}
-                type="url"
-              />
-              
-              {profileUser.created_at && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5 }}>
-                  <CalendarToday sx={{ fontSize: 20, color: 'primary.main' }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Joined {new Date(profileUser.created_at).toLocaleDateString()}
+          {/* Tabs */}
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_, newValue) => setActiveTab(newValue)}
+              sx={{
+                '& .MuiTab-root': {
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  minHeight: 48,
+                },
+              }}
+            >
+              <Tab icon={<InfoIcon />} iconPosition="start" label="About" />
+              <Tab icon={<FeedIcon />} iconPosition="start" label="Feed" />
+            </Tabs>
+          </Box>
+
+          {/* Tab Content */}
+          {activeTab === 0 && (
+            <Box>
+              {/* Contact Info */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  gap: 4,
+                  mb: 4,
+                }}
+              >
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    Contact Information
                   </Typography>
+                  
+                  <InlineEditField
+                    field="email"
+                    value={profileUser.email || ''}
+                    placeholder="Email"
+                    icon={<Email sx={{ fontSize: 20 }} />}
+                    type="email"
+                  />
+                  
+                  <InlineEditField
+                    field="phone"
+                    value={profileUser.phone || ''}
+                    placeholder="Phone"
+                    icon={<Phone sx={{ fontSize: 20 }} />}
+                    type="tel"
+                  />
+                  
+                  <InlineEditField
+                    field="location"
+                    value={profileUser.location || ''}
+                    placeholder="Location"
+                    icon={<LocationOn sx={{ fontSize: 20 }} />}
+                  />
+                  
+                  <InlineEditField
+                    field="website"
+                    value={profileUser.website || ''}
+                    placeholder="Website"
+                    icon={<LinkIcon sx={{ fontSize: 20 }} />}
+                    type="url"
+                  />
+                  
+                  {profileUser.created_at && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5 }}>
+                      <CalendarToday sx={{ fontSize: 20, color: 'primary.main' }} />
+                      <Typography variant="body2" color="text.secondary">
+                        Joined {new Date(profileUser.created_at).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+
+                {/* Social Links */}
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    Social Links
+                  </Typography>
+                  
+                  <InlineEditField
+                    field="social_facebook"
+                    value={profileUser.social_links?.facebook || ''}
+                    placeholder="Facebook URL"
+                    icon={<FaFacebook size={20} style={{ color: '#1877F2' }} />}
+                    type="url"
+                  />
+                  
+                  <InlineEditField
+                    field="social_twitter"
+                    value={profileUser.social_links?.twitter || ''}
+                    placeholder="Twitter URL"
+                    icon={<FaTwitter size={20} style={{ color: '#1DA1F2' }} />}
+                    type="url"
+                  />
+                  
+                  <InlineEditField
+                    field="social_instagram"
+                    value={profileUser.social_links?.instagram || ''}
+                    placeholder="Instagram URL"
+                    icon={<FaInstagram size={20} style={{ color: '#E4405F' }} />}
+                    type="url"
+                  />
+                  
+                  <InlineEditField
+                    field="social_linkedin"
+                    value={profileUser.social_links?.linkedin || ''}
+                    placeholder="LinkedIn URL"
+                    icon={<FaLinkedin size={20} style={{ color: '#0077B5' }} />}
+                    type="url"
+                  />
+                </Box>
+              </Box>
+
+              {/* About Section */}
+              <AboutField />
+            </Box>
+          )}
+
+          {activeTab === 1 && (
+            <Box>
+              {postsLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : postsError ? (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {postsError}
+                </Alert>
+              ) : posts.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 8 }}>
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    No posts yet
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {isOwnProfile ? "Start sharing your thoughts!" : "This user hasn't posted anything yet."}
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {posts.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      token={token ?? ""}
+                      userId={currentUser?.id ?? 0}
+                      showUsername={false}
+                      r2PublicUrl={R2_PUBLIC_URL}
+                      currentUserId={currentUser?.id ?? 0}
+                      showEditDeleteOnHover={isOwnProfile}
+                    />
+                  ))}
                 </Box>
               )}
             </Box>
-
-            {/* Social Links */}
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                Social Links
-              </Typography>
-              
-              <InlineEditField
-                field="social_facebook"
-                value={profileUser.social_links?.facebook || ''}
-                placeholder="Facebook URL"
-                icon={<FaFacebook size={20} style={{ color: '#1877F2' }} />}
-                type="url"
-              />
-              
-              <InlineEditField
-                field="social_twitter"
-                value={profileUser.social_links?.twitter || ''}
-                placeholder="Twitter URL"
-                icon={<FaTwitter size={20} style={{ color: '#1DA1F2' }} />}
-                type="url"
-              />
-              
-              <InlineEditField
-                field="social_instagram"
-                value={profileUser.social_links?.instagram || ''}
-                placeholder="Instagram URL"
-                icon={<FaInstagram size={20} style={{ color: '#E4405F' }} />}
-                type="url"
-              />
-              
-              <InlineEditField
-                field="social_linkedin"
-                value={profileUser.social_links?.linkedin || ''}
-                placeholder="LinkedIn URL"
-                icon={<FaLinkedin size={20} style={{ color: '#0077B5' }} />}
-                type="url"
-              />
-            </Box>
-          </Box>
-
-          {/* About Section */}
-          <AboutField />
+          )}
         </Paper>
       </Container>
 

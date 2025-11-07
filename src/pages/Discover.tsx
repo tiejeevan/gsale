@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import EditPostModal from "./EditPostModal";
 import DeletePostModal from "./DeletePostModal";
 import PostCard from "../components/PostCard";
+import { getAllPosts, updatePost, deletePost, type Post } from "../services/postService";
 import {
   Box,
   Typography,
@@ -21,38 +22,6 @@ import {
   Star as StarIcon,
 } from "@mui/icons-material";
 
-interface Attachment {
-  id: number;
-  file_name: string;
-  file_url: string;
-  uploaded_at: string;
-}
-
-interface Post {
-  id: number;
-  user_id: number;
-  username?: string;
-  content: string;
-  image_url: string | null;
-  created_at: string;
-  like_count: number;
-  is_edited: boolean;
-  liked_by_user: boolean;
-  comment_count?: number;
-  attachments?: Attachment[];
-}
-
-// 🔥 Calculate “hot” ranking score — Reddit-inspired
-function calculateHotScore(post: Post): number {
-  const hoursSincePost =
-    (Date.now() - new Date(post.created_at).getTime()) / 3600000;
-  const likesWeight = post.like_count * 1.5;
-  const commentsWeight = (post.comment_count || 0) * 1.2;
-  // Newer posts get slight boost
-  const recencyBoost = Math.max(0, 24 - hoursSincePost) * 0.5;
-  return likesWeight + commentsWeight + recencyBoost;
-}
-
 const Discover: React.FC = () => {
   const { token, currentUser: user } = useUserContext();
   const navigate = useNavigate();
@@ -62,9 +31,7 @@ const Discover: React.FC = () => {
   const [error, setError] = useState("");
   const [editModalPost, setEditModalPost] = useState<Post | null>(null);
   const [deleteModalPost, setDeleteModalPost] = useState<Post | null>(null);
-  const [sortMode, setSortMode] = useState<"latest" | "top" | "hot">("hot");
-
-  const API_URL = import.meta.env.VITE_API_URL;
+  const [sortMode, setSortMode] = useState<"latest" | "top" | "hot">("latest");
 
   if (!user) return null;
 
@@ -72,15 +39,11 @@ const Discover: React.FC = () => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/posts`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) setError(data.error || "Failed to fetch posts");
-      else setPosts(data);
-    } catch (err) {
+      const data = await getAllPosts(token!);
+      setPosts(data);
+    } catch (err: any) {
       console.error(err);
-      setError("Something went wrong while fetching posts");
+      setError(err.message || "Something went wrong while fetching posts");
     } finally {
       setLoading(false);
     }
@@ -104,28 +67,20 @@ const Discover: React.FC = () => {
         return sorted.sort((a, b) => b.like_count - a.like_count);
       case "hot":
       default:
-        return sorted.sort((a, b) => calculateHotScore(b) - calculateHotScore(a));
+        return sorted.sort((a, b) => {
+          const scoreA = a.like_count * 1.5 + (a.comments?.length || 0) * 1.2;
+          const scoreB = b.like_count * 1.5 + (b.comments?.length || 0) * 1.2;
+          return scoreB - scoreA;
+        });
     }
   }, [posts, sortMode]);
 
   // ✅ Edit post handler
   const handleUpdatePost = async (updated: Post) => {
     try {
-      const res = await fetch(`${API_URL}/api/posts/${updated.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          content: updated.content,
-          image_url: updated.image_url,
-        }),
-      });
-      if (res.ok) {
-        setEditModalPost(null);
-        fetchPosts();
-      }
+      await updatePost(token!, updated.id, { content: updated.content });
+      setEditModalPost(null);
+      fetchPosts();
     } catch (err) {
       console.error(err);
     }
@@ -133,16 +88,11 @@ const Discover: React.FC = () => {
 
   // ✅ Delete post handler
   const handleDeletePost = async (post: Post | null) => {
-    if (!post) return;
+    if (!post || !token) return;
     try {
-      const res = await fetch(`${API_URL}/api/posts/${post.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        setDeleteModalPost(null);
-        fetchPosts();
-      }
+      await deletePost(token, post.id);
+      setDeleteModalPost(null);
+      fetchPosts();
     } catch (err) {
       console.error(err);
     }
@@ -249,7 +199,7 @@ const Discover: React.FC = () => {
       {sortedPosts.map((post) => (
         <PostCard
           key={post.id}
-          post={post}
+          post={post as any}
           token={token as string}
           currentUserId={user.id}
           showUsername={true}

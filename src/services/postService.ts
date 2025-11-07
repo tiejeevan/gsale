@@ -9,8 +9,10 @@ export interface Attachment {
 }
 
 export interface Like {
+  like_id: number;
   user_id: number;
-  username: string;
+  reaction_type: string;
+  post_id: number;
 }
 
 export interface Comment {
@@ -20,13 +22,14 @@ export interface Comment {
   username: string;
   first_name: string;
   last_name: string;
-  avatar_url?: string;
+  profile_image?: string;
   content: string | null;
   attachments?: any[] | null;
   like_count?: number;
   liked_by_user?: boolean;
   parent_comment_id: number | null;
   children?: Comment[];
+  path?: string;
   created_at: string;
   updated_at: string;
   is_deleted: boolean;
@@ -36,19 +39,32 @@ export interface Post {
   id: number;
   user_id: number;
   content: string;
-  image_url: string | null;
+  title?: string | null;
+  post_type?: string;
+  image_url?: string | null;
   created_at: string;
-  like_count?: number; // For compatibility with existing components
+  updated_at?: string;
+  like_count: number;
   is_edited: boolean;
   is_deleted?: boolean;
-  visibility?: string;
+  is_pinned?: boolean;
+  visibility: string;
   username?: string;
   first_name?: string;
   last_name?: string;
-  liked_by_user?: boolean; // For compatibility with existing components
+  profile_image?: string;
+  liked_by_user: boolean;
   attachments?: Attachment[];
-  likes?: Like[]; // New field from your backend
-  comments?: Comment[]; // New field from your backend
+  likes?: Like[];
+  comments?: Comment[];
+  tags?: string[];
+  mentions?: string[];
+  location?: string | null;
+  metadata?: any;
+  scheduled_at?: string | null;
+  status?: string;
+  comments_enabled?: boolean;
+  view_count?: number;
 }
 
 // -------------------- 🟢 FETCH POSTS --------------------
@@ -81,7 +97,6 @@ const transformPostData = (post: Post, currentUserId?: number): Post => {
   // Transform comments to add missing fields for compatibility
   const transformedComments = post.comments?.map(comment => ({
     ...comment,
-    avatar_url: comment.avatar_url || undefined,
     attachments: comment.attachments || null,
     like_count: comment.like_count || 0,
     liked_by_user: comment.liked_by_user || false,
@@ -111,17 +126,40 @@ export const getPostById = async (postId: number, token: string, currentUserId?:
 
 // -------------------- 🟠 CREATE POST --------------------
 
+export interface CreatePostParams {
+  content: string;
+  title?: string;
+  post_type?: string;
+  visibility?: "public" | "private" | "follows";
+  tags?: string[];
+  mentions?: string[];
+  location?: string;
+  metadata?: any;
+  scheduled_at?: string;
+  comments_enabled?: boolean;
+  files?: File[];
+}
+
 export const createPost = async (
   token: string,
-  content: string,
-  files: File[],
-  visibility: "public" | "private" | "follows" = "public"
+  params: CreatePostParams
 ): Promise<Post> => {
   const formData = new FormData();
-  formData.append("content", content);
-  formData.append("visibility", visibility);
+  
+  formData.append("content", params.content);
+  if (params.title) formData.append("title", params.title);
+  if (params.post_type) formData.append("post_type", params.post_type);
+  formData.append("visibility", params.visibility || "public");
+  if (params.tags) formData.append("tags", JSON.stringify(params.tags));
+  if (params.mentions) formData.append("mentions", JSON.stringify(params.mentions));
+  if (params.location) formData.append("location", params.location);
+  if (params.metadata) formData.append("metadata", JSON.stringify(params.metadata));
+  if (params.scheduled_at) formData.append("scheduled_at", params.scheduled_at);
+  if (params.comments_enabled !== undefined) formData.append("comments_enabled", String(params.comments_enabled));
 
-  files.forEach((file) => formData.append("files", file));
+  if (params.files) {
+    params.files.forEach((file) => formData.append("files", file));
+  }
 
   const res = await fetch(`${API_URL}/api/posts`, {
     method: "POST",
@@ -139,12 +177,22 @@ export const createPost = async (
 
 // -------------------- 🔵 UPDATE POST --------------------
 
+export interface UpdatePostParams {
+  content?: string;
+  title?: string;
+  visibility?: "public" | "private" | "follows";
+  post_type?: string;
+  tags?: string[];
+  mentions?: string[];
+  location?: string;
+  comments_enabled?: boolean;
+  metadata?: any;
+}
+
 export const updatePost = async (
   token: string,
   postId: number,
-  content: string,
-  image_url?: string,
-  visibility?: "public" | "private" | "follows"
+  updates: UpdatePostParams
 ): Promise<Post> => {
   const res = await fetch(`${API_URL}/api/posts/${postId}`, {
     method: "PUT",
@@ -152,7 +200,7 @@ export const updatePost = async (
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ content, image_url, visibility }),
+    body: JSON.stringify(updates),
   });
   if (!res.ok) {
     const err = await res.json();
@@ -171,6 +219,44 @@ export const deletePost = async (token: string, postId: number): Promise<{ msg: 
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to delete post");
+  }
+  return res.json();
+};
+
+// -------------------- 📌 PIN/UNPIN POST --------------------
+
+export const pinPost = async (token: string, postId: number): Promise<Post> => {
+  const res = await fetch(`${API_URL}/api/posts/${postId}/pin`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to pin post");
+  }
+  return res.json();
+};
+
+export const unpinPost = async (token: string, postId: number): Promise<Post> => {
+  const res = await fetch(`${API_URL}/api/posts/${postId}/unpin`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to unpin post");
+  }
+  return res.json();
+};
+
+export const getPinnedPost = async (userId: number, token: string): Promise<Post | null> => {
+  const res = await fetch(`${API_URL}/api/posts/user/${userId}/pinned`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to fetch pinned post");
   }
   return res.json();
 };
