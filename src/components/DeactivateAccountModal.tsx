@@ -13,7 +13,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  Paper,
 } from "@mui/material";
 import {
   Close as CloseIcon,
