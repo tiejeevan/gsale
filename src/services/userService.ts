@@ -33,6 +33,8 @@ export interface User {
   updated_at?: string;
   last_login_at?: string;
   is_active?: boolean;
+  follower_count?: number;
+  following_count?: number;
 }
 
 // -------------------- 🟢 HELPER --------------------

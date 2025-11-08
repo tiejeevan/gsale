@@ -41,6 +41,8 @@ import EditProfileModal from "../components/EditProfileModal.tsx";
 import DeactivateAccountModal from "../components/DeactivateAccountModal.tsx";
 import PostCard, { type Post } from "../components/PostCard";
 import FloatingChatPopup from "../components/chat/FloatingChatPopup";
+import FollowButton from "../components/FollowButton";
+import FollowersModal from "../components/FollowersModal";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -51,6 +53,8 @@ const Profile: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showChatPopup, setShowChatPopup] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [followersModalTab, setFollowersModalTab] = useState<'followers' | 'following'>('followers');
   
   // Tab state
   const [activeTab, setActiveTab] = useState(1);
@@ -820,19 +824,80 @@ const Profile: React.FC = () => {
               <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                 @{profileUser.username}
               </Typography>
-              {profileUser.role && (
-                <Chip
-                  label={profileUser.role}
-                  size="small"
-                  sx={{
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                    '&:hover': {
-                      bgcolor: 'primary.dark',
-                    },
+              
+              {/* Follower/Following Stats */}
+              <Box sx={{ display: 'flex', gap: 3, mb: 1, justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                <Box
+                  onClick={() => {
+                    setFollowersModalTab('followers');
+                    setShowFollowersModal(true);
                   }}
-                />
-              )}
+                  sx={{
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.7 },
+                    transition: 'opacity 0.2s',
+                  }}
+                >
+                  <Typography variant="body2" component="span">
+                    <Typography component="span" fontWeight={600} color="text.primary">
+                      {profileUser.follower_count || 0}
+                    </Typography>
+                    {' '}
+                    <Typography component="span" color="text.secondary">
+                      Followers
+                    </Typography>
+                  </Typography>
+                </Box>
+                <Box
+                  onClick={() => {
+                    setFollowersModalTab('following');
+                    setShowFollowersModal(true);
+                  }}
+                  sx={{
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.7 },
+                    transition: 'opacity 0.2s',
+                  }}
+                >
+                  <Typography variant="body2" component="span">
+                    <Typography component="span" fontWeight={600} color="text.primary">
+                      {profileUser.following_count || 0}
+                    </Typography>
+                    {' '}
+                    <Typography component="span" color="text.secondary">
+                      Following
+                    </Typography>
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: { xs: 'center', md: 'flex-start' }, flexWrap: 'wrap' }}>
+                {profileUser.role && (
+                  <Chip
+                    label={profileUser.role}
+                    size="small"
+                    sx={{
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      '&:hover': {
+                        bgcolor: 'primary.dark',
+                      },
+                    }}
+                  />
+                )}
+                {!isOwnProfile && (
+                  <FollowButton
+                    userId={profileUser.id}
+                    onFollowChange={(isFollowing) => {
+                      // Update local follower count
+                      setProfileUser(prev => prev ? {
+                        ...prev,
+                        follower_count: (prev.follower_count || 0) + (isFollowing ? 1 : -1)
+                      } : null);
+                    }}
+                  />
+                )}
+              </Box>
             </Box>
           </Box>
 
@@ -1023,6 +1088,16 @@ const Profile: React.FC = () => {
           username={profileUser.display_name || profileUser.username}
           avatarUrl={profileUser.profile_image}
           onClose={() => setShowChatPopup(false)}
+        />
+      )}
+
+      {/* Followers/Following Modal */}
+      {showFollowersModal && profileUser && (
+        <FollowersModal
+          userId={profileUser.id}
+          username={profileUser.display_name || profileUser.username}
+          initialTab={followersModalTab}
+          onClose={() => setShowFollowersModal(false)}
         />
       )}
     </Box>
