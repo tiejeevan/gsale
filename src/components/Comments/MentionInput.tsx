@@ -26,7 +26,7 @@ interface MentionInputProps {
   value: string;
   onChange: (value: string) => void;
   onFocus?: () => void;
-  onKeyDown?: (e: React.KeyboardEvent) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
   rows?: number;
   multiline?: boolean;
@@ -142,7 +142,7 @@ const MentionInput: React.FC<MentionInputProps> = ({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (showSuggestions && suggestions.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -161,7 +161,7 @@ const MentionInput: React.FC<MentionInputProps> = ({
     }
     
     if (onKeyDown) {
-      onKeyDown(e);
+      onKeyDown(e as React.KeyboardEvent<HTMLTextAreaElement>);
     }
   };
 
@@ -234,21 +234,15 @@ const MentionInput: React.FC<MentionInputProps> = ({
               {suggestions.map((user, index) => (
                 <ListItem
                   key={user.id}
-                  button
-                  selected={index === selectedIndex}
+                  component="div"
                   onClick={() => insertMention(user)}
                   sx={{
                     borderRadius: 1,
                     mb: 0.5,
+                    cursor: 'pointer',
                     backgroundColor: index === selectedIndex ? 'rgba(103, 126, 234, 0.15)' : 'transparent',
                     '&:hover': {
                       backgroundColor: 'rgba(103, 126, 234, 0.1)',
-                    },
-                    '&.Mui-selected': {
-                      backgroundColor: 'rgba(103, 126, 234, 0.15)',
-                      '&:hover': {
-                        backgroundColor: 'rgba(103, 126, 234, 0.2)',
-                      },
                     },
                   }}
                 >

@@ -76,7 +76,7 @@ const AddComment: React.FC<AddCommentProps> = ({
     if (onCancel) onCancel();
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!loading && content.trim()) {

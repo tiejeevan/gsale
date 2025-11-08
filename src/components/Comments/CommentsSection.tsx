@@ -34,6 +34,7 @@ export interface Comment {
   created_at: string;
   updated_at: string;
   is_deleted: boolean;
+  path?: string;
 }
 
 interface CommentsSectionProps {
