@@ -115,6 +115,32 @@ const CreatePost: React.FC = () => {
           onKeyDown={handleKeyDown}
         />
 
+        <div className="absolute top-2 right-2 flex items-center gap-1">
+          <Tooltip title={showAdvanced ? "Show less options" : "Show more options"} arrow>
+            <IconButton 
+              size="small" 
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              sx={{ 
+                backgroundColor: showAdvanced ? 'rgba(99, 102, 241, 0.1)' : 'rgba(0,0,0,0.05)',
+                '&:hover': {
+                  backgroundColor: showAdvanced ? 'rgba(99, 102, 241, 0.2)' : 'rgba(0,0,0,0.1)',
+                }
+              }}
+            >
+              {showAdvanced ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              )}
+            </IconButton>
+          </Tooltip>
+        </div>
+
         <div className="absolute bottom-2 right-2">
           <Tooltip title={visibility === "public" ? "Public" : visibility === "follows" ? "Follows" : "Private"} arrow>
             <IconButton size="small" onClick={openVisibilityMenu} sx={{ backgroundColor: 'rgba(0,0,0,0.05)' }}>
@@ -186,23 +212,6 @@ const CreatePost: React.FC = () => {
             <span>Attach Files</span>
             <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} />
           </label>
-
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: showAdvanced ? '#c7d2fe' : '#f3f4f6',
-              color: showAdvanced ? '#3730a3' : '#6b7280',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'all 0.2s ease',
-              border: 'none',
-            }}
-          >
-            {showAdvanced ? 'Less' : 'More'}
-          </button>
         </div>
 
         <button
