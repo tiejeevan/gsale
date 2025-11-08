@@ -6,6 +6,7 @@ import React, {
   type ReactNode,
 } from "react";
 import { Snackbar, Alert, AlertTitle } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { socket, joinUserRoom } from "./socket";
 import { useUserContext } from "./context/UserContext";
 import { userService } from "./services/userService";
@@ -41,6 +42,7 @@ export const useNotifications = () => {
 
 export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { currentUser: user, token } = useUserContext();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastNotification, setToastNotification] = useState<Notification | null>(null);
@@ -134,11 +136,18 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     };
     socket.on("notification:new", handleNewNotification);
 
+    // Listen for notification deletions (for mention soft deletes)
+    const handleNotificationDeleted = (data: { notificationId: number }) => {
+      setNotifications(prev => prev.filter(n => n.id !== data.notificationId));
+    };
+    socket.on("notification:deleted", handleNotificationDeleted);
+
 
 
     // Cleanup on unmount
     return () => {
       socket.off("notification:new", handleNewNotification);
+      socket.off("notification:deleted", handleNotificationDeleted);
       socket.off("connect_error", handleConnectError);
       socket.off("disconnect", handleDisconnect);
       socket.off("reconnect_failed", handleReconnectFailed);
@@ -152,12 +161,60 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const addNotification = (notif: Notification) =>
     setNotifications(prev => [notif, ...prev]);
 
-  const markAsRead = (id: number) =>
-    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
+  const markAsRead = (id: number) => {
+    // Find the notification to check if it's a mention
+    const notification = notifications.find(n => n.id === id);
+    
+    if (notification?.type === 'mention') {
+      // Remove mention notifications from the list
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } else {
+      // Just mark as read for other notification types
+      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
+    }
+  };
 
   const handleToastClose = () => {
     setToastOpen(false);
     setToastNotification(null);
+  };
+
+  const handleToastClick = async () => {
+    if (!toastNotification) return;
+    
+    // Mark as read
+    markAsRead(toastNotification.id);
+    
+    // Close toast
+    handleToastClose();
+    
+    try {
+      // Mark as read on backend
+      await fetch(`${API_URL}/api/notifications/${toastNotification.id}/read`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
+
+    // Navigate based on notification type
+    if (toastNotification.type === 'comment' || toastNotification.type === 'like' || toastNotification.type === 'mention') {
+      const postId = toastNotification.payload?.postId;
+      const commentId = toastNotification.payload?.commentId;
+      if (postId) {
+        // Pass state to show comments immediately for comment/mention notifications
+        navigate(`/post/${postId}`, { 
+          state: { 
+            fromNotification: true,
+            showComments: toastNotification.type === 'comment' || toastNotification.type === 'mention',
+            highlightCommentId: commentId // Pass the comment ID to highlight
+          } 
+        });
+      }
+    } else if (toastNotification.type === 'follow') {
+      navigate(`/profile/${toastNotification.actor_user_id}`);
+    }
   };
 
   const getNotificationMessage = (notif: Notification) => {
@@ -169,6 +226,9 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         return `${notif.actor_name} liked your post`;
       case "follow":
         return `${notif.actor_name} started following you`;
+      case "mention":
+        const mentionText = notif.payload?.text ? `: "${notif.payload.text}"` : "";
+        return `${notif.actor_name} mentioned you in a comment${mentionText}`;
       default:
         return `New notification from ${notif.actor_name}`;
     }
@@ -180,7 +240,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     >
       {children}
       
-      {/* Toast Notification */}
+      {/* Toast Notification - Clickable */}
       <Snackbar
         open={toastOpen}
         autoHideDuration={4000}
@@ -191,9 +251,19 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
           onClose={handleToastClose} 
           severity="info" 
           variant="filled"
+          onClick={handleToastClick}
           sx={{ 
             minWidth: 300,
-            '& .MuiAlert-message': { width: '100%' }
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: 6,
+            },
+            '& .MuiAlert-message': { 
+              width: '100%',
+              cursor: 'pointer',
+            }
           }}
         >
           <AlertTitle sx={{ fontSize: '0.875rem', fontWeight: 600 }}>

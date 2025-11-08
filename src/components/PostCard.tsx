@@ -12,9 +12,10 @@ import {
   useMediaQuery,
   Fade,
   Tooltip,
+  Button,
 } from "@mui/material";
-import { Edit, Delete, PushPin, PushPinOutlined } from "@mui/icons-material";
-import LikeButton from "./LikeButton";
+import { Edit, Delete, PushPin, PushPinOutlined, FavoriteBorder, Favorite, ChatBubbleOutline, Share } from "@mui/icons-material";
+import { addLike, removeLike } from "../services/likeService";
 import CommentsSection, { type Comment } from "./Comments/CommentsSection";
 
 interface Attachment {
@@ -58,6 +59,8 @@ interface PostCardProps {
   onPin?: (post: Post) => void;
   r2PublicUrl?: string;
   collapseComments?: boolean;
+  showCommentsInitially?: boolean;
+  highlightCommentId?: number;
 }
 
 const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
@@ -72,8 +75,14 @@ const PostCard: React.FC<PostCardProps> = ({
   onDelete,
   onPin,
   collapseComments = true,
+  showCommentsInitially = false,
+  highlightCommentId,
 }) => {
   const [hovered, setHovered] = useState(false);
+  const [showComments, setShowComments] = useState(showCommentsInitially);
+  const [liked, setLiked] = useState(post.liked_by_user || false);
+  const [likeCount, setLikeCount] = useState(post.like_count || 0);
+  const [isLiking, setIsLiking] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -95,6 +104,48 @@ const PostCard: React.FC<PostCardProps> = ({
       return date.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
     } else {
       return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+  };
+
+  const handleLike = async () => {
+    if (isLiking) return;
+    
+    setIsLiking(true);
+    const previousLiked = liked;
+    const previousCount = likeCount;
+    
+    // Optimistic update
+    setLiked(!liked);
+    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+    
+    try {
+      if (liked) {
+        await removeLike(token, { target_type: 'post', target_id: post.id });
+      } else {
+        await addLike(token, { target_type: 'post', target_id: post.id });
+      }
+    } catch (error) {
+      // Revert on error
+      setLiked(previousLiked);
+      setLikeCount(previousCount);
+      console.error("Failed to like/unlike post:", error);
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const handleShare = () => {
+    const postUrl = `${window.location.origin}/post/${post.id}`;
+    if (navigator.share) {
+      navigator.share({
+        title: post.title || 'Check out this post',
+        text: post.content,
+        url: postUrl,
+      }).catch((error) => console.log('Error sharing:', error));
+    } else {
+      navigator.clipboard.writeText(postUrl);
+      // You could add a toast notification here
+      alert('Link copied to clipboard!');
     }
   };
 
@@ -200,156 +251,120 @@ const PostCard: React.FC<PostCardProps> = ({
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
                 gap: 1.5,
               }}
             >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                }}
+              <Link 
+                to={`/profile/${post.user_id}`}
+                style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex' }}
               >
+                <Avatar
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {post.username.charAt(0).toUpperCase()}
+                </Avatar>
+              </Link>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Link 
                   to={`/profile/${post.user_id}`}
-                  style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex' }}
+                  style={{ textDecoration: 'none', color: 'inherit', display: 'inline' }}
                 >
-                  <Avatar
+                  <Typography
+                    variant="subtitle1"
+                    component="span"
                     sx={{
-                      width: 40,
-                      height: 40,
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      fontSize: '1rem',
                       fontWeight: 600,
+                      color: 'text.primary',
+                      mb: 0,
+                      display: 'inline',
+                      fontSize: '0.95rem',
+                      '&:hover': { opacity: 0.8 },
+                      transition: 'opacity 0.2s',
                     }}
                   >
-                    {post.username.charAt(0).toUpperCase()}
-                  </Avatar>
+                    {post.username}
+                  </Typography>
                 </Link>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Link 
-                    to={`/profile/${post.user_id}`}
-                    style={{ textDecoration: 'none', color: 'inherit', display: 'inline' }}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.75rem',
+                    }}
                   >
-                    <Typography
-                      variant="subtitle1"
-                      component="span"
-                      sx={{
-                        fontWeight: 600,
-                        color: 'text.primary',
-                        mb: 0,
-                        display: 'inline',
-                        fontSize: '0.95rem',
-                        '&:hover': { opacity: 0.8 },
-                        transition: 'opacity 0.2s',
-                      }}
-                    >
-                      {post.username}
-                    </Typography>
-                  </Link>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: 'text.secondary',
-                        fontSize: '0.75rem',
-                      }}
-                    >
-                      {formatDate(post.created_at)}
-                    </Typography>
-                    {post.is_pinned && (
-                      <Tooltip title="Pinned post" arrow>
-                        <PushPin 
-                          sx={{ 
-                            fontSize: '0.75rem', 
-                            color: '#fbbf24',
-                            verticalAlign: 'middle',
-                          }} 
-                        />
-                      </Tooltip>
-                    )}
-                    {post.is_edited && (
-                      <Chip
-                        label="Edited"
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          height: 14,
-                          fontSize: '0.6rem',
-                          '& .MuiChip-label': { px: 0.5, py: 0 },
-                        }}
+                    {formatDate(post.created_at)}
+                  </Typography>
+                  {post.is_pinned && (
+                    <Tooltip title="Pinned post" arrow>
+                      <PushPin 
+                        sx={{ 
+                          fontSize: '0.75rem', 
+                          color: '#fbbf24',
+                          verticalAlign: 'middle',
+                        }} 
                       />
-                    )}
-                  </Box>
+                    </Tooltip>
+                  )}
+                  {post.is_edited && (
+                    <Chip
+                      label="Edited"
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        height: 14,
+                        fontSize: '0.6rem',
+                        '& .MuiChip-label': { px: 0.5, py: 0 },
+                      }}
+                    />
+                  )}
                 </Box>
               </Box>
-              
-              {/* Like Button on the right side */}
-              <LikeButton
-                targetType="post"
-                targetId={post.id}
-                initialLikesCount={post.like_count || 0}
-                isInitiallyLiked={post.liked_by_user || false}
-                token={token}
-              />
             </Box>
           </Box>
         )}
 
-        {/* Content wrapper with like button on the right when username is hidden */}
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            {/* Post Title */}
-            {post.title && (
-              <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    mb: 1,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    '&:hover': { color: '#667eea' },
-                    transition: 'color 0.2s',
-                  }}
-                >
-                  {post.title}
-                </Typography>
-              </Link>
-            )}
+        {/* Post Title */}
+        {post.title && (
+          <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 1,
+                fontWeight: 600,
+                cursor: 'pointer',
+                '&:hover': { color: '#667eea' },
+                transition: 'color 0.2s',
+              }}
+            >
+              {post.title}
+            </Typography>
+          </Link>
+        )}
 
-            {/* Post Content */}
-            <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <Typography
-                variant="body1"
-                sx={{
-                  mb: 1.5,
-                  lineHeight: 1.5,
-                  whiteSpace: 'pre-line',
-                  cursor: 'pointer',
-                  '&:hover': { color: 'text.secondary' },
-                  transition: 'color 0.2s',
-                  fontSize: '0.95rem',
-                }}
-              >
-                {post.content}
-              </Typography>
-            </Link>
-          </Box>
-
-          {/* Like Button - Show on the right when username is hidden */}
-          {!showUsername && (
-            <Box sx={{ flexShrink: 0 }}>
-              <LikeButton
-                targetType="post"
-                targetId={post.id}
-                initialLikesCount={post.like_count || 0}
-                isInitiallyLiked={post.liked_by_user || false}
-                token={token}
-              />
-            </Box>
-          )}
-        </Box>
+        {/* Post Content */}
+        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Typography
+            variant="body1"
+            sx={{
+              mb: 1.5,
+              lineHeight: 1.5,
+              whiteSpace: 'pre-line',
+              cursor: 'pointer',
+              '&:hover': { color: 'text.secondary' },
+              transition: 'color 0.2s',
+              fontSize: '0.95rem',
+            }}
+          >
+            {post.content}
+          </Typography>
+        </Link>
 
         {/* Post Image */}
         {post.image_url && (
@@ -436,30 +451,87 @@ const PostCard: React.FC<PostCardProps> = ({
           </Box>
         )}
 
+        {/* Action Bar - Like, Comment, Share */}
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1,
+            pt: 1,
+            borderTop: '1px solid rgba(148, 163, 184, 0.1)',
+          }}
+        >
+          {/* Like Button */}
+          <Button
+            startIcon={liked ? <Favorite /> : <FavoriteBorder />}
+            onClick={handleLike}
+            disabled={isLiking}
+            sx={{
+              color: liked ? '#ef4444' : 'text.secondary',
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              '&:hover': {
+                bgcolor: 'rgba(239, 68, 68, 0.1)',
+                color: '#ef4444',
+              },
+            }}
+          >
+            {likeCount > 0 ? likeCount : 'Like'}
+          </Button>
+
+          {/* Comment Button */}
+          {post.comments_enabled !== false && (
+            <Button
+              startIcon={<ChatBubbleOutline />}
+              onClick={() => setShowComments(!showComments)}
+              sx={{
+                color: 'text.secondary',
+                textTransform: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                '&:hover': {
+                  bgcolor: 'rgba(103, 126, 234, 0.1)',
+                  color: '#667eea',
+                },
+              }}
+            >
+              {post.comments && post.comments.length > 0 ? post.comments.length : 'Comment'}
+            </Button>
+          )}
+
+          {/* Share Button */}
+          <Button
+            startIcon={<Share />}
+            onClick={handleShare}
+            sx={{
+              color: 'text.secondary',
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              '&:hover': {
+                bgcolor: 'rgba(103, 126, 234, 0.1)',
+                color: '#667eea',
+              },
+            }}
+          >
+            Share
+          </Button>
+        </Box>
 
       </CardContent>
 
-      {/* Comments Section */}
-      {post.comments_enabled !== false && (
-        <Box sx={{ borderTop: '1px solid rgba(148, 163, 184, 0.1)', mt: 0.5 }}>
+      {/* Comments Section - Only show when toggled */}
+      {post.comments_enabled !== false && showComments && (
+        <Box sx={{ borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
           <CommentsSection
             postId={post.id}
             currentUserId={currentUserId}
             initialComments={post.comments}
             collapseTopLevel={collapseComments}
             initialVisibleCount={2}
+            highlightCommentId={highlightCommentId}
           />
-        </Box>
-      )}
-      
-      {post.comments_enabled === false && (
-        <Box sx={{ borderTop: '1px solid rgba(148, 163, 184, 0.1)', mt: 0.5, p: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-            </svg>
-            Comments are disabled for this post
-          </Typography>
         </Box>
       )}
     </Card>

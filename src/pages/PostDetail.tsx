@@ -25,6 +25,7 @@ const PostDetail: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const { token, currentUser: user } = useUserContext();
+  const location = window.location;
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +34,26 @@ const PostDetail: React.FC = () => {
   const [editImageUrl, setEditImageUrl] = useState("");
   const [visibilityAnchorEl, setVisibilityAnchorEl] = useState<null | HTMLElement>(null);
   const [menuExpanded, setMenuExpanded] = useState(false);
+  
+  // Check if we should show comments initially (ONLY from notification)
+  const navigationState = (window.history.state as any)?.usr;
+  const showCommentsInitially = Boolean(navigationState?.showComments);
+  const highlightCommentId = navigationState?.highlightCommentId;
+
+  // Clear navigation state after component mounts to prevent persistence on reload
+  useEffect(() => {
+    if (navigationState?.showComments || navigationState?.highlightCommentId) {
+      // Clear the state after a delay (after highlight animation completes)
+      const timer = setTimeout(() => {
+        window.history.replaceState(
+          { ...window.history.state, usr: undefined },
+          ''
+        );
+      }, 3500); // Clear after highlight animation (3s) + buffer
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -519,6 +540,8 @@ const PostDetail: React.FC = () => {
           onEdit={undefined} // Disable PostCard edit button
           onDelete={undefined} // Disable PostCard delete button
           collapseComments={false}
+          showCommentsInitially={showCommentsInitially}
+          highlightCommentId={highlightCommentId}
         />
       </Box>
 

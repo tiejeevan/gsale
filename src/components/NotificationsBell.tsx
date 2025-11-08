@@ -62,11 +62,19 @@ const NotificationsBell = () => {
     }
 
     // Navigate to the appropriate page based on notification type
-    if (notification.type === 'comment' || notification.type === 'like') {
-      // For comments and likes, navigate to the post
+    if (notification.type === 'comment' || notification.type === 'like' || notification.type === 'mention') {
+      // For comments, likes, and mentions, navigate to the post
       const postId = notification.payload?.postId;
+      const commentId = notification.payload?.commentId;
       if (postId) {
-        navigate(`/post/${postId}`);
+        // Pass state to show comments immediately for comment/mention notifications
+        navigate(`/post/${postId}`, { 
+          state: { 
+            fromNotification: true,
+            showComments: notification.type === 'comment' || notification.type === 'mention',
+            highlightCommentId: commentId // Pass the comment ID to highlight
+          } 
+        });
       }
     } else if (notification.type === 'follow') {
       // For follows, navigate to the actor's profile
@@ -98,6 +106,8 @@ const NotificationsBell = () => {
         return <FavoriteIcon sx={{ fontSize: 16, color: 'error.main' }} />;
       case 'follow':
         return <PersonAddIcon sx={{ fontSize: 16, color: 'success.main' }} />;
+      case 'mention':
+        return <CommentIcon sx={{ fontSize: 16, color: '#667eea' }} />;
       default:
         return <CircleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />;
     }
@@ -284,10 +294,11 @@ const NotificationsBell = () => {
                           {n.type === "like" && "liked your post"}
                           {n.type === "comment" && "commented on your post"}
                           {n.type === "follow" && "started following you"}
+                          {n.type === "mention" && "mentioned you in a comment"}
                         </Typography>
                         
-                        {/* Comment preview */}
-                        {n.type === "comment" && n.payload?.text && (
+                        {/* Comment/Mention preview */}
+                        {(n.type === "comment" || n.type === "mention") && n.payload?.text && (
                           <Typography 
                             variant="body2" 
                             sx={{ 

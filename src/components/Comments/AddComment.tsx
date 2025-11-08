@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import {
   Box,
   Avatar,
-  TextField,
   Button,
   CircularProgress,
 } from "@mui/material";
 import { Send } from "@mui/icons-material";
 import { type Comment } from "./CommentsSection";
-import { socket } from "../../socket"; // <-- import socket instance
+import { socket } from "../../socket";
+import MentionInput from "./MentionInput";
 
 interface AddCommentProps {
   postId: number;
@@ -104,36 +104,14 @@ const AddComment: React.FC<AddCommentProps> = ({
 
       {/* Comment Form */}
       <Box component="form" onSubmit={handleSubmit} sx={{ flex: 1 }}>
-        <TextField
-          multiline
-          placeholder={placeholder || "Add a comment... (Press Enter to post, Shift+Enter for new line)"}
+        <MentionInput
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
           onFocus={() => setIsFocused(true)}
           onKeyDown={handleKeyDown}
-          variant="outlined"
-          size="small"
-          fullWidth
+          placeholder={placeholder || "Add a comment... (Type @ to mention, Enter to post, Shift+Enter for new line)"}
           rows={isFocused || content ? 2 : 1}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              backgroundColor: 'transparent',
-              fontSize: '0.85rem',
-              '& fieldset': {
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-              },
-              '&:hover fieldset': {
-                borderColor: 'rgba(255, 255, 255, 0.2)',
-              },
-              '&.Mui-focused fieldset': {
-                borderColor: 'primary.main',
-              },
-            },
-            '& .MuiInputBase-input::placeholder': {
-              color: 'text.secondary',
-              opacity: 0.7,
-            },
-          }}
+          disabled={loading}
         />
 
         {/* Action Buttons */}

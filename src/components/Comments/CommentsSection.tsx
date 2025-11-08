@@ -44,6 +44,7 @@ interface CommentsSectionProps {
   initialComments?: Comment[];
   collapseTopLevel?: boolean;
   initialVisibleCount?: number;
+  highlightCommentId?: number;
 }
 
 const CommentsSection: React.FC<CommentsSectionProps> = ({
@@ -53,10 +54,65 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   initialComments,
   collapseTopLevel = false,
   initialVisibleCount = 2,
+  highlightCommentId,
 }) => {
-  const [comments, setComments] = useState<Comment[]>(initialComments || []);
+  // Sort comments to put highlighted comment first (only when coming from notification)
+  const sortedInitialComments = React.useMemo(() => {
+    if (!initialComments) return [];
+    
+    // Only sort if we have a highlightCommentId (coming from notification)
+    if (!highlightCommentId) {
+      // Default behavior: sort by created_at DESC (latest first)
+      return [...initialComments].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    }
+    
+    const findAndExtractComment = (comments: Comment[], targetId: number): { found: Comment | null; remaining: Comment[] } => {
+      for (let i = 0; i < comments.length; i++) {
+        const comment = comments[i];
+        
+        // Check if this is the target comment
+        if (comment.id === targetId) {
+          const remaining = [...comments.slice(0, i), ...comments.slice(i + 1)];
+          return { found: comment, remaining };
+        }
+        
+        // Check children recursively
+        if (comment.children && comment.children.length > 0) {
+          const childResult = findAndExtractComment(comment.children, targetId);
+          if (childResult.found) {
+            // Found in children, return the found comment and update this comment's children
+            const updatedComment = { ...comment, children: childResult.remaining };
+            const remaining = [...comments.slice(0, i), updatedComment, ...comments.slice(i + 1)];
+            return { found: childResult.found, remaining };
+          }
+        }
+      }
+      
+      return { found: null, remaining: comments };
+    };
+    
+    const { found, remaining } = findAndExtractComment([...initialComments], highlightCommentId);
+    
+    // If found, put it at the top
+    if (found) {
+      return [found, ...remaining];
+    }
+    
+    return initialComments;
+  }, [initialComments, highlightCommentId]);
+
+  const [comments, setComments] = useState<Comment[]>(sortedInitialComments);
   const [loading, setLoading] = useState(!initialComments);
   const [visibleCount, setVisibleCount] = useState<number>(initialVisibleCount);
+
+  // Update comments when sortedInitialComments changes
+  useEffect(() => {
+    if (sortedInitialComments) {
+      setComments(sortedInitialComments);
+    }
+  }, [sortedInitialComments]);
 
   const fetchComments = async () => {
     if (initialComments) return;
@@ -196,18 +252,6 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
       <Divider sx={{ mb: 2, opacity: 0.3 }} />
 
-      {/* Add Comment */}
-      <Box sx={{ mb: 3 }}>
-        <AddComment
-          postId={postId}
-          parentCommentId={null}
-          onCommentAdded={addNewComment}
-          currentUserAvatar={currentUserAvatar}
-          isTopLevel={true}
-          placeholder={!loading && comments.length === 0 ? "Be first to comment..." : "Add a comment..."}
-        />
-      </Box>
-
       {/* Loading State */}
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
@@ -215,11 +259,9 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         </Box>
       )}
 
-      
-
       {/* Comments List */}
       {!loading && comments.length > 0 && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
           {(collapseTopLevel ? comments.slice(0, Math.min(visibleCount, comments.length)) : comments).map((comment) => (
             <CommentItem
               key={comment.id}
@@ -229,6 +271,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
               onCommentAdded={addNewComment}
               onCommentUpdated={updateCommentInState}
               onCommentDeleted={deleteCommentInState}
+              highlightCommentId={highlightCommentId}
             />
           ))}
           {collapseTopLevel && comments.length > visibleCount && (
@@ -244,6 +287,18 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
           )}
         </Box>
       )}
+
+      {/* Add Comment - Now at the bottom */}
+      <Box sx={{ mt: !loading && comments.length > 0 ? 2 : 0 }}>
+        <AddComment
+          postId={postId}
+          parentCommentId={null}
+          onCommentAdded={addNewComment}
+          currentUserAvatar={currentUserAvatar}
+          isTopLevel={true}
+          placeholder={!loading && comments.length === 0 ? "Be first to comment..." : "Add a comment..."}
+        />
+      </Box>
     </Box>
   );
 };

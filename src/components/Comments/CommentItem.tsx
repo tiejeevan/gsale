@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
@@ -17,9 +17,9 @@ import {
   ThumbUpOutlined,
   ExpandMore,
   ExpandLess,
-  Reply,
 } from "@mui/icons-material";
 import AddComment from "./AddComment";
+import MentionText from "./MentionText";
 import { type Comment } from "./CommentsSection";
 
 interface CommentItemProps {
@@ -29,6 +29,7 @@ interface CommentItemProps {
   onCommentAdded: (comment: Comment) => void;
   onCommentUpdated: (comment: Comment) => void;
   onCommentDeleted: (commentId: number) => void;
+  highlightCommentId?: number;
 }
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -40,14 +41,54 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onCommentAdded,
   onCommentUpdated,
   onCommentDeleted,
+  highlightCommentId,
 }) => {
   const [showReply, setShowReply] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content || "");
   const [repliesVisible, setRepliesVisible] = useState(false);
+  const [isHighlighted, setIsHighlighted] = useState(false);
+  const commentRef = useRef<HTMLDivElement>(null);
   
   const showMenu = Boolean(menuAnchor);
+
+  // Check if this comment should be highlighted
+  const shouldHighlight = highlightCommentId === comment.id;
+
+  // Check if any child comment should be highlighted
+  const hasHighlightedChild = (children: Comment[]): boolean => {
+    if (!highlightCommentId || !children) return false;
+    return children.some(child => 
+      child.id === highlightCommentId || hasHighlightedChild(child.children || [])
+    );
+  };
+
+  // Auto-expand replies if a child is highlighted
+  useEffect(() => {
+    if (highlightCommentId && hasHighlightedChild(comment.children || [])) {
+      setRepliesVisible(true);
+    }
+  }, [highlightCommentId]);
+
+  // Scroll to and highlight the comment if it matches
+  useEffect(() => {
+    if (shouldHighlight && commentRef.current) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        commentRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        setIsHighlighted(true);
+        
+        // Remove highlight after animation
+        setTimeout(() => {
+          setIsHighlighted(false);
+        }, 3000);
+      }, 300);
+    }
+  }, [shouldHighlight]);
 
   const token = localStorage.getItem("token");
   const isOwner = currentUserId === Number(comment.user_id);
@@ -142,8 +183,37 @@ const CommentItem: React.FC<CommentItemProps> = ({
     setRepliesVisible(true);
   };
 
+  // Calculate comment depth from path
+  const getCommentDepth = () => {
+    if (!comment.path) return 0;
+    return comment.path.split('/').length - 1;
+  };
+
+  const commentDepth = getCommentDepth();
+  const canReply = commentDepth < 1; // Only allow replies on top-level comments (depth 0)
+
   return (
-    <Box sx={{ display: 'flex', gap: 1.5, width: '100%' }}>
+    <Box 
+      ref={commentRef}
+      sx={{ 
+        display: 'flex', 
+        gap: 1.5, 
+        width: '100%',
+        p: isHighlighted ? 1.5 : 0,
+        borderRadius: 2,
+        backgroundColor: isHighlighted ? 'rgba(103, 126, 234, 0.15)' : 'transparent',
+        transition: 'all 0.3s ease',
+        animation: isHighlighted ? 'pulse 1s ease-in-out 2' : 'none',
+        '@keyframes pulse': {
+          '0%, 100%': {
+            backgroundColor: 'rgba(103, 126, 234, 0.15)',
+          },
+          '50%': {
+            backgroundColor: 'rgba(103, 126, 234, 0.25)',
+          },
+        },
+      }}
+    >
       {/* Avatar */}
       <Link to={`/profile/${comment.user_id}`} style={{ textDecoration: 'none' }}>
         <Avatar
@@ -162,48 +232,77 @@ const CommentItem: React.FC<CommentItemProps> = ({
       <Box sx={{ flex: 1, minWidth: 0 }}>
         {!editing ? (
           <Box>
-            {/* Header */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-              <Link 
-                to={`/profile/${comment.user_id}`}
-                style={{ textDecoration: 'none' }}
-              >
+            {/* Header and Content with Like on Right */}
+            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                {/* Header */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Link 
+                    to={`/profile/${comment.user_id}`}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: 600,
+                        color: 'text.primary',
+                        fontSize: '0.85rem',
+                        '&:hover': { color: 'primary.main' },
+                        transition: 'color 0.2s',
+                      }}
+                    >
+                      {comment.username}
+                    </Typography>
+                  </Link>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.7rem',
+                    }}
+                  >
+                    {formatDate(comment.created_at)}
+                  </Typography>
+                </Box>
+
+                {/* Content with Mentions */}
                 <Typography
-                  variant="subtitle2"
+                  variant="body2"
                   sx={{
-                    fontWeight: 600,
                     color: 'text.primary',
                     fontSize: '0.85rem',
-                    '&:hover': { color: 'primary.main' },
-                    transition: 'color 0.2s',
+                    lineHeight: 1.4,
+                    mb: 1,
                   }}
                 >
-                  {comment.username}
+                  <MentionText content={comment.content || ''} />
                 </Typography>
-              </Link>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: 'text.secondary',
-                  fontSize: '0.7rem',
-                }}
-              >
-                {formatDate(comment.created_at)}
-              </Typography>
-            </Box>
+              </Box>
 
-            {/* Content */}
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.primary',
-                fontSize: '0.85rem',
-                lineHeight: 1.4,
-                mb: 1,
-              }}
-            >
-              {comment.content}
-            </Typography>
+              {/* Like Button on Right */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
+                <IconButton
+                  size="small"
+                  onClick={handleLike}
+                  sx={{
+                    color: comment.liked_by_user ? 'primary.main' : 'text.secondary',
+                    p: 0.5,
+                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                  }}
+                >
+                  {comment.liked_by_user ? (
+                    <ThumbUp fontSize="small" />
+                  ) : (
+                    <ThumbUpOutlined fontSize="small" />
+                  )}
+                </IconButton>
+                {comment.like_count > 0 && (
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+                    {comment.like_count}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
           </Box>
         ) : (
           /* Edit Mode */
@@ -245,46 +344,52 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </Box>
         )}
 
-        {/* Actions */}
-        {!editing && (
+        {/* Actions - Reply button (only for top-level comments) */}
+        {!editing && canReply && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-            {/* Like Button */}
-            <IconButton
-              size="small"
-              onClick={handleLike}
-              sx={{
-                color: comment.liked_by_user ? 'primary.main' : 'text.secondary',
-                p: 0.5,
-                '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-              }}
-            >
-              {comment.liked_by_user ? (
-                <ThumbUp fontSize="small" />
-              ) : (
-                <ThumbUpOutlined fontSize="small" />
-              )}
-            </IconButton>
-            {comment.like_count > 0 && (
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem', mr: 1 }}>
-                {comment.like_count}
-              </Typography>
-            )}
-
             {/* Reply Button */}
             <Button
               size="small"
-              startIcon={<Reply fontSize="small" />}
               onClick={() => setShowReply(!showReply)}
               sx={{
-                fontSize: '0.7rem',
+                fontSize: '0.75rem',
                 textTransform: 'none',
-                color: 'text.secondary',
+                color: showReply ? 'primary.main' : 'text.secondary',
+                fontWeight: showReply ? 600 : 500,
                 minWidth: 'auto',
-                p: 0.5,
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                transition: 'all 0.2s ease',
+                backgroundColor: showReply ? 'rgba(103, 126, 234, 0.1)' : 'transparent',
+                '&:hover': {
+                  backgroundColor: showReply ? 'rgba(103, 126, 234, 0.15)' : 'rgba(103, 126, 234, 0.08)',
+                  color: 'primary.main',
+                  transform: 'translateY(-1px)',
+                },
+                '&:active': {
+                  transform: 'translateY(0)',
+                },
               }}
             >
-              Reply
+              {showReply ? 'Cancel Reply' : 'Reply'}
             </Button>
+          </Box>
+        )}
+        
+        {/* Hint for nested comments */}
+        {!editing && !canReply && (
+          <Box sx={{ mt: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontSize: '0.7rem',
+                fontStyle: 'italic',
+              }}
+            >
+              Use @mentions to reply
+            </Typography>
           </Box>
         )}
 
@@ -331,6 +436,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     onCommentAdded={onCommentAdded}
                     onCommentUpdated={onCommentUpdated}
                     onCommentDeleted={onCommentDeleted}
+                    highlightCommentId={highlightCommentId}
                   />
                 ))}
               </Box>
