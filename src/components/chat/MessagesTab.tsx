@@ -66,28 +66,28 @@ const MessagesTab = () => {
       <div ref={messagesTabRef} className="fixed bottom-0 right-6 z-40">
         {/* Expanded Chat List */}
         {isExpanded && (
-          <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow-2xl border border-gray-200 dark:border-gray-700 w-80 mb-0">
+          <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow-2xl border border-gray-200 dark:border-gray-700 w-56 sm:w-80 mb-0">
             {/* Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Messages</h3>
+            <div className="px-2 py-1.5 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="font-semibold text-xs sm:text-base text-gray-900 dark:text-gray-100">Messages</h3>
               <button
                 onClick={() => setIsExpanded(false)}
                 className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
             </div>
 
             {/* Chat List */}
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-80 sm:max-h-96 overflow-y-auto">
               {chats.length === 0 ? (
-                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                  <svg className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="p-4 sm:p-8 text-center text-gray-500 dark:text-gray-400">
+                  <svg className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
-                  <p className="text-sm">Start chat with a user by going to their profile page and clicking on message icon</p>
+                  <p className="text-xs sm:text-sm">Start chat with a user by going to their profile page and clicking on message icon</p>
                 </div>
               ) : (
                 chats.map(chat => {
@@ -115,25 +115,25 @@ const MessagesTab = () => {
                     <button
                       key={chat.id}
                       onClick={() => handleChatClick(chat.id)}
-                      className="w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-all duration-150 border-b border-gray-100 dark:border-gray-700 text-left outline-none focus:outline-none active:scale-[0.98]"
+                      className="w-full p-2 sm:p-3 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-all duration-150 border-b border-gray-100 dark:border-gray-700 text-left outline-none focus:outline-none active:scale-[0.98]"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         {/* Avatar - Left Side */}
                         <div className="flex-shrink-0">
                           {avatarUrl ? (
                             <img
                               src={avatarUrl}
                               alt={chatTitle}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                              className="w-9 h-9 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
                               {isGroup ? (
-                                <svg className="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
                               ) : (
-                                <span className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+                                <span className="text-sm sm:text-lg font-semibold text-indigo-600 dark:text-indigo-400">
                                   {chatTitle.charAt(0).toUpperCase()}
                                 </span>
                               )}
@@ -144,18 +144,18 @@ const MessagesTab = () => {
                         {/* Right Side - Name and Message */}
                         <div className="flex-1 min-w-0">
                           {/* User Name */}
-                          <div className="flex items-center justify-between mb-1">
-                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                          <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                            <h4 className="font-semibold text-xs sm:text-base text-gray-900 dark:text-gray-100 truncate">
                               {chatTitle}
                             </h4>
-                            <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                            <div className="flex items-center gap-1 sm:gap-2 ml-1 sm:ml-2 flex-shrink-0">
                               {chat.last_message_at && (
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                                   {formatTime(chat.last_message_at)}
                                 </span>
                               )}
                               {chat.unread_count > 0 && (
-                                <span className="bg-indigo-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                                <span className="bg-indigo-600 text-white text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full">
                                   {chat.unread_count}
                                 </span>
                               )}
@@ -163,7 +163,7 @@ const MessagesTab = () => {
                           </div>
                           {/* Last Message */}
                           <div className="flex items-center gap-1">
-                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate flex-1">
+                            <p className="text-[11px] sm:text-sm text-gray-600 dark:text-gray-400 truncate flex-1">
                               {chat.last_message_sender && chat.last_message_sender !== currentUser?.username && (
                                 <span className="font-medium">{chat.last_message_sender}: </span>
                               )}
@@ -185,14 +185,14 @@ const MessagesTab = () => {
         {!isExpanded && (
           <button
             onClick={() => setIsExpanded(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-t-lg shadow-lg transition flex items-center gap-2 relative"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:px-6 sm:py-3 rounded-t-lg shadow-lg transition flex items-center gap-1.5 sm:gap-2 relative"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <span className="font-semibold">Messages</span>
+            <span className="font-semibold text-xs sm:text-base">Messages</span>
             {totalUnreadCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+              <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-red-500 text-white text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full min-w-[18px] sm:min-w-[20px] text-center">
                 {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
               </span>
             )}
