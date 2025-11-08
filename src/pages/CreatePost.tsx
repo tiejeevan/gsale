@@ -20,6 +20,7 @@ const CreatePost: React.FC = () => {
   const [visibility, setVisibility] = useState<"public" | "private" | "follows">("public");
   const [visibilityAnchorEl, setVisibilityAnchorEl] = useState<null | HTMLElement>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [commentsEnabled, setCommentsEnabled] = useState(true);
 
   const openVisibilityMenu = (e: React.MouseEvent<HTMLElement>) => setVisibilityAnchorEl(e.currentTarget);
   const closeVisibilityMenu = () => setVisibilityAnchorEl(null);
@@ -55,7 +56,7 @@ const CreatePost: React.FC = () => {
         title: title || undefined,
         visibility,
         files,
-        comments_enabled: true,
+        comments_enabled: commentsEnabled,
       });
 
       setMessage("✅ Post created successfully!");
@@ -63,6 +64,7 @@ const CreatePost: React.FC = () => {
       setTitle("");
       setFiles([]);
       setShowAdvanced(false);
+      setCommentsEnabled(true);
       triggerPostCreated(); // ✅ Notify UserPosts to refresh
     } catch (err: any) {
       console.error(err);
@@ -214,42 +216,66 @@ const CreatePost: React.FC = () => {
           </label>
         </div>
 
-        <button
-          onClick={createPost}
-          disabled={loading}
-          style={{
-            backgroundColor: loading ? '#a5b4fc' : '#4f46e5',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '8px 20px',
-            fontWeight: '600',
-            fontSize: '14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow: loading ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            WebkitAppearance: 'none',
-            WebkitTapHighlightColor: 'transparent',
-            outline: 'none',
-          }}
-          onMouseEnter={(e) => {
-            if (!loading) {
-              e.currentTarget.style.backgroundColor = '#3730a3';
-              e.currentTarget.style.transform = 'scale(1.02)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!loading) {
-              e.currentTarget.style.backgroundColor = '#4f46e5';
-              e.currentTarget.style.transform = 'scale(1)';
-            }
-          }}
-        >
-          {loading ? <><FiLoader className="animate-spin" /> Posting...</> : <><FiSend /> Post</>}
-        </button>
+        <div className="flex items-center gap-2">
+          {showAdvanced && (
+            <Tooltip title={commentsEnabled ? "Comments enabled" : "Comments disabled"} arrow>
+              <IconButton
+                size="small"
+                onClick={() => setCommentsEnabled(!commentsEnabled)}
+                sx={{
+                  backgroundColor: commentsEnabled ? '#22c55e' : '#d1d5db',
+                  color: 'white',
+                  width: 32,
+                  height: 32,
+                  '&:hover': {
+                    backgroundColor: commentsEnabled ? '#16a34a' : '#9ca3af',
+                  },
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </IconButton>
+            </Tooltip>
+          )}
+
+          <button
+            onClick={createPost}
+            disabled={loading}
+            style={{
+              backgroundColor: loading ? '#a5b4fc' : '#4f46e5',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '8px 20px',
+              fontWeight: '600',
+              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: loading ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              WebkitAppearance: 'none',
+              WebkitTapHighlightColor: 'transparent',
+              outline: 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.backgroundColor = '#3730a3';
+                e.currentTarget.style.transform = 'scale(1.02)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading) {
+                e.currentTarget.style.backgroundColor = '#4f46e5';
+                e.currentTarget.style.transform = 'scale(1)';
+              }
+            }}
+          >
+            {loading ? <><FiLoader className="animate-spin" /> Posting...</> : <><FiSend /> Post</>}
+          </button>
+        </div>
       </div>
 
       {files.length > 0 && (

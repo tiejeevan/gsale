@@ -43,6 +43,7 @@ export interface Post {
   attachments?: Attachment[];
   comments?: Comment[];
   view_count?: number;
+  comments_enabled?: boolean;
 }
 
 interface PostCardProps {
@@ -421,15 +422,28 @@ const PostCard: React.FC<PostCardProps> = ({
       </CardContent>
 
       {/* Comments Section */}
-      <Box sx={{ borderTop: '1px solid rgba(148, 163, 184, 0.1)', mt: 0.5 }}>
-        <CommentsSection
-          postId={post.id}
-          currentUserId={currentUserId}
-          initialComments={post.comments}
-          collapseTopLevel={collapseComments}
-          initialVisibleCount={2}
-        />
-      </Box>
+      {post.comments_enabled !== false && (
+        <Box sx={{ borderTop: '1px solid rgba(148, 163, 184, 0.1)', mt: 0.5 }}>
+          <CommentsSection
+            postId={post.id}
+            currentUserId={currentUserId}
+            initialComments={post.comments}
+            collapseTopLevel={collapseComments}
+            initialVisibleCount={2}
+          />
+        </Box>
+      )}
+      
+      {post.comments_enabled === false && (
+        <Box sx={{ borderTop: '1px solid rgba(148, 163, 184, 0.1)', mt: 0.5, p: 2, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            Comments are disabled for this post
+          </Typography>
+        </Box>
+      )}
     </Card>
   );
 };

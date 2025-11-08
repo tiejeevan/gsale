@@ -32,6 +32,7 @@ const PostDetail: React.FC = () => {
   const [editContent, setEditContent] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
   const [visibilityAnchorEl, setVisibilityAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuExpanded, setMenuExpanded] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -134,6 +135,21 @@ const PostDetail: React.FC = () => {
       navigate("/dashboard"); // Redirect to dashboard after deletion
     } catch (error) {
       console.error("Failed to delete post:", error);
+    }
+  };
+
+  const handleToggleComments = async () => {
+    if (!post || !token) return;
+    
+    try {
+      await updatePost(token, post.id, { 
+        comments_enabled: post.comments_enabled === false ? true : false 
+      });
+      // Refetch the post to get updated data including comments
+      const refreshedPost = await getPostById(parseInt(postId!), token, user?.id);
+      setPost(refreshedPost);
+    } catch (error) {
+      console.error("Failed to toggle comments:", error);
     }
   };
 
@@ -300,73 +316,123 @@ const PostDetail: React.FC = () => {
               Post by {post.username}
             </Typography>
 
-            {/* Quick actions for post owner */}
+            {/* Quick actions for post owner - Expandable Menu */}
             {user?.id === post.user_id && (
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Tooltip title={post.is_pinned ? "Unpin post" : "Pin post"} arrow>
+              <Box sx={{ display: 'flex', gap: 1, position: 'relative' }}>
+                {/* Expanded Action Buttons */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1,
+                    opacity: menuExpanded ? 1 : 0,
+                    transform: menuExpanded ? 'translateX(0)' : 'translateX(20px)',
+                    transition: 'all 0.3s ease',
+                    pointerEvents: menuExpanded ? 'auto' : 'none',
+                  }}
+                >
+                  <Tooltip title={currentVisibility === 'public' ? 'Public' : currentVisibility === 'follows' ? 'Follows' : 'Private'} arrow>
+                    <IconButton
+                      onClick={openVisibilityMenu}
+                      sx={{
+                        bgcolor: 'rgba(30, 41, 59, 0.8)',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        '&:hover': { 
+                          bgcolor: 'rgba(30, 41, 59, 0.9)',
+                          color: '#90caf9',
+                        },
+                      }}
+                    >
+                      {renderVisibilityIcon()}
+                    </IconButton>
+                  </Tooltip>
+                  
+                  <Tooltip title={post.comments_enabled !== false ? "Disable comments" : "Enable comments"} arrow>
+                    <IconButton
+                      onClick={handleToggleComments}
+                      sx={{
+                        bgcolor: 'rgba(30, 41, 59, 0.8)',
+                        color: post.comments_enabled !== false ? '#22c55e' : 'rgba(255, 255, 255, 0.5)',
+                        '&:hover': { 
+                          bgcolor: 'rgba(30, 41, 59, 0.9)',
+                          color: post.comments_enabled !== false ? '#16a34a' : '#9ca3af',
+                        },
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    </IconButton>
+                  </Tooltip>
+                  
+                  <Tooltip title={post.is_pinned ? "Unpin post" : "Pin post"} arrow>
+                    <IconButton
+                      onClick={handleTogglePin}
+                      sx={{
+                        bgcolor: 'rgba(30, 41, 59, 0.8)',
+                        color: post.is_pinned ? '#fbbf24' : 'rgba(255, 255, 255, 0.7)',
+                        '&:hover': { 
+                          bgcolor: 'rgba(30, 41, 59, 0.9)',
+                          color: '#fbbf24',
+                        },
+                      }}
+                    >
+                      {post.is_pinned ? <PushPin /> : <PushPinOutlined />}
+                    </IconButton>
+                  </Tooltip>
+                  
+                  <Tooltip title="Edit post" arrow>
+                    <IconButton
+                      onClick={() => handleEdit(post)}
+                      sx={{
+                        bgcolor: 'rgba(30, 41, 59, 0.8)',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        '&:hover': { 
+                          bgcolor: 'rgba(30, 41, 59, 0.9)',
+                          color: '#667eea',
+                        },
+                      }}
+                    >
+                      <Edit />
+                    </IconButton>
+                  </Tooltip>
+                  
+                  <Tooltip title="Delete post" arrow>
+                    <IconButton
+                      onClick={() => handleDelete(post)}
+                      sx={{
+                        bgcolor: 'rgba(30, 41, 59, 0.8)',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        '&:hover': { 
+                          bgcolor: 'rgba(30, 41, 59, 0.9)',
+                          color: '#ef4444',
+                        },
+                      }}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+
+                {/* Menu Toggle Button */}
+                <Tooltip title={menuExpanded ? "Close menu" : "More options"} arrow>
                   <IconButton
-                    onClick={handleTogglePin}
-                    sx={{
-                      bgcolor: 'rgba(30, 41, 59, 0.8)',
-                      color: post.is_pinned ? '#fbbf24' : 'rgba(255, 255, 255, 0.7)',
-                      '&:hover': { 
-                        bgcolor: 'rgba(30, 41, 59, 0.9)',
-                        color: '#fbbf24',
-                      },
-                    }}
-                  >
-                    {post.is_pinned ? <PushPin /> : <PushPinOutlined />}
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Edit post" arrow>
-                  <IconButton
-                    onClick={() => {
-                      console.log("Edit button clicked!");
-                      handleEdit(post);
-                    }}
+                    onClick={() => setMenuExpanded(!menuExpanded)}
                     sx={{
                       bgcolor: 'rgba(30, 41, 59, 0.8)',
                       color: 'rgba(255, 255, 255, 0.7)',
                       '&:hover': { 
                         bgcolor: 'rgba(30, 41, 59, 0.9)',
-                        color: '#667eea',
+                        color: '#ffffff',
                       },
+                      transform: menuExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.3s ease',
                     }}
                   >
-                    <Edit />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete post" arrow>
-                  <IconButton
-                    onClick={() => {
-                      console.log("Delete button clicked!");
-                      handleDelete(post);
-                    }}
-                    sx={{
-                      bgcolor: 'rgba(30, 41, 59, 0.8)',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      '&:hover': { 
-                        bgcolor: 'rgba(30, 41, 59, 0.9)',
-                        color: '#ef4444',
-                      },
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title={currentVisibility === 'public' ? 'Public' : currentVisibility === 'follows' ? 'Follows' : 'Private'} arrow>
-                  <IconButton
-                    onClick={openVisibilityMenu}
-                    sx={{
-                      bgcolor: 'rgba(30, 41, 59, 0.8)',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      '&:hover': { 
-                        bgcolor: 'rgba(30, 41, 59, 0.9)',
-                        color: '#90caf9',
-                      },
-                    }}
-                  >
-                    {renderVisibilityIcon()}
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="1" />
+                      <circle cx="12" cy="5" r="1" />
+                      <circle cx="12" cy="19" r="1" />
+                    </svg>
                   </IconButton>
                 </Tooltip>
                 <Menu
@@ -444,6 +510,7 @@ const PostDetail: React.FC = () => {
             ...post,
             like_count: post.like_count || 0,
             liked_by_user: post.liked_by_user || false,
+            comments_enabled: post.comments_enabled,
           } as any}
           currentUserId={user?.id}
           token={token || ""}
