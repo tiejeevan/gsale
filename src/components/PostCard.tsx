@@ -297,41 +297,59 @@ const PostCard: React.FC<PostCardProps> = ({
           </Box>
         )}
 
-        {/* Post Title */}
-        {post.title && (
-          <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Typography
-              variant="h6"
-              sx={{
-                mb: 1,
-                fontWeight: 600,
-                cursor: 'pointer',
-                '&:hover': { color: '#667eea' },
-                transition: 'color 0.2s',
-              }}
-            >
-              {post.title}
-            </Typography>
-          </Link>
-        )}
+        {/* Content wrapper with like button on the right when username is hidden */}
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            {/* Post Title */}
+            {post.title && (
+              <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    mb: 1,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    '&:hover': { color: '#667eea' },
+                    transition: 'color 0.2s',
+                  }}
+                >
+                  {post.title}
+                </Typography>
+              </Link>
+            )}
 
-        {/* Post Content */}
-        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <Typography
-            variant="body1"
-            sx={{
-              mb: 1.5,
-              lineHeight: 1.5,
-              whiteSpace: 'pre-line',
-              cursor: 'pointer',
-              '&:hover': { color: 'text.secondary' },
-              transition: 'color 0.2s',
-              fontSize: '0.95rem',
-            }}
-          >
-            {post.content}
-          </Typography>
-        </Link>
+            {/* Post Content */}
+            <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  mb: 1.5,
+                  lineHeight: 1.5,
+                  whiteSpace: 'pre-line',
+                  cursor: 'pointer',
+                  '&:hover': { color: 'text.secondary' },
+                  transition: 'color 0.2s',
+                  fontSize: '0.95rem',
+                }}
+              >
+                {post.content}
+              </Typography>
+            </Link>
+          </Box>
+
+          {/* Like Button - Show on the right when username is hidden */}
+          {!showUsername && (
+            <Box sx={{ flexShrink: 0 }}>
+              <LikeButton
+                targetType="post"
+                targetId={post.id}
+                initialLikesCount={post.like_count || 0}
+                isInitiallyLiked={post.liked_by_user || false}
+                token={token}
+              />
+            </Box>
+          )}
+        </Box>
 
         {/* Post Image */}
         {post.image_url && (
