@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { IconButton, Menu, MenuItem, Tooltip } from "@mui/material";
+import React, { useState, useRef, useEffect } from "react";
+import { IconButton, Menu, MenuItem, Tooltip, Paper, Avatar, Typography, Box } from "@mui/material";
 import PublicIcon from "@mui/icons-material/Public";
 import LockIcon from "@mui/icons-material/Lock";
 import GroupIcon from "@mui/icons-material/Group";
@@ -7,6 +7,7 @@ import { useUserContext } from "../context/UserContext";
 import { FiImage, FiLoader, FiSend } from "react-icons/fi";
 import { triggerPostCreated } from "../utils/eventBus";
 import { createPost as createPostService } from "../services/postService";
+import { searchUsersForMentions } from "../services/userService";
 
 const CreatePost: React.FC = () => {
   const { token, currentUser: user } = useUserContext();
@@ -21,6 +22,14 @@ const CreatePost: React.FC = () => {
   const [visibilityAnchorEl, setVisibilityAnchorEl] = useState<null | HTMLElement>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(true);
+  
+  // Mentions state
+  const [mentionSearch, setMentionSearch] = useState("");
+  const [mentionResults, setMentionResults] = useState<any[]>([]);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const openVisibilityMenu = (e: React.MouseEvent<HTMLElement>) => setVisibilityAnchorEl(e.currentTarget);
   const closeVisibilityMenu = () => setVisibilityAnchorEl(null);
@@ -74,7 +83,118 @@ const CreatePost: React.FC = () => {
     }
   };
 
+  // Handle mentions search
+  useEffect(() => {
+    const searchMentions = async () => {
+      if (mentionSearch && token) {
+        try {
+          const results = await searchUsersForMentions(mentionSearch, token);
+          setMentionResults(results);
+        } catch (err) {
+          console.error('Failed to search mentions:', err);
+          setMentionResults([]);
+        }
+      } else {
+        setMentionResults([]);
+      }
+    };
+
+    const debounce = setTimeout(searchMentions, 200);
+    return () => clearTimeout(debounce);
+  }, [mentionSearch, token]);
+
+  // Handle content change with mention detection
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setContent(newContent);
+
+    const cursorPos = e.target.selectionStart;
+    const textBeforeCursor = newContent.slice(0, cursorPos);
+    const lastAtSymbol = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtSymbol !== -1) {
+      const textAfterAt = textBeforeCursor.slice(lastAtSymbol + 1);
+      
+      // Check if there's a space after @ (which would end the mention)
+      if (!textAfterAt.includes(' ') && textAfterAt.length <= 20) {
+        setMentionSearch(textAfterAt);
+        setShowMentions(true);
+        setSelectedMentionIndex(0);
+        
+        // Calculate position for mention dropdown
+        if (textareaRef.current) {
+          const textarea = textareaRef.current;
+          const rect = textarea.getBoundingClientRect();
+          setMentionPosition({
+            top: rect.bottom + window.scrollY,
+            left: rect.left + window.scrollX,
+          });
+        }
+      } else {
+        setShowMentions(false);
+      }
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  // Insert mention into content
+  const insertMention = (username: string) => {
+    const cursorPos = textareaRef.current?.selectionStart || 0;
+    const textBeforeCursor = content.slice(0, cursorPos);
+    const textAfterCursor = content.slice(cursorPos);
+    const lastAtSymbol = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtSymbol !== -1) {
+      const newContent = 
+        content.slice(0, lastAtSymbol) + 
+        `@${username} ` + 
+        textAfterCursor;
+      
+      setContent(newContent);
+      setShowMentions(false);
+      setMentionSearch("");
+      
+      // Focus back on textarea
+      setTimeout(() => {
+        if (textareaRef.current) {
+          const newCursorPos = lastAtSymbol + username.length + 2;
+          textareaRef.current.focus();
+          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle mention navigation
+    if (showMentions && mentionResults.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedMentionIndex((prev) => 
+          prev < mentionResults.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedMentionIndex((prev) => 
+          prev > 0 ? prev - 1 : mentionResults.length - 1
+        );
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        insertMention(mentionResults[selectedMentionIndex].username);
+        return;
+      }
+      if (e.key === 'Escape') {
+        setShowMentions(false);
+        return;
+      }
+    }
+
+    // Normal enter to post
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!loading && (content.trim() || files.length > 0)) {
@@ -110,10 +230,11 @@ const CreatePost: React.FC = () => {
 
       <div className="relative mb-4">
         <textarea
+          ref={textareaRef}
           className="w-full p-3 pr-10 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none min-h-[100px]"
-          placeholder="What's on your mind? (Press Enter to post, Shift+Enter for new line)"
+          placeholder="What's on your mind? Type @ to mention someone (Press Enter to post, Shift+Enter for new line)"
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={handleContentChange}
           onKeyDown={handleKeyDown}
         />
 
@@ -289,6 +410,54 @@ const CreatePost: React.FC = () => {
             }
           })}
         </div>
+      )}
+
+      {/* Mentions Dropdown */}
+      {showMentions && mentionResults.length > 0 && (
+        <Paper
+          elevation={8}
+          sx={{
+            position: 'fixed',
+            top: mentionPosition.top,
+            left: mentionPosition.left,
+            maxWidth: 300,
+            maxHeight: 200,
+            overflow: 'auto',
+            zIndex: 1000,
+            borderRadius: 2,
+          }}
+        >
+          {mentionResults.map((user, index) => (
+            <Box
+              key={user.id}
+              onClick={() => insertMention(user.username)}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                p: 1.5,
+                cursor: 'pointer',
+                bgcolor: index === selectedMentionIndex ? 'action.hover' : 'transparent',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <Avatar
+                src={user.profile_image || `https://ui-avatars.com/api/?name=${user.display_name || user.username}&size=32`}
+                sx={{ width: 32, height: 32 }}
+              />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="body2" fontWeight={600} noWrap>
+                  {user.display_name || user.username}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  @{user.username}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+        </Paper>
       )}
     </div>
   );

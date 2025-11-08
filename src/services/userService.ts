@@ -109,3 +109,15 @@ export const userService = {
     return handleResponse<{ message: string }>(res);
   },
 };
+
+// -------------------- 🟢 MENTIONS --------------------
+
+export const searchUsersForMentions = async (query: string, token: string): Promise<User[]> => {
+  if (!query.trim()) return [];
+  
+  const res = await fetch(`${API_URL}/api/users/search/mentions?q=${encodeURIComponent(query)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await handleResponse<{ users: User[] }>(res);
+  return data.users;
+};
