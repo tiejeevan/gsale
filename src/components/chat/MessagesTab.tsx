@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useChatContext } from '../../context/ChatContext';
 import { useUserContext } from '../../context/UserContext';
 import FloatingChatPopup from './FloatingChatPopup';
@@ -8,6 +8,24 @@ const MessagesTab = () => {
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const { chats, totalUnreadCount } = useChatContext();
   const { currentUser } = useUserContext();
+  const messagesTabRef = useRef<HTMLDivElement>(null);
+
+  // Close expanded tab when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isExpanded && messagesTabRef.current && !messagesTabRef.current.contains(event.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+
+    if (isExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isExpanded]);
 
   const handleChatClick = (chatId: number) => {
     setSelectedChatId(chatId);
@@ -45,7 +63,7 @@ const MessagesTab = () => {
   return (
     <>
       {/* Messages Tab */}
-      <div className="fixed bottom-0 right-6 z-40">
+      <div ref={messagesTabRef} className="fixed bottom-0 right-6 z-40">
         {/* Expanded Chat List */}
         {isExpanded && (
           <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow-2xl border border-gray-200 dark:border-gray-700 w-80 mb-0">
@@ -97,7 +115,7 @@ const MessagesTab = () => {
                     <button
                       key={chat.id}
                       onClick={() => handleChatClick(chat.id)}
-                      className="w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition border-b border-gray-100 dark:border-gray-700 text-left"
+                      className="w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-all duration-150 border-b border-gray-100 dark:border-gray-700 text-left outline-none focus:outline-none active:scale-[0.98]"
                     >
                       <div className="flex items-center gap-3">
                         {/* Avatar - Left Side */}

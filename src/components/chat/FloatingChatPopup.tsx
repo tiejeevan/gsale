@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Box, IconButton, Typography, Avatar, Paper, Fade } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useUserContext } from '../../context/UserContext';
 import { useChatContext } from '../../context/ChatContext';
 import { useChat } from '../../hooks/useChat';
@@ -16,6 +17,7 @@ interface FloatingChatPopupProps {
 }
 
 const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingChatPopupProps) => {
+  const navigate = useNavigate();
   const { token, currentUser } = useUserContext();
   const { chats, messages: contextMessages, setMessages, addMessage, updateChatInList } = useChatContext();
   const { startDirectChat } = useChat();
@@ -142,12 +144,22 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Focus input on mount
+  // Focus input on mount and when messages change
   useEffect(() => {
-    if (!loading) {
-      inputRef.current?.focus();
-    }
-  }, [loading]);
+    inputRef.current?.focus();
+  }, [loading, messages.length]);
+
+  // Handle ESC key to close popup
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscKey);
+    return () => window.removeEventListener('keydown', handleEscKey);
+  }, [onClose]);
 
   const handleSend = async () => {
     if (!chatId || !token || !inputValue.trim() || sending) return;
@@ -227,8 +239,8 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
           position: 'fixed',
           bottom: 16,
           right: 16,
-          width: 380,
-          height: 500,
+          width: 320,
+          height: 450,
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 2,
@@ -240,38 +252,62 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
         {/* Header */}
         <Box
           sx={{
-            p: 2,
+            px: 2,
+            py: 1.5,
             bgcolor: 'primary.main',
             color: 'white',
             display: 'flex',
             alignItems: 'center',
-            gap: 2,
+            gap: 1,
           }}
         >
           <Avatar
-            src={avatarUrl || `https://ui-avatars.com/api/?name=${username}&size=40`}
+            onClick={() => navigate(`/profile/${userId}`)}
+            src={avatarUrl || `https://ui-avatars.com/api/?name=${username}&size=32`}
             alt={username}
-            sx={{ width: 40, height: 40 }}
+            sx={{ 
+              width: 32, 
+              height: 32,
+              cursor: 'pointer',
+              transition: 'opacity 0.2s',
+              '&:hover': {
+                opacity: 0.8,
+              },
+              '&:active': {
+                opacity: 0.6,
+              },
+            }}
           />
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {username}
-            </Typography>
-            <Typography variant="caption" sx={{ opacity: 0.9 }}>
-              Direct Message
-            </Typography>
-          </Box>
+          <Typography 
+            variant="subtitle2" 
+            onClick={() => navigate(`/profile/${userId}`)}
+            sx={{ 
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'opacity 0.2s',
+              '&:hover': {
+                opacity: 0.8,
+              },
+              '&:active': {
+                opacity: 0.6,
+              },
+            }}
+          >
+            {username}
+          </Typography>
+          <Box sx={{ flex: 1 }} />
           <IconButton
             onClick={onClose}
             size="small"
             sx={{
               color: 'white',
+              padding: 0.5,
               '&:hover': {
                 bgcolor: 'rgba(255, 255, 255, 0.1)',
               },
             }}
           >
-            <CloseIcon />
+            <CloseIcon fontSize="small" />
           </IconButton>
         </Box>
 
@@ -280,25 +316,56 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
           sx={{
             flex: 1,
             overflowY: 'auto',
-            p: 2,
+            p: 1.5,
             bgcolor: 'background.default',
             display: 'flex',
             flexDirection: 'column',
-            gap: 1.5,
+            gap: 1,
+            // Custom scrollbar
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(0,0,0,0.2)',
+              borderRadius: '3px',
+              '&:hover': {
+                background: 'rgba(0,0,0,0.3)',
+              },
+            },
           }}
         >
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-              <Typography variant="body2" color="text.secondary">
-                Loading messages...
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', gap: 1 }}>
+              <Box sx={{ 
+                width: 32, 
+                height: 32, 
+                border: '3px solid rgba(99, 102, 241, 0.2)',
+                borderTop: '3px solid rgb(99, 102, 241)',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                '@keyframes spin': {
+                  '0%': { transform: 'rotate(0deg)' },
+                  '100%': { transform: 'rotate(360deg)' },
+                },
+              }} />
+              <Typography variant="caption" color="text.secondary">
+                Loading...
               </Typography>
             </Box>
           ) : messages.length === 0 ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-              <Typography variant="body2" color="text.secondary" textAlign="center">
-                No messages yet.
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', gap: 1 }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" opacity="0.3">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ px: 2 }}>
+                No messages yet
                 <br />
-                Start the conversation!
+                <Typography variant="caption" color="text.secondary">
+                  Start the conversation!
+                </Typography>
               </Typography>
             </Box>
           ) : (
@@ -316,13 +383,19 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                     <Box
                       sx={{
                         maxWidth: '75%',
-                        px: 2,
-                        py: 1,
-                        borderRadius: 2,
+                        px: 1.5,
+                        py: 0.75,
+                        borderRadius: '16px',
                         bgcolor: isOwn ? 'primary.main' : 'grey.200',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
                         ...(isOwn
-                          ? { borderBottomRightRadius: 4 }
-                          : { borderBottomLeftRadius: 4 }),
+                          ? { borderBottomRightRadius: '4px' }
+                          : { borderBottomLeftRadius: '4px' }),
+                        animation: 'fadeIn 0.2s ease-in',
+                        '@keyframes fadeIn': {
+                          '0%': { opacity: 0, transform: 'translateY(4px)' },
+                          '100%': { opacity: 1, transform: 'translateY(0)' },
+                        },
                       }}
                     >
                       <Typography 
@@ -330,32 +403,34 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                         sx={{ 
                           wordBreak: 'break-word',
                           color: isOwn ? '#ffffff' : '#1a1a1a',
+                          fontSize: '0.875rem',
+                          lineHeight: 1.4,
                         }}
                       >
                         {message.content}
                       </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
                         <Typography
                           variant="caption"
                           sx={{
-                            opacity: 0.7,
-                            fontSize: '0.7rem',
+                            opacity: 0.6,
+                            fontSize: '0.65rem',
                             color: isOwn ? '#ffffff' : '#1a1a1a',
                           }}
                         >
                           {formatTime(message.created_at)}
                         </Typography>
                         {isOwn && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.25 }}>
                             {message.read_by && message.read_by.some(r => r.user_id !== currentUser?.id) ? (
                               // Double check for read
-                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                                 <path d="M2 8.5L5 11.5L9 7.5" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                 <path d="M6 8.5L9 11.5L13 7.5" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
                             ) : (
                               // Single check for sent
-                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                                 <path d="M3 8.5L6 11.5L13 4.5" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
                             )}
@@ -374,37 +449,57 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
         {/* Input */}
         <Box
           sx={{
-            p: 2,
+            p: 1.5,
             borderTop: 1,
             borderColor: 'divider',
             bgcolor: 'background.paper',
           }}
         >
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <input
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Box
+              component="input"
               ref={inputRef}
               type="text"
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e: any) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               disabled={loading || sending}
-              style={{
+              sx={{
                 flex: 1,
-                padding: '10px 14px',
-                border: '1px solid #e0e0e0',
-                borderRadius: '20px',
+                padding: '7px 12px',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: '16px',
                 outline: 'none',
-                fontSize: '14px',
+                fontSize: '0.8125rem',
                 fontFamily: 'inherit',
+                bgcolor: 'background.paper',
+                color: 'text.primary',
+                transition: 'all 0.2s',
+                '&::placeholder': {
+                  color: 'text.secondary',
+                  opacity: 0.5,
+                },
+                '&:focus': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'background.paper',
+                },
+                '&:disabled': {
+                  opacity: 0.5,
+                  cursor: 'not-allowed',
+                },
               }}
             />
             <IconButton
               onClick={handleSend}
               disabled={!inputValue.trim() || loading || sending}
+              size="small"
               sx={{
                 bgcolor: 'primary.main',
                 color: 'white',
+                width: 32,
+                height: 32,
                 '&:hover': {
                   bgcolor: 'primary.dark',
                 },
@@ -414,8 +509,8 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                 },
               }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </IconButton>
           </Box>
