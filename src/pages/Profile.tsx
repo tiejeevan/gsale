@@ -124,7 +124,8 @@ const Profile: React.FC = () => {
         if (isOwnProfile && currentUser) {
           setProfileUser(currentUser);
         } else if (userId) {
-          const user = await userService.getPublicProfile(parseInt(userId));
+          // Pass userId directly - backend handles both ID and username
+          const user = await userService.getPublicProfile(userId);
           setProfileUser(user);
         } else {
           setError("Profile not found");

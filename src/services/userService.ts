@@ -54,7 +54,7 @@ const handleResponse = async <T>(res: Response): Promise<T> => {
 
 export const userService = {
   // ---------------- PUBLIC PROFILE ----------------
-  getPublicProfile: async (userId: number): Promise<User> => {
+  getPublicProfile: async (userId: number | string): Promise<User> => {
     const res = await fetch(`${API_URL}/api/users/${userId}`);
     const data = await handleResponse<{ user: User }>(res);
     return data.user;
