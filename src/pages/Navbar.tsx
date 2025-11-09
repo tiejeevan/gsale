@@ -16,7 +16,6 @@ import {
 import {
   Menu as MenuIcon,
   Logout as LogoutIcon,
-  Explore as ExploreIcon,
 } from "@mui/icons-material";
 import NotificationsBell from "../components/NotificationsBell";
 import { useUserContext } from "../context/UserContext";
@@ -75,28 +74,14 @@ const Navbar: React.FC = () => {
             component={Link}
             to="/dashboard"
             sx={{
-              flexGrow: 0,
+              flexGrow: 1,
               textDecoration: 'none',
               color: 'inherit',
               fontWeight: 'bold',
-              mr: 4,
             }}
           >
             GSALE
           </Typography>
-
-          {/* Discover - Always visible */}
-          <Button
-            component={Link}
-            to="/discover"
-            startIcon={<ExploreIcon />}
-            sx={{ mr: 2 }}
-          >
-            Discover
-          </Button>
-
-          {/* Spacer */}
-          <Box sx={{ flexGrow: 1 }} />
 
           {/* Desktop Navigation */}
           {!isMobile && user && (

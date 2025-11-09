@@ -458,7 +458,6 @@ const PostCard: React.FC<PostCardProps> = ({
             alignItems: 'center', 
             gap: 1,
             pt: 1,
-            borderTop: '1px solid rgba(148, 163, 184, 0.1)',
           }}
         >
           {/* Like Button */}

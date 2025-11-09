@@ -3,7 +3,6 @@ import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
 import PostDetail from "./pages/PostDetail";
 import { useUserContext } from "./context/UserContext";
@@ -47,14 +46,6 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/discover"
-            element={
-              <ProtectedRoute>
-                <Discover />
               </ProtectedRoute>
             }
           />
