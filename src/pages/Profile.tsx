@@ -906,7 +906,7 @@ const Profile: React.FC = () => {
           <BioField />
 
           {/* Tabs */}
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
               value={activeTab}
               onChange={(_, newValue) => setActiveTab(newValue)}
@@ -924,7 +924,7 @@ const Profile: React.FC = () => {
             </Tabs>
           </Box>
 
-          {/* Tab Content */}
+          {/* About Tab Content - Inside Paper */}
           {activeTab === 0 && (
             <Box>
               {/* Contact Info */}
@@ -1026,45 +1026,46 @@ const Profile: React.FC = () => {
               <AboutField />
             </Box>
           )}
-
-          {activeTab === 1 && (
-            <Box>
-              {postsLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress />
-                </Box>
-              ) : postsError ? (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {postsError}
-                </Alert>
-              ) : posts.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    No posts yet
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {isOwnProfile ? "Start sharing your thoughts!" : "This user hasn't posted anything yet."}
-                  </Typography>
-                </Box>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {posts.map((post) => (
-                    <PostCard
-                      key={post.id}
-                      post={post}
-                      token={token ?? ""}
-                      userId={currentUser?.id ?? 0}
-                      showUsername={false}
-                      r2PublicUrl={R2_PUBLIC_URL}
-                      currentUserId={currentUser?.id ?? 0}
-                      showEditDeleteOnHover={isOwnProfile}
-                    />
-                  ))}
-                </Box>
-              )}
-            </Box>
-          )}
         </Paper>
+
+        {/* Feed Tab Content - Outside Paper with normal styling */}
+        {activeTab === 1 && (
+          <Box sx={{ mt: 3 }}>
+            {postsLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : postsError ? (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {postsError}
+              </Alert>
+            ) : posts.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No posts yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {isOwnProfile ? "Start sharing your thoughts!" : "This user hasn't posted anything yet."}
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {posts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    token={token ?? ""}
+                    userId={currentUser?.id ?? 0}
+                    showUsername={false}
+                    r2PublicUrl={R2_PUBLIC_URL}
+                    currentUserId={currentUser?.id ?? 0}
+                    showEditDeleteOnHover={isOwnProfile}
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
       </Container>
 
       {/* Modals */}
