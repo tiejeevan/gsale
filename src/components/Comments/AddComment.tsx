@@ -57,8 +57,8 @@ const AddComment: React.FC<AddCommentProps> = ({
       // Call original callback to update UI
       onCommentAdded(data);
 
-      // Emit to Socket.IO server for real-time update
-      socket.emit(`post_${postId}:comment:new`, data);
+      // Note: Backend already emits socket event to all clients in the room
+      // No need to emit from client side
 
       setContent("");
       setIsFocused(false);

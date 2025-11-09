@@ -199,15 +199,15 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     }
 
     // Navigate based on notification type
-    if (toastNotification.type === 'comment' || toastNotification.type === 'like' || toastNotification.type === 'mention') {
-      const postId = toastNotification.payload?.postId;
-      const commentId = toastNotification.payload?.commentId;
+    if (toastNotification.type === 'comment' || toastNotification.type === 'like' || toastNotification.type === 'mention' || toastNotification.type === 'comment_like') {
+      const postId = toastNotification.payload?.postId || toastNotification.payload?.post_id;
+      const commentId = toastNotification.payload?.commentId || toastNotification.payload?.comment_id;
       if (postId) {
-        // Pass state to show comments immediately for comment/mention notifications
+        // Pass state to show comments immediately for comment/mention/comment_like notifications
         navigate(`/post/${postId}`, { 
           state: { 
             fromNotification: true,
-            showComments: toastNotification.type === 'comment' || toastNotification.type === 'mention',
+            showComments: toastNotification.type === 'comment' || toastNotification.type === 'mention' || toastNotification.type === 'comment_like',
             highlightCommentId: commentId // Pass the comment ID to highlight
           } 
         });
@@ -224,6 +224,9 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         return `${notif.actor_name} commented on your post${commentText}`;
       case "like":
         return `${notif.actor_name} liked your post`;
+      case "comment_like":
+        const commentLikeText = notif.payload?.text ? `: "${notif.payload.text}"` : "";
+        return `${notif.actor_name} liked your comment${commentLikeText}`;
       case "follow":
         return `${notif.actor_name} started following you`;
       case "mention":

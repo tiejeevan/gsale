@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Card,
@@ -17,6 +17,7 @@ import {
 import { Edit, Delete, PushPin, PushPinOutlined, FavoriteBorder, Favorite, ChatBubbleOutline, Share } from "@mui/icons-material";
 import { addLike, removeLike } from "../services/likeService";
 import CommentsSection, { type Comment } from "./Comments/CommentsSection";
+import { socket, joinPostRoom } from "../socket";
 
 interface Attachment {
   id: number;
@@ -82,9 +83,66 @@ const PostCard: React.FC<PostCardProps> = ({
   const [showComments, setShowComments] = useState(showCommentsInitially);
   const [liked, setLiked] = useState(post.liked_by_user || false);
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
+  const [commentCount, setCommentCount] = useState(post.comments?.length || 0);
   const [isLiking, setIsLiking] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Socket.IO: Listen for real-time like updates
+  useEffect(() => {
+    const postRoom = `post_${post.id}`;
+    const likeEvent = `post_${post.id}:like:new`;
+
+    // Join the room for this post
+    const joinRoom = () => {
+      if (socket.connected) {
+        socket.emit("join", postRoom);
+        console.log(`🔌 PostCard joined room: ${postRoom}`);
+      }
+    };
+
+    // Connect and join room
+    if (!socket.connected) {
+      socket.connect();
+      socket.once("connect", joinRoom);
+    } else {
+      joinRoom();
+    }
+
+    // Handler for new like/unlike events
+    const handleNewLike = (data: any) => {
+      console.log(`📡 Received like event for post ${post.id}:`, data);
+      
+      if (data.user_id === currentUserId) {
+        // This is our own like, already handled optimistically
+        return;
+      }
+
+      // Update like count based on reaction type
+      if (data.reaction_type === 'like') {
+        setLikeCount(prev => prev + 1);
+      } else if (data.reaction_type === 'unlike') {
+        setLikeCount(prev => Math.max(0, prev - 1));
+      }
+    };
+
+    // Handler for new comment events
+    const handleNewComment = (data: any) => {
+      console.log(`📡 Received comment event for post ${post.id}:`, data);
+      // Increment comment count for all users (including sender)
+      setCommentCount(prev => prev + 1);
+    };
+
+    // Listen for socket events
+    socket.on(likeEvent, handleNewLike);
+    socket.on(`post_${post.id}:comment:new`, handleNewComment);
+
+    // Cleanup on unmount
+    return () => {
+      socket.off(likeEvent, handleNewLike);
+      socket.off(`post_${post.id}:comment:new`, handleNewComment);
+    };
+  }, [post.id, currentUserId]);
 
   // Parse content and make mentions clickable
   const renderContentWithMentions = (content: string) => {
@@ -522,7 +580,7 @@ const PostCard: React.FC<PostCardProps> = ({
                 },
               }}
             >
-              {post.comments && post.comments.length > 0 ? post.comments.length : 'Comment'}
+              {commentCount > 0 ? commentCount : 'Comment'}
             </Button>
           )}
 
@@ -551,9 +609,9 @@ const PostCard: React.FC<PostCardProps> = ({
       {post.comments_enabled !== false && showComments && (
         <Box sx={{ borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
           <CommentsSection
+            key={`comments-${post.id}`}
             postId={post.id}
             currentUserId={currentUserId}
-            initialComments={post.comments}
             collapseTopLevel={collapseComments}
             initialVisibleCount={2}
             highlightCommentId={highlightCommentId}

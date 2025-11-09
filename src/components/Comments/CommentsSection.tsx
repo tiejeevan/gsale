@@ -105,42 +105,85 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   }, [initialComments, highlightCommentId]);
 
   const [comments, setComments] = useState<Comment[]>(sortedInitialComments);
-  const [loading, setLoading] = useState(!initialComments);
+  const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState<number>(initialVisibleCount);
 
-  // Update comments when sortedInitialComments changes
-  useEffect(() => {
-    if (sortedInitialComments) {
-      setComments(sortedInitialComments);
-    }
-  }, [sortedInitialComments]);
-
   const fetchComments = async () => {
-    if (initialComments) return;
     setLoading(true);
     try {
-      // Replace with real API call to fetch initial comments
-      setComments([]); 
+      const token = localStorage.getItem("token");
+      const API_URL = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${API_URL}/api/comments/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch comments");
+      const data = await res.json();
+      setComments(data);
     } catch (err) {
       console.error("Failed to fetch comments:", err);
+      setComments([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch comments once on mount
   useEffect(() => {
     fetchComments();
+  }, [postId]);
 
+  // Setup socket listeners separately
+  useEffect(() => {
     // --- SOCKET.IO LISTENER ---
-    socket.connect(); // ensure socket is connected
-    // Join this post room to receive post-scoped events (comments, likes, etc.)
-    socket.emit('join', `post_${postId}`);
+    const joinRoom = () => {
+      if (socket.connected) {
+        console.log(`🔌 CommentsSection joining room: post_${postId}`);
+        socket.emit('join', `post_${postId}`);
+      } else {
+        console.warn(`⚠️ Socket not connected, cannot join room post_${postId}`);
+      }
+    };
 
-    socket.on(`post_${postId}:comment:new`, (newComment: Comment) => {
-      // Avoid adding duplicates if we just created the comment ourselves
+    // Connect socket if not connected
+    if (!socket.connected) {
+      console.log(`🔄 Socket not connected, connecting...`);
+      socket.connect();
+      socket.once('connect', () => {
+        console.log(`✅ Socket connected! Socket ID: ${socket.id}`);
+        joinRoom();
+      });
+    } else {
+      console.log(`✅ Socket already connected! Socket ID: ${socket.id}`);
+      joinRoom();
+    }
+
+    // Listen for room join confirmation
+    socket.once('joined', (room) => {
+      console.log(`✅ Confirmed joined room: ${room}`);
+    });
+
+    const handleNewComment = (newComment: Comment) => {
+      console.log(`📡 Received new comment for post ${postId}:`, newComment);
+      console.log(`👤 Current user ID: ${currentUserId}, Comment user ID: ${newComment.user_id}`);
+      
+      // Skip if this is our own comment (already added via onCommentAdded)
+      if (currentUserId && newComment.user_id === currentUserId) {
+        console.log(`⏭️ Skipping own comment ${newComment.id} (already added locally)`);
+        return;
+      }
+      
+      console.log(`🔄 Processing comment from another user...`);
+      
+      // Avoid adding duplicates
       setComments(prev => {
+        console.log(`📊 Current comments count: ${prev.length}`);
         const exists = prev.some(c => c.id === newComment.id) || prev.some(c => c.children?.some(child => child.id === newComment.id));
-        if (exists) return prev;
+        if (exists) {
+          console.log(`⏭️ Comment ${newComment.id} already exists, skipping`);
+          return prev;
+        }
+        
+        console.log(`✅ Adding new comment ${newComment.id} to state`);
         
         if (newComment.parent_comment_id) {
           const addToParent = (nodes: Comment[]): Comment[] => 
@@ -154,10 +197,14 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
             });
           return addToParent(prev);
         } else {
-          return [...prev, newComment];
+          const updated = [...prev, newComment];
+          console.log(`📊 New comments count: ${updated.length}`);
+          return updated;
         }
       });
-    });
+    };
+
+    socket.on(`post_${postId}:comment:new`, handleNewComment);
 
     // Listen for like/unlike events to update comment like counts in real time
     const handleCommentLikeEvent = (likeData: {
@@ -187,11 +234,13 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     socket.on(`post_${postId}:comment:like:new`, handleCommentLikeEvent);
 
     return () => {
-      socket.off(`post_${postId}:comment:new`);
+      console.log(`🧹 Cleaning up socket listeners for post ${postId}`);
+      socket.off(`post_${postId}:comment:new`, handleNewComment);
       socket.off(`post_${postId}:comment:like:new`, handleCommentLikeEvent);
+      socket.off('joined');
       // socket.disconnect();
     };
-  }, [postId]);
+  }, [postId, currentUserId]);
 
   const addNewComment = (comment: Comment) => {
     if (comment.parent_comment_id) {

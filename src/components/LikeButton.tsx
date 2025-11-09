@@ -39,9 +39,20 @@ const LikeButton: React.FC<LikeButtonProps> = ({
     const likeEvent = `${postRoom}:like:new`;
 
     // Join the room for this post
-    if (socket.connected) {
-      socket.emit("join", postRoom);
-    }
+    const joinRoom = () => {
+      if (socket.connected) {
+        console.log(`🔌 Joining room: ${postRoom}`);
+        socket.emit("join", postRoom);
+      } else {
+        console.log(`⚠️ Socket not connected, cannot join room: ${postRoom}`);
+      }
+    };
+
+    // Join immediately if connected
+    joinRoom();
+
+    // Also join when socket connects
+    socket.on("connect", joinRoom);
 
     // Handler for new like/unlike events
     const handleNewLike = (likeData: {
@@ -50,12 +61,16 @@ const LikeButton: React.FC<LikeButtonProps> = ({
       user_id: number;
       reaction_type: string; // 'like' or 'unlike'
     }) => {
+      console.log(`📥 Received like event for post ${targetId}:`, likeData);
       if (likeData.target_id === targetId) {
-        if (likeData.user_id === user?.id) return;
+        if (likeData.user_id === user?.id) {
+          console.log(`⏭️ Skipping own like event`);
+          return;
+        }
         setLikesCount((prev) => {
-          if (likeData.reaction_type === "like") return prev + 1;
-          if (likeData.reaction_type === "unlike") return prev - 1;
-          return prev;
+          const newCount = likeData.reaction_type === "like" ? prev + 1 : prev - 1;
+          console.log(`✅ Updating like count from ${prev} to ${newCount}`);
+          return newCount;
         });
       }
     };
@@ -66,6 +81,7 @@ const LikeButton: React.FC<LikeButtonProps> = ({
     // Cleanup on unmount
     return () => {
       socket.off(likeEvent, handleNewLike);
+      socket.off("connect", joinRoom);
     };
   }, [targetId]);
 
