@@ -8,7 +8,6 @@ import {
 } from "@mui/material";
 import { Send } from "@mui/icons-material";
 import { type Comment } from "./CommentsSection";
-import { socket } from "../../socket";
 import MentionInput from "./MentionInput";
 
 interface AddCommentProps {

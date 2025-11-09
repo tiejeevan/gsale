@@ -17,7 +17,7 @@ import {
 import { Edit, Delete, PushPin, PushPinOutlined, FavoriteBorder, Favorite, ChatBubbleOutline, Share } from "@mui/icons-material";
 import { addLike, removeLike } from "../services/likeService";
 import CommentsSection, { type Comment } from "./Comments/CommentsSection";
-import { socket, joinPostRoom } from "../socket";
+import { socket } from "../socket";
 
 interface Attachment {
   id: number;
