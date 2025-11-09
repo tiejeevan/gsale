@@ -86,6 +86,38 @@ const PostCard: React.FC<PostCardProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  // Parse content and make mentions clickable
+  const renderContentWithMentions = (content: string) => {
+    const parts = content.split(/(@\w+)/g);
+    
+    return parts.map((part, index) => {
+      if (part.match(/^@\w+$/)) {
+        const username = part.substring(1);
+        return (
+          <Link
+            key={index}
+            to={`/profile/${username}`}
+            style={{
+              color: '#667eea',
+              textDecoration: 'none',
+              fontWeight: 600,
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.textDecoration = 'underline';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.textDecoration = 'none';
+            }}
+          >
+            {part}
+          </Link>
+        );
+      }
+      return part;
+    });
+  };
+
   const getPublicUrl = (file_url: string) => {
     const filename = file_url.split("/").pop();
     return `${R2_PUBLIC_URL}/${filename}`;
@@ -349,22 +381,17 @@ const PostCard: React.FC<PostCardProps> = ({
         )}
 
         {/* Post Content */}
-        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <Typography
-            variant="body1"
-            sx={{
-              mb: 1.5,
-              lineHeight: 1.5,
-              whiteSpace: 'pre-line',
-              cursor: 'pointer',
-              '&:hover': { color: 'text.secondary' },
-              transition: 'color 0.2s',
-              fontSize: '0.95rem',
-            }}
-          >
-            {post.content}
-          </Typography>
-        </Link>
+        <Typography
+          variant="body1"
+          sx={{
+            mb: 1.5,
+            lineHeight: 1.5,
+            whiteSpace: 'pre-line',
+            fontSize: '0.95rem',
+          }}
+        >
+          {renderContentWithMentions(post.content)}
+        </Typography>
 
         {/* Post Image */}
         {post.image_url && (

@@ -50,6 +50,19 @@ const CreatePost: React.FC = () => {
     setFiles(Array.from(e.target.files));
   };
 
+  // Extract mentions from content
+  const extractMentions = (text: string): string[] => {
+    const mentionRegex = /@(\w+)/g;
+    const mentions: string[] = [];
+    let match;
+    
+    while ((match = mentionRegex.exec(text)) !== null) {
+      mentions.push(match[1]);
+    }
+    
+    return [...new Set(mentions)]; // Remove duplicates
+  };
+
   const createPost = async () => {
     if (!content.trim() && files.length === 0) {
       setMessage("Write something or attach files to post.");
@@ -60,13 +73,22 @@ const CreatePost: React.FC = () => {
     setMessage("");
 
     try {
-      await createPostService(token!, {
+      // Extract mentions from content
+      const mentions = extractMentions(content);
+      console.log('📝 Extracted mentions:', mentions);
+      
+      const postData = {
         content,
         title: title || undefined,
         visibility,
         files,
         comments_enabled: commentsEnabled,
-      });
+        mentions: mentions.length > 0 ? mentions : undefined,
+      };
+      
+      console.log('📤 Sending post data:', postData);
+      
+      await createPostService(token!, postData);
 
       setMessage("✅ Post created successfully!");
       setContent("");
@@ -75,6 +97,11 @@ const CreatePost: React.FC = () => {
       setShowAdvanced(false);
       setCommentsEnabled(true);
       triggerPostCreated(); // ✅ Notify UserPosts to refresh
+      
+      // Clear success message after 6 seconds
+      setTimeout(() => {
+        setMessage("");
+      }, 6000);
     } catch (err: any) {
       console.error(err);
       setMessage(err.message || "⚠️ Something went wrong. Try again.");

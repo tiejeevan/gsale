@@ -303,11 +303,12 @@ const PostDetail: React.FC = () => {
       {/* Header Card */}
       <Card
         sx={{
-          mb: 3,
+          mb: 0,
           background: 'rgba(30, 41, 59, 0.7)',
           backdropFilter: 'blur(10px)',
           border: '1px solid rgba(148, 163, 184, 0.1)',
-          borderRadius: 2,
+          borderRadius: '16px 16px 0 0',
+          borderBottom: 'none',
         }}
       >
         <CardContent sx={{ p: 3 }}>
@@ -525,23 +526,33 @@ const PostDetail: React.FC = () => {
 
       {/* Post Content Card */}
       <Box sx={{ mb: 3 }}>
-        <PostCard
-          post={{
-            ...post,
-            like_count: post.like_count || 0,
-            liked_by_user: post.liked_by_user || false,
-            comments_enabled: post.comments_enabled,
-          } as any}
-          currentUserId={user?.id}
-          token={token || ""}
-          showUsername={false} // We show it in the header card
-          showEditDeleteOnHover={false} // We have dedicated buttons in header
-          onEdit={undefined} // Disable PostCard edit button
-          onDelete={undefined} // Disable PostCard delete button
-          collapseComments={false}
-          showCommentsInitially={showCommentsInitially}
-          highlightCommentId={highlightCommentId}
-        />
+        <Box
+          sx={{
+            '& > div': {
+              borderRadius: '0 0 16px 16px !important',
+              borderTop: 'none !important',
+              mt: 0,
+            }
+          }}
+        >
+          <PostCard
+            post={{
+              ...post,
+              like_count: post.like_count || 0,
+              liked_by_user: post.liked_by_user || false,
+              comments_enabled: post.comments_enabled,
+            } as any}
+            currentUserId={user?.id}
+            token={token || ""}
+            showUsername={false} // We show it in the header card
+            showEditDeleteOnHover={false} // We have dedicated buttons in header
+            onEdit={undefined} // Disable PostCard edit button
+            onDelete={undefined} // Disable PostCard delete button
+            collapseComments={false}
+            showCommentsInitially={showCommentsInitially}
+            highlightCommentId={highlightCommentId}
+          />
+        </Box>
       </Box>
 
       {/* Post Details Card */}
