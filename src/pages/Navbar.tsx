@@ -154,6 +154,11 @@ const Navbar: React.FC = () => {
         }}
       >
         <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
+        {user?.role === 'admin' && (
+          <MenuItem onClick={() => { navigate('/admin'); handleProfileMenuClose(); }}>
+            Admin Dashboard
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Mobile Menu */}
@@ -189,6 +194,14 @@ const Navbar: React.FC = () => {
               </Typography>
             </Box>
           </MenuItem>,
+          
+          user.role === 'admin' && (
+            <MenuItem key="admin" onClick={() => { navigate('/admin'); handleMobileMenuClose(); }}>
+              <Typography variant="body2">
+                Admin Dashboard
+              </Typography>
+            </MenuItem>
+          ),
           
           <MenuItem key="logout" onClick={handleMobileLogout}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>

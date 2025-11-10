@@ -27,7 +27,8 @@ export interface User {
   preferences?: Record<string, any>;
   social_links?: SocialLinks;
   phone?: string;
-  role?: string;
+  role?: 'user' | 'admin';
+  status?: 'active' | 'muted' | 'deactivated' | 'suspended';
   is_verified?: boolean;
   created_at?: string;
   updated_at?: string;
