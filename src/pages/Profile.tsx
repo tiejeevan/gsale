@@ -73,9 +73,6 @@ const Profile: React.FC = () => {
   const isOwnProfile = !userId || (!!currentUser && (userId === currentUser.id.toString() || userId === currentUser.username));
   
   const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
-  
-  // Add debugging
-  console.log('Profile render:', { userId, currentUser: !!currentUser, isOwnProfile, loading, error });
 
   // Fetch posts function
   const fetchPosts = async (targetUserId: number) => {
@@ -356,270 +353,6 @@ const Profile: React.FC = () => {
     );
   };
 
-  // Dedicated Bio/About components
-  const BioField: React.FC = () => {
-    const isEditing = editingFields['bio'];
-    const isSaving = savingFields['bio'];
-    const isEmpty = isFieldEmpty(profileUser?.bio);
-
-    if (isEditing) {
-      return (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-            Bio
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <TextField
-              value={editValues['bio'] || ''}
-              onChange={(e) => setEditValues(prev => ({ ...prev, bio: e.target.value }))}
-              placeholder="Tell people about yourself..."
-              fullWidth
-              multiline
-              rows={3}
-              autoFocus
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'background.default',
-                  '& fieldset': {
-                    borderColor: 'divider',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-            <Stack spacing={0.5}>
-              <IconButton
-                onClick={() => saveField('bio')}
-                disabled={isSaving || !editValues['bio']?.trim()}
-                sx={{ color: 'success.main' }}
-              >
-                <Save />
-              </IconButton>
-              <IconButton
-                onClick={() => cancelEditing('bio')}
-                disabled={isSaving}
-                sx={{ color: 'text.secondary' }}
-              >
-                <Close />
-              </IconButton>
-            </Stack>
-          </Box>
-        </Box>
-      );
-    }
-
-    if (isEmpty && isOwnProfile) {
-      return (
-        <Box sx={{ mb: 4 }}>
-          <Button
-            onClick={() => startEditing('bio')}
-            fullWidth
-            variant="outlined"
-            startIcon={<Add />}
-            sx={{
-              py: 2,
-              borderStyle: 'dashed',
-              textTransform: 'none',
-              color: 'text.secondary',
-              borderColor: 'divider',
-              '&:hover': {
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                borderStyle: 'dashed',
-                bgcolor: 'rgba(102, 126, 234, 0.08)',
-              },
-            }}
-          >
-            Add a bio
-          </Button>
-        </Box>
-      );
-    }
-
-    if (!isEmpty) {
-      return (
-        <Box
-          sx={{
-            mb: 4,
-            '&:hover .edit-button': {
-              opacity: 1,
-            },
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Bio
-            </Typography>
-            {isOwnProfile && (
-              <IconButton
-                onClick={() => startEditing('bio', profileUser?.bio || '')}
-                size="small"
-                className="edit-button"
-                sx={{
-                  opacity: 0,
-                  transition: 'opacity 0.2s',
-                  color: 'text.secondary',
-                  '&:hover': {
-                    color: 'primary.main',
-                  },
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            )}
-          </Box>
-          <Typography variant="body1" sx={{ lineHeight: 1.8, color: 'text.secondary' }}>
-            {profileUser?.bio}
-          </Typography>
-        </Box>
-      );
-    }
-
-    return null;
-  };
-
-  const AboutField: React.FC = () => {
-    const isEditing = editingFields['about'];
-    const isSaving = savingFields['about'];
-    const isEmpty = isFieldEmpty(profileUser?.about);
-
-    if (isEditing) {
-      return (
-        <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 4 }}>
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-            About
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <TextField
-              value={editValues['about'] || ''}
-              onChange={(e) => setEditValues(prev => ({ ...prev, about: e.target.value }))}
-              placeholder="Write a longer description about yourself, your interests, experience, etc..."
-              fullWidth
-              multiline
-              rows={5}
-              autoFocus
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'background.default',
-                  '& fieldset': {
-                    borderColor: 'divider',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-            <Stack spacing={0.5}>
-              <IconButton
-                onClick={() => saveField('about')}
-                disabled={isSaving || !editValues['about']?.trim()}
-                sx={{ color: 'success.main' }}
-              >
-                <Save />
-              </IconButton>
-              <IconButton
-                onClick={() => cancelEditing('about')}
-                disabled={isSaving}
-                sx={{ color: 'text.secondary' }}
-              >
-                <Close />
-              </IconButton>
-            </Stack>
-          </Box>
-        </Box>
-      );
-    }
-
-    if (isEmpty && isOwnProfile) {
-      return (
-        <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 4 }}>
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-            About
-          </Typography>
-          <Button
-            onClick={() => startEditing('about')}
-            fullWidth
-            variant="outlined"
-            startIcon={<Add />}
-            sx={{
-              py: 3,
-              borderStyle: 'dashed',
-              textTransform: 'none',
-              color: 'text.secondary',
-              borderColor: 'divider',
-              '&:hover': {
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                borderStyle: 'dashed',
-                bgcolor: 'rgba(102, 126, 234, 0.08)',
-              },
-            }}
-          >
-            Add about section
-          </Button>
-        </Box>
-      );
-    }
-
-    if (!isEmpty) {
-      return (
-        <Box
-          sx={{
-            borderTop: 1,
-            borderColor: 'divider',
-            pt: 4,
-            '&:hover .edit-button': {
-              opacity: 1,
-            },
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              About
-            </Typography>
-            {isOwnProfile && (
-              <IconButton
-                onClick={() => startEditing('about', profileUser?.about || '')}
-                size="small"
-                className="edit-button"
-                sx={{
-                  opacity: 0,
-                  transition: 'opacity 0.2s',
-                  color: 'text.secondary',
-                  '&:hover': {
-                    color: 'primary.main',
-                  },
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            )}
-          </Box>
-          <Typography
-            variant="body1"
-            sx={{
-              lineHeight: 1.8,
-              color: 'text.secondary',
-              whiteSpace: 'pre-line',
-            }}
-          >
-            {profileUser?.about}
-          </Typography>
-        </Box>
-      );
-    }
-
-    return null;
-  };
 
   if (loading || userLoading) {
     return (
@@ -900,8 +633,7 @@ const Profile: React.FC = () => {
             </Box>
           </Box>
 
-          {/* Bio Section */}
-          <BioField />
+
 
           {/* Tabs */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -925,6 +657,226 @@ const Profile: React.FC = () => {
           {/* About Tab Content - Inside Paper */}
           {activeTab === 0 && (
             <Box>
+              {/* Bio Section */}
+              {editingFields['bio'] ? (
+                <Box sx={{ mb: 4, pb: 4, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    Bio
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      value={editValues['bio'] || ''}
+                      onChange={(e) => setEditValues(prev => ({ ...prev, bio: e.target.value }))}
+                      placeholder="Tell people about yourself..."
+                      fullWidth
+                      multiline
+                      rows={3}
+                      autoFocus
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          bgcolor: 'background.default',
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                        },
+                      }}
+                    />
+                    <Stack spacing={0.5}>
+                      <IconButton
+                        onClick={() => saveField('bio')}
+                        disabled={savingFields['bio'] || !editValues['bio']?.trim()}
+                        sx={{ color: 'success.main' }}
+                      >
+                        <Save />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => cancelEditing('bio')}
+                        disabled={savingFields['bio']}
+                        sx={{ color: 'text.secondary' }}
+                      >
+                        <Close />
+                      </IconButton>
+                    </Stack>
+                  </Box>
+                </Box>
+              ) : (profileUser.bio || isOwnProfile) && (
+                <Box sx={{ mb: 4, pb: 4, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    Bio
+                  </Typography>
+                  {profileUser.bio ? (
+                    <Box
+                      sx={{
+                        '&:hover .edit-button': {
+                          opacity: 1,
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                        <Typography variant="body1" sx={{ lineHeight: 1.8, color: 'text.secondary', flex: 1 }}>
+                          {profileUser.bio}
+                        </Typography>
+                        {isOwnProfile && (
+                          <IconButton
+                            onClick={() => startEditing('bio', profileUser?.bio || '')}
+                            size="small"
+                            className="edit-button"
+                            sx={{
+                              opacity: 0,
+                              transition: 'opacity 0.2s',
+                              color: 'text.secondary',
+                              '&:hover': {
+                                color: 'primary.main',
+                              },
+                            }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Button
+                      onClick={() => startEditing('bio')}
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<Add />}
+                      sx={{
+                        py: 2,
+                        borderStyle: 'dashed',
+                        textTransform: 'none',
+                        color: 'text.secondary',
+                        borderColor: 'divider',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          color: 'primary.main',
+                          borderStyle: 'dashed',
+                          bgcolor: 'rgba(102, 126, 234, 0.08)',
+                        },
+                      }}
+                    >
+                      Add a bio
+                    </Button>
+                  )}
+                </Box>
+              )}
+
+              {/* About Section */}
+              {editingFields['about'] ? (
+                <Box sx={{ mb: 4, pb: 4, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    About
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      value={editValues['about'] || ''}
+                      onChange={(e) => setEditValues(prev => ({ ...prev, about: e.target.value }))}
+                      placeholder="Write a longer description about yourself, your interests, experience, etc..."
+                      fullWidth
+                      multiline
+                      rows={5}
+                      autoFocus
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          bgcolor: 'background.default',
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                        },
+                      }}
+                    />
+                    <Stack spacing={0.5}>
+                      <IconButton
+                        onClick={() => saveField('about')}
+                        disabled={savingFields['about'] || !editValues['about']?.trim()}
+                        sx={{ color: 'success.main' }}
+                      >
+                        <Save />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => cancelEditing('about')}
+                        disabled={savingFields['about']}
+                        sx={{ color: 'text.secondary' }}
+                      >
+                        <Close />
+                      </IconButton>
+                    </Stack>
+                  </Box>
+                </Box>
+              ) : (profileUser.about || isOwnProfile) && (
+                <Box sx={{ mb: 4, pb: 4, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    About
+                  </Typography>
+                  {profileUser.about ? (
+                    <Box
+                      sx={{
+                        '&:hover .edit-button': {
+                          opacity: 1,
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                        <Typography variant="body1" sx={{ lineHeight: 1.8, color: 'text.secondary', flex: 1, whiteSpace: 'pre-line' }}>
+                          {profileUser.about}
+                        </Typography>
+                        {isOwnProfile && (
+                          <IconButton
+                            onClick={() => startEditing('about', profileUser?.about || '')}
+                            size="small"
+                            className="edit-button"
+                            sx={{
+                              opacity: 0,
+                              transition: 'opacity 0.2s',
+                              color: 'text.secondary',
+                              '&:hover': {
+                                color: 'primary.main',
+                              },
+                            }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Button
+                      onClick={() => startEditing('about')}
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<Add />}
+                      sx={{
+                        py: 2,
+                        borderStyle: 'dashed',
+                        textTransform: 'none',
+                        color: 'text.secondary',
+                        borderColor: 'divider',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          color: 'primary.main',
+                          borderStyle: 'dashed',
+                          bgcolor: 'rgba(102, 126, 234, 0.08)',
+                        },
+                      }}
+                    >
+                      Add about section
+                    </Button>
+                  )}
+                </Box>
+              )}
+
               {/* Contact Info */}
               <Box
                 sx={{
@@ -1020,8 +972,7 @@ const Profile: React.FC = () => {
                 </Box>
               </Box>
 
-              {/* About Section */}
-              <AboutField />
+
             </Box>
           )}
         </Paper>
