@@ -17,11 +17,13 @@ export const usePosts = (
     (async () => {
       setLoading(true);
       try {
-        const data =
-          type === "user" && userId
-            ? await getUserPosts(userId, token)
-            : await getAllPosts(token);
-        setPosts(data);
+        if (type === "user" && userId) {
+          const data = await getUserPosts(userId, token);
+          setPosts(data);
+        } else {
+          const data = await getAllPosts(token);
+          setPosts(data.posts);
+        }
       } catch (err: any) {
         setError(err.message);
       } finally {

@@ -77,12 +77,25 @@ export const getUserPosts = async (userId: number, token: string): Promise<Post[
   return res.json();
 };
 
-export const getAllPosts = async (token: string): Promise<Post[]> => {
-  const res = await fetch(`${API_URL}/api/posts`, {
+export interface PostsResponse {
+  posts: Post[];
+  total: number;
+  hasMore: boolean;
+}
+
+export const getAllPosts = async (
+  token: string,
+  limit: number = 20,
+  offset: number = 0
+): Promise<PostsResponse> => {
+  const res = await fetch(`${API_URL}/api/posts?limit=${limit}&offset=${offset}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  
   if (!res.ok) throw new Error("Failed to fetch all posts");
-  return res.json();
+  
+  const data = await res.json();
+  return data;
 };
 
 // Utility function to transform post data for PostCard compatibility

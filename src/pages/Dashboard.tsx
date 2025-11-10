@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useUserContext } from "../context/UserContext";
 import CreatePost from "./CreatePost";
 import PostCard from "../components/PostCard";
@@ -27,23 +27,61 @@ const Dashboard: React.FC = () => {
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
   const [sortMode, setSortMode] = useState<"latest" | "top" | "hot">("latest");
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
+  
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastPostRef = useCallback((node: HTMLDivElement | null) => {
+    if (loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadMorePosts();
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loadingMore, hasMore]);
 
   if (!user) return null;
 
-  // Fetch all posts
+  // Fetch initial posts
   const fetchPosts = async () => {
     setLoading(true);
     setError("");
+    setOffset(0);
     try {
-      const data = await getAllPosts(token!);
-      setPosts(data);
+      const data = await getAllPosts(token!, 20, 0);
+      setPosts(data.posts);
+      setHasMore(data.hasMore);
+      setOffset(20);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to fetch posts");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load more posts
+  const loadMorePosts = async () => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    try {
+      const data = await getAllPosts(token!, 20, offset);
+      setPosts(prev => [...prev, ...data.posts]);
+      setHasMore(data.hasMore);
+      setOffset(prev => prev + 20);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to load more posts");
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -211,16 +249,46 @@ const Dashboard: React.FC = () => {
             </Box>
           ) : (
             <div className="space-y-4">
-              {sortedPosts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post as any}
-                  token={token as string}
-                  currentUserId={user.id}
-                  showUsername={true}
-                  showEditDeleteOnHover={false}
-                />
-              ))}
+              {sortedPosts.map((post, index) => {
+                if (sortedPosts.length === index + 1) {
+                  return (
+                    <div ref={lastPostRef} key={post.id}>
+                      <PostCard
+                        post={post as any}
+                        token={token as string}
+                        currentUserId={user.id}
+                        showUsername={true}
+                        showEditDeleteOnHover={false}
+                      />
+                    </div>
+                  );
+                } else {
+                  return (
+                    <PostCard
+                      key={post.id}
+                      post={post as any}
+                      token={token as string}
+                      currentUserId={user.id}
+                      showUsername={true}
+                      showEditDeleteOnHover={false}
+                    />
+                  );
+                }
+              })}
+              
+              {loadingMore && (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                  <CircularProgress size={32} />
+                </Box>
+              )}
+              
+              {!hasMore && posts.length > 0 && (
+                <Box sx={{ textAlign: "center", py: 4 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    You've reached the end! 🎉
+                  </Typography>
+                </Box>
+              )}
             </div>
           )}
         </div>
