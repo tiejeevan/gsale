@@ -70,7 +70,7 @@ const Profile: React.FC = () => {
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
 
   // Check if viewing own profile
-  const isOwnProfile = !userId || (!!currentUser && userId === currentUser.id.toString());
+  const isOwnProfile = !userId || (!!currentUser && (userId === currentUser.id.toString() || userId === currentUser.username));
   
   const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
   
@@ -805,22 +805,20 @@ const Profile: React.FC = () => {
                 <Typography variant="h4" sx={{ fontWeight: 700 }}>
                   {profileUser.display_name || profileUser.username}
                 </Typography>
-                {!isOwnProfile && (
-                  <IconButton
-                    onClick={() => setShowChatPopup(true)}
-                    size="small"
-                    sx={{
-                      bgcolor: 'primary.main',
-                      color: 'white',
-                      '&:hover': {
-                        bgcolor: 'primary.dark',
-                      },
-                    }}
-                    title="Send message"
-                  >
-                    <ChatIcon fontSize="small" />
-                  </IconButton>
-                )}
+                <IconButton
+                  onClick={() => setShowChatPopup(true)}
+                  size="small"
+                  sx={{
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                    },
+                  }}
+                  title={isOwnProfile ? "Message yourself" : "Send message"}
+                >
+                  <ChatIcon fontSize="small" />
+                </IconButton>
               </Box>
               <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                 @{profileUser.username}
@@ -1084,7 +1082,7 @@ const Profile: React.FC = () => {
       )}
 
       {/* Floating Chat Popup */}
-      {showChatPopup && !isOwnProfile && profileUser && (
+      {showChatPopup && profileUser && (
         <FloatingChatPopup
           userId={typeof profileUser.id === 'string' ? parseInt(profileUser.id) : profileUser.id}
           username={profileUser.display_name || profileUser.username}

@@ -44,10 +44,20 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
       setLoading(true);
       try {
         // Find existing chat or create new one
-        const existingChat = chats.find(
-          chat => chat.type === 'direct' && 
-          chat.participants?.some(p => p.id === userId)
-        );
+        const isSelfChat = userId === currentUser?.id;
+        const existingChat = chats.find(chat => {
+          if (chat.type !== 'direct') return false;
+          
+          if (isSelfChat) {
+            // For self-chat, find chat where user is the only participant
+            return chat.participants?.length === 1 && chat.participants[0].id === userId;
+          } else {
+            // For regular chat, find chat with exactly these two users
+            return chat.participants?.length === 2 &&
+                   chat.participants.some(p => p.id === userId) &&
+                   chat.participants.some(p => p.id === currentUser?.id);
+          }
+        });
 
         let activeChatId: number;
         
@@ -308,7 +318,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
               },
             }}
           >
-            {username}
+            {userId === currentUser?.id ? 'You' : username}
           </Typography>
           <Box sx={{ flex: 1 }} />
           <IconButton
