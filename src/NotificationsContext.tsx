@@ -73,14 +73,19 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
     // Connect socket if not already connected
     if (!socket.connected) {
+      console.log(`🔄 NotificationsContext: Connecting socket for user ${user.id}`);
       socket.connect();
       socket.once("connect", () => {
+        console.log(`✅ NotificationsContext: Socket connected for user ${user.id}`);
         // Add a small delay to ensure backend is ready
         setTimeout(() => {
+          console.log(`🔌 NotificationsContext: Joining user room for user ${user.id}`);
           joinUserRoom(user.id);
         }, 100);
       });
     } else {
+      console.log(`✅ NotificationsContext: Socket already connected for user ${user.id}`);
+      console.log(`🔌 NotificationsContext: Joining user room for user ${user.id}`);
       joinUserRoom(user.id);
     }
 
@@ -104,6 +109,8 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
     // Listen for all new notifications
     const handleNewNotification = async (notif: any) => {
+      console.log(`🔔 NotificationsContext: Received notification for user ${user.id}:`, notif);
+      
       // Fetch actor name since backend doesn't include it
       let actorName = "Someone";
       const actorId = notif.actor || notif.actor_user_id;

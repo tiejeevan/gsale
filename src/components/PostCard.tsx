@@ -133,14 +133,23 @@ const PostCard: React.FC<PostCardProps> = ({
       setCommentCount(prev => prev + 1);
     };
 
+    // Handler for comment delete events
+    const handleCommentDelete = (data: { commentIds: number[]; deletedCount: number }) => {
+      console.log(`🗑️ Received comment delete event for post ${post.id}:`, data);
+      // Decrease comment count by the number of deleted comments (including replies)
+      setCommentCount(prev => Math.max(0, prev - data.deletedCount));
+    };
+
     // Listen for socket events
     socket.on(likeEvent, handleNewLike);
     socket.on(`post_${post.id}:comment:new`, handleNewComment);
+    socket.on(`post_${post.id}:comment:delete`, handleCommentDelete);
 
     // Cleanup on unmount
     return () => {
       socket.off(likeEvent, handleNewLike);
       socket.off(`post_${post.id}:comment:new`, handleNewComment);
+      socket.off(`post_${post.id}:comment:delete`, handleCommentDelete);
     };
   }, [post.id, currentUserId]);
 

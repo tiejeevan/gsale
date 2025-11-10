@@ -278,30 +278,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   <MentionText content={comment.content || ''} />
                 </Typography>
               </Box>
-
-              {/* Like Button on Right */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
-                <IconButton
-                  size="small"
-                  onClick={handleLike}
-                  sx={{
-                    color: comment.liked_by_user ? 'primary.main' : 'text.secondary',
-                    p: 0.5,
-                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-                  }}
-                >
-                  {comment.liked_by_user ? (
-                    <ThumbUp fontSize="small" />
-                  ) : (
-                    <ThumbUpOutlined fontSize="small" />
-                  )}
-                </IconButton>
-                {comment.like_count > 0 && (
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
-                    {comment.like_count}
-                  </Typography>
-                )}
-              </Box>
             </Box>
           </Box>
         ) : (
@@ -344,36 +320,66 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </Box>
         )}
 
-        {/* Actions - Reply button (only for top-level comments) */}
-        {!editing && canReply && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-            {/* Reply Button */}
-            <Button
-              size="small"
-              onClick={() => setShowReply(!showReply)}
-              sx={{
-                fontSize: '0.75rem',
-                textTransform: 'none',
-                color: showReply ? 'primary.main' : 'text.secondary',
-                fontWeight: showReply ? 600 : 500,
-                minWidth: 'auto',
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-                transition: 'all 0.2s ease',
-                backgroundColor: showReply ? 'rgba(103, 126, 234, 0.1)' : 'transparent',
-                '&:hover': {
-                  backgroundColor: showReply ? 'rgba(103, 126, 234, 0.15)' : 'rgba(103, 126, 234, 0.08)',
-                  color: 'primary.main',
-                  transform: 'translateY(-1px)',
-                },
-                '&:active': {
-                  transform: 'translateY(0)',
-                },
-              }}
-            >
-              {showReply ? 'Cancel Reply' : 'Reply'}
-            </Button>
+        {/* Actions - Like and Reply buttons */}
+        {!editing && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+            {/* Like Button */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <IconButton
+                size="small"
+                onClick={handleLike}
+                sx={{
+                  color: comment.liked_by_user ? 'primary.main' : 'text.secondary',
+                  p: 0.5,
+                  transition: 'all 0.2s ease',
+                  '&:hover': { 
+                    backgroundColor: 'rgba(103, 126, 234, 0.08)',
+                    transform: 'scale(1.1)',
+                  },
+                }}
+              >
+                {comment.liked_by_user ? (
+                  <ThumbUp fontSize="small" />
+                ) : (
+                  <ThumbUpOutlined fontSize="small" />
+                )}
+              </IconButton>
+              {comment.like_count > 0 && (
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem', fontWeight: 500 }}>
+                  {comment.like_count}
+                </Typography>
+              )}
+            </Box>
+
+            {/* Reply Button (only for top-level comments) */}
+            {canReply && (
+              <Button
+                size="small"
+                onClick={() => setShowReply(!showReply)}
+                sx={{
+                  fontSize: '0.75rem',
+                  textTransform: 'none',
+                  color: showReply ? 'primary.main' : 'text.secondary',
+                  fontWeight: showReply ? 600 : 500,
+                  minWidth: 'auto',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  transition: 'all 0.2s ease',
+                  backgroundColor: showReply ? 'rgba(103, 126, 234, 0.1)' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: showReply ? 'rgba(103, 126, 234, 0.15)' : 'rgba(103, 126, 234, 0.08)',
+                    color: 'primary.main',
+                    transform: 'translateY(-1px)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0)',
+                  },
+                }}
+              >
+                {showReply ? 'Cancel Reply' : 'Reply'}
+              </Button>
+            )}
           </Box>
         )}
         

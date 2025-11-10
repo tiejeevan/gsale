@@ -233,10 +233,63 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
     socket.on(`post_${postId}:comment:like:new`, handleCommentLikeEvent);
 
+    // Listen for comment delete events
+    const handleCommentDelete = (data: { commentIds: number[]; deletedCount: number }) => {
+      console.log(`🗑️ Received delete event for post ${postId}:`, data);
+      
+      // Remove deleted comments from state
+      setComments(prev => {
+        const removeNodes = (nodes: Comment[], idsToRemove: number[]): Comment[] => {
+          return nodes
+            .filter(node => !idsToRemove.includes(node.id))
+            .map(node => {
+              if (node.children && node.children.length > 0) {
+                return { ...node, children: removeNodes(node.children, idsToRemove) };
+              }
+              return node;
+            });
+        };
+        return removeNodes(prev, data.commentIds);
+      });
+    };
+
+    socket.on(`post_${postId}:comment:delete`, handleCommentDelete);
+
+    // Listen for comment edit events
+    const handleCommentEdit = (editedComment: Comment) => {
+      console.log(`✏️ Received edit event for post ${postId}:`, editedComment);
+      
+      // Skip if this is our own edit (already updated locally)
+      if (currentUserId && editedComment.user_id === currentUserId) {
+        console.log(`⏭️ Skipping own edit ${editedComment.id}`);
+        return;
+      }
+      
+      // Update the comment in state
+      setComments(prev => {
+        const updateNode = (nodes: Comment[]): Comment[] => {
+          return nodes.map(node => {
+            if (node.id === editedComment.id) {
+              return { ...node, ...editedComment };
+            }
+            if (node.children && node.children.length > 0) {
+              return { ...node, children: updateNode(node.children) };
+            }
+            return node;
+          });
+        };
+        return updateNode(prev);
+      });
+    };
+
+    socket.on(`post_${postId}:comment:edit`, handleCommentEdit);
+
     return () => {
       console.log(`🧹 Cleaning up socket listeners for post ${postId}`);
       socket.off(`post_${postId}:comment:new`, handleNewComment);
       socket.off(`post_${postId}:comment:like:new`, handleCommentLikeEvent);
+      socket.off(`post_${postId}:comment:delete`, handleCommentDelete);
+      socket.off(`post_${postId}:comment:edit`, handleCommentEdit);
       socket.off('joined');
       // socket.disconnect();
     };
