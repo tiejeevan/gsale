@@ -137,9 +137,12 @@ const NotificationsBell = () => {
         onClick={handleClick}
         color="inherit"
         aria-label="notifications"
+        sx={{
+          p: 0,
+        }}
       >
         <Badge badgeContent={unreadCount} color="error">
-          <NotificationsIcon />
+          <NotificationsIcon sx={{ fontSize: 32 }} />
         </Badge>
       </IconButton>
 

@@ -4,7 +4,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   IconButton,
   Avatar,
   Box,
@@ -15,6 +14,7 @@ import {
   Logout as LogoutIcon,
 } from "@mui/icons-material";
 import NotificationsBell from "../components/NotificationsBell";
+import UserSearch from "../components/UserSearch";
 import { useUserContext } from "../context/UserContext";
 
 const Navbar: React.FC = () => {
@@ -45,36 +45,51 @@ const Navbar: React.FC = () => {
   return (
     <>
       <AppBar position="sticky" color="default" elevation={1}>
-        <Toolbar>
+        <Toolbar 
+          sx={{ 
+            gap: { xs: 1, sm: 2 },
+            px: { xs: 1, sm: 2 },
+            minHeight: { xs: 56, sm: 64 },
+          }}
+        >
           {/* Logo */}
           <Typography
             variant="h6"
             component={Link}
             to="/dashboard"
             sx={{
-              flexGrow: 1,
               textDecoration: 'none',
               color: 'inherit',
               fontWeight: 'bold',
+              flexShrink: 0,
+              fontSize: { xs: '1.1rem', sm: '1.25rem' },
             }}
           >
             GSALE
           </Typography>
 
-          {/* Navigation - Always visible */}
+          {/* Navigation - Right side */}
           {user && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                gap: 1,
+                flexShrink: 0,
+                ml: 'auto',
+              }}
+            >
+              {/* Search Icon - Expands left */}
+              <UserSearch token={localStorage.getItem('token') || ''} />
+              
+              {/* Notification Bell */}
               <NotificationsBell />
               
-              {/* Profile Avatar & Name - Always visible */}
-              <Button
+              {/* Profile Avatar */}
+              <IconButton
                 onClick={handleProfileMenuOpen}
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  textTransform: 'none',
-                  color: 'inherit',
+                  paddingRight:0
                 }}
               >
                 <Avatar
@@ -82,24 +97,31 @@ const Navbar: React.FC = () => {
                   alt="User avatar"
                   sx={{ width: 32, height: 32 }}
                 />
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontWeight: 'medium',
-                  }}
-                >
-                  {user.first_name}
-                </Typography>
-              </Button>
+              </IconButton>
 
-              {/* Logout Icon */}
+              {/* User Name - Desktop only */}
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontWeight: 'medium',
+                  display: { xs: 'none', md: 'block' },
+                  ml: -0.5,
+                }}
+              >
+                {user.first_name}
+              </Typography>
+
+              {/* Logout Icon - Desktop only */}
               <IconButton
                 onClick={handleLogout}
                 color="error"
                 title="Logout"
-                sx={{ ml: 1 }}
+                sx={{ 
+                  display: { xs: 'none', sm: 'inline-flex' },
+                  p: 0,
+                }}
               >
-                <LogoutIcon />
+                <LogoutIcon sx={{ fontSize: 32 }} />
               </IconButton>
             </Box>
           )}
@@ -128,6 +150,17 @@ const Navbar: React.FC = () => {
             <Typography variant="body2">Admin Dashboard</Typography>
           </MenuItem>
         )}
+        <MenuItem 
+          onClick={handleLogout}
+          sx={{ 
+            display: { xs: 'flex', sm: 'none' },
+            color: 'error.main',
+            gap: 1,
+          }}
+        >
+          <Typography variant="body2">Logout</Typography>
+          <LogoutIcon fontSize="small" />
+        </MenuItem>
       </Menu>
     </>
   );

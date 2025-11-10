@@ -122,3 +122,15 @@ export const searchUsersForMentions = async (query: string, token: string): Prom
   const data = await handleResponse<{ users: User[] }>(res);
   return data.users;
 };
+
+// -------------------- 🟢 USER SEARCH --------------------
+
+export const searchActiveUsers = async (query: string, token: string): Promise<User[]> => {
+  if (!query.trim() || query.trim().length < 2) return [];
+  
+  const res = await fetch(`${API_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await handleResponse<{ users: User[] }>(res);
+  return data.users;
+};
