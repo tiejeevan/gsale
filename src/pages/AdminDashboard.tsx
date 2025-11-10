@@ -78,13 +78,23 @@ const AdminDashboard: React.FC = () => {
               Manage users and monitor platform activity
             </Typography>
           </Box>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/admin/tests')}
-            sx={{ height: 'fit-content' }}
-          >
-            🧪 Test Dashboard
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              onClick={() => navigate('/admin/database')}
+              sx={{ height: 'fit-content' }}
+              startIcon={<AdminIcon />}
+            >
+              Database GUI
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => navigate('/admin/tests')}
+              sx={{ height: 'fit-content' }}
+            >
+              🧪 Test Dashboard
+            </Button>
+          </Box>
         </Box>
 
         {error && (
@@ -96,7 +106,7 @@ const AdminDashboard: React.FC = () => {
         {/* Stats Cards */}
         {stats && (
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -114,7 +124,7 @@ const AdminDashboard: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -132,7 +142,7 @@ const AdminDashboard: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -150,7 +160,7 @@ const AdminDashboard: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

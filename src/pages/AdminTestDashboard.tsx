@@ -21,7 +21,6 @@ import {
   PlayArrow as PlayIcon,
   CheckCircle as CheckIcon,
   Error as ErrorIcon,
-  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 
 interface TestResult {
@@ -192,7 +191,7 @@ const AdminTestDashboard: React.FC = () => {
               Test Configuration
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <TextField
                   fullWidth
                   label="Test Username"
@@ -201,7 +200,7 @@ const AdminTestDashboard: React.FC = () => {
                   size="small"
                 />
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <TextField
                   fullWidth
                   label="Test Password"
@@ -218,7 +217,7 @@ const AdminTestDashboard: React.FC = () => {
         {/* Test Suites */}
         <Grid container spacing={3}>
           {testSuites.map((suite) => (
-            <Grid item xs={12} md={6} key={suite.id}>
+            <Grid size={{ xs: 12, md: 6 }} key={suite.id}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 1 }}>

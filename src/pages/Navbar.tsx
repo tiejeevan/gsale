@@ -10,11 +10,8 @@ import {
   Box,
   Menu,
   MenuItem,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import {
-  Menu as MenuIcon,
   Logout as LogoutIcon,
 } from "@mui/icons-material";
 import NotificationsBell from "../components/NotificationsBell";
@@ -23,10 +20,7 @@ import { useUserContext } from "../context/UserContext";
 const Navbar: React.FC = () => {
   const { currentUser: user, logout } = useUserContext();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [mobileMenuAnchorEl, setMobileMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -46,23 +40,7 @@ const Navbar: React.FC = () => {
     handleProfileMenuClose();
   };
 
-  const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setMobileMenuAnchorEl(event.currentTarget);
-  };
 
-  const handleMobileMenuClose = () => {
-    setMobileMenuAnchorEl(null);
-  };
-
-  const handleMobileProfileClick = () => {
-    navigate('/profile');
-    handleMobileMenuClose();
-  };
-
-  const handleMobileLogout = () => {
-    logout();
-    handleMobileMenuClose();
-  };
 
   return (
     <>
@@ -83,12 +61,12 @@ const Navbar: React.FC = () => {
             GSALE
           </Typography>
 
-          {/* Desktop Navigation */}
-          {!isMobile && user && (
+          {/* Navigation - Always visible */}
+          {user && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <NotificationsBell />
               
-              {/* Profile Avatar & Name - Clickable */}
+              {/* Profile Avatar & Name - Always visible */}
               <Button
                 onClick={handleProfileMenuOpen}
                 sx={{
@@ -100,11 +78,16 @@ const Navbar: React.FC = () => {
                 }}
               >
                 <Avatar
-                  src="https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
+                  src={user.profile_image || "https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
                   alt="User avatar"
                   sx={{ width: 32, height: 32 }}
                 />
-                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    fontWeight: 'medium',
+                  }}
+                >
                   {user.first_name}
                 </Typography>
               </Button>
@@ -120,26 +103,10 @@ const Navbar: React.FC = () => {
               </IconButton>
             </Box>
           )}
-
-          {/* Mobile Menu Button */}
-          {isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {user && (
-                <NotificationsBell />
-              )}
-              <IconButton
-                edge="end"
-                color="inherit"
-                onClick={handleMobileMenuOpen}
-              >
-                <MenuIcon />
-              </IconButton>
-            </Box>
-          )}
         </Toolbar>
       </AppBar>
 
-      {/* Profile Menu for Desktop */}
+      {/* Profile Menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -153,65 +120,14 @@ const Navbar: React.FC = () => {
           horizontal: 'right',
         }}
       >
-        <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
+        <MenuItem onClick={handleProfileClick}>
+          <Typography variant="body2">Profile</Typography>
+        </MenuItem>
         {user?.role === 'admin' && (
           <MenuItem onClick={() => { navigate('/admin'); handleProfileMenuClose(); }}>
-            Admin Dashboard
+            <Typography variant="body2">Admin Dashboard</Typography>
           </MenuItem>
         )}
-      </Menu>
-
-      {/* Mobile Menu */}
-      <Menu
-        anchorEl={mobileMenuAnchorEl}
-        open={Boolean(mobileMenuAnchorEl)}
-        onClose={handleMobileMenuClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: {
-            minWidth: 200,
-            mt: 1,
-          },
-        }}
-      >
-        {user && [
-          <MenuItem key="profile" onClick={handleMobileProfileClick}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-              <Avatar
-                src="https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
-                alt="User avatar"
-                sx={{ width: 32, height: 32 }}
-              />
-              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                {user.first_name}
-              </Typography>
-            </Box>
-          </MenuItem>,
-          
-          user.role === 'admin' && (
-            <MenuItem key="admin" onClick={() => { navigate('/admin'); handleMobileMenuClose(); }}>
-              <Typography variant="body2">
-                Admin Dashboard
-              </Typography>
-            </MenuItem>
-          ),
-          
-          <MenuItem key="logout" onClick={handleMobileLogout}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-              <LogoutIcon sx={{ color: 'error.main', fontSize: 20 }} />
-              <Typography variant="body2" sx={{ color: 'error.main' }}>
-                Logout
-              </Typography>
-            </Box>
-          </MenuItem>
-        ]}
       </Menu>
     </>
   );

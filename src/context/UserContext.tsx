@@ -23,13 +23,22 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("token"));
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionId, setSessionId] = useState<string | null>(() => localStorage.getItem("sessionId"));
+  const [loginTime, setLoginTime] = useState<string | null>(() => localStorage.getItem("loginTime"));
 
   const isAuthenticated = !!currentUser;
 
   const setToken = (t: string | null) => {
     setTokenState(t);
-    if (t) localStorage.setItem("token", t);
-    else localStorage.removeItem("token");
+    if (t) {
+      localStorage.setItem("token", t);
+    } else {
+      localStorage.removeItem("token");
+      localStorage.removeItem("sessionId");
+      localStorage.removeItem("loginTime");
+      setSessionId(null);
+      setLoginTime(null);
+    }
   };
 
   const fetchMe = async () => {
@@ -82,10 +91,31 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     logout();
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Log logout activity to backend
+    if (currentUser && token) {
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        await fetch(`${API_URL}/api/auth/signout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ 
+            userId: currentUser.id,
+            sessionId: sessionId,
+            loginTime: loginTime
+          })
+        });
+      } catch (err) {
+        console.error('Failed to log signout activity:', err);
+        // Continue with logout even if logging fails
+      }
+    }
+    
     setCurrentUser(null);
     setToken(null);
-    // Redirect to login page
     navigate('/login');
   };
 

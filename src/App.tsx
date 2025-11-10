@@ -4,6 +4,7 @@ import Signin from "./pages/Signin";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminTestDashboard from "./pages/AdminTestDashboard";
+import DatabaseGUI from "./pages/DatabaseGUI";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Profile from "./pages/Profile";
 import PostDetail from "./pages/PostDetail";
@@ -80,6 +81,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AdminTestDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/database"
+            element={
+              <ProtectedRoute>
+                <DatabaseGUI />
               </ProtectedRoute>
             }
           />

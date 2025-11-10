@@ -29,7 +29,12 @@ const Signin: React.FC = () => {
         return;
       }
 
+      // Store token, sessionId, and login time
       setToken(data.token);
+      if (data.sessionId) {
+        localStorage.setItem("sessionId", data.sessionId);
+        localStorage.setItem("loginTime", new Date().toISOString());
+      }
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
