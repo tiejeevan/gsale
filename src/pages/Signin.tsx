@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserContext } from "../context/UserContext";
-import { ShoppingBagIcon, UserIcon } from "@heroicons/react/24/outline";
+import { ShoppingBagIcon } from "@heroicons/react/24/outline";
+import { Box, Paper, TextField, Button, Typography, Alert } from "@mui/material";
 
 
 const Signin: React.FC = () => {
@@ -43,71 +44,124 @@ const Signin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
-      <div className="flex flex-col md:flex-row w-full max-w-4xl shadow-2xl rounded-3xl overflow-hidden bg-white dark:bg-gray-800">
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        p: 2,
+      }}
+    >
+      <Paper
+        elevation={8}
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          width: '100%',
+          maxWidth: 900,
+          borderRadius: 4,
+          overflow: 'hidden',
+        }}
+      >
         {/* Left side - branding */}
-        <div className="md:w-1/2 bg-indigo-500 dark:bg-indigo-600 flex flex-col items-center justify-center p-8 space-y-4">
-          <ShoppingBagIcon className="w-20 h-20 text-white" />
-          <h1 className="text-white text-4xl font-bold">Gsale</h1>
-          <p className="text-indigo-100 text-center text-lg">
+        <Box
+          sx={{
+            width: { xs: '100%', md: '50%' },
+            bgcolor: 'primary.main',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: 4,
+            gap: 2,
+          }}
+        >
+          <ShoppingBagIcon style={{ width: 80, height: 80, color: 'white' }} />
+          <Typography variant="h3" sx={{ color: 'white', fontWeight: 700 }}>
+            Gsale
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', textAlign: 'center' }}>
             Buy, sell, and discover amazing garage sale deals in your area.
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
         {/* Right side - form */}
-        <div className="md:w-1/2 p-8 space-y-6">
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 text-center">
+        <Box
+          sx={{
+            width: { xs: '100%', md: '50%' },
+            p: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>
             Sign In
-          </h2>
+          </Typography>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="relative">
-              <UserIcon className="absolute top-3 left-3 w-5 h-5 text-gray-400 dark:text-gray-300" />
-              <input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              />
-            </div>
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              type="text"
+              label="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              fullWidth
+              variant="outlined"
+            />
 
-            <div className="relative">
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full pl-4 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              />
-            </div>
+            <TextField
+              type="password"
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              fullWidth
+              variant="outlined"
+            />
 
-            <button
+            <Button
               type="submit"
-              className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-semibold rounded-2xl shadow-lg transition-transform transform hover:scale-105"
+              variant="contained"
+              size="large"
+              fullWidth
+              sx={{
+                py: 1.5,
+                borderRadius: 3,
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '1rem',
+              }}
             >
               Sign In
-            </button>
-          </form>
+            </Button>
+          </Box>
 
           {message && (
-            <p className="text-center text-red-500 font-medium">{message}</p>
+            <Alert severity="error" sx={{ mt: 1 }}>
+              {message}
+            </Alert>
           )}
 
-          <p className="text-center text-gray-600 dark:text-gray-300">
+          <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary' }}>
             Don't have an account?{" "}
             <Link
               to="/signup"
-              className="text-indigo-500 hover:underline font-semibold"
+              style={{
+                color: 'inherit',
+                fontWeight: 600,
+              }}
             >
-              Sign Up
+              <Typography component="span" sx={{ color: 'primary.main', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}>
+                Sign Up
+              </Typography>
             </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+          </Typography>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 

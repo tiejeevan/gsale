@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useChatContext } from '../../context/ChatContext';
 import { useUserContext } from '../../context/UserContext';
 import FloatingChatPopup from './FloatingChatPopup';
+import { Box, Paper, Typography, Avatar, Badge, IconButton, Button } from '@mui/material';
+import { ExpandMore as ExpandMoreIcon, Chat as ChatIcon } from '@mui/icons-material';
 
 const MessagesTab = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -63,32 +65,52 @@ const MessagesTab = () => {
   return (
     <>
       {/* Messages Tab */}
-      <div ref={messagesTabRef} className="fixed bottom-0 right-6 z-40">
+      <Box ref={messagesTabRef} sx={{ position: 'fixed', bottom: 0, right: 24, zIndex: 40 }}>
         {/* Expanded Chat List */}
         {isExpanded && (
-          <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow-2xl border border-gray-200 dark:border-gray-700 w-56 sm:w-80 mb-0">
+          <Paper
+            elevation={8}
+            sx={{
+              borderRadius: '12px 12px 0 0',
+              width: { xs: 224, sm: 320 },
+              mb: 0,
+              overflow: 'hidden',
+            }}
+          >
             {/* Header */}
-            <div className="px-2 py-1.5 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <h3 className="font-semibold text-xs sm:text-base text-gray-900 dark:text-gray-100">Messages</h3>
-              <button
+            <Box
+              sx={{
+                px: { xs: 1, sm: 2 },
+                py: { xs: 1, sm: 2 },
+                borderBottom: 1,
+                borderColor: 'divider',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                bgcolor: 'background.paper',
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem' } }}>
+                Messages
+              </Typography>
+              <IconButton
                 onClick={() => setIsExpanded(false)}
-                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
+                size="small"
+                sx={{ color: 'text.secondary' }}
               >
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            </div>
+                <ExpandMoreIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
+              </IconButton>
+            </Box>
 
             {/* Chat List */}
-            <div className="max-h-80 sm:max-h-96 overflow-y-auto">
+            <Box sx={{ maxHeight: { xs: 320, sm: 384 }, overflowY: 'auto' }}>
               {chats.length === 0 ? (
-                <div className="p-4 sm:p-8 text-center text-gray-500 dark:text-gray-400">
-                  <svg className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <p className="text-xs sm:text-sm">Start chat with a user by going to their profile page and clicking on message icon</p>
-                </div>
+                <Box sx={{ p: { xs: 2, sm: 4 }, textAlign: 'center', color: 'text.secondary' }}>
+                  <ChatIcon sx={{ fontSize: { xs: 32, sm: 48 }, mx: 'auto', mb: { xs: 1, sm: 1.5 }, opacity: 0.3 }} />
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                    Start chat with a user by going to their profile page and clicking on message icon
+                  </Typography>
+                </Box>
               ) : (
                 chats.map(chat => {
                   const isGroup = chat.type === 'group';
@@ -112,93 +134,149 @@ const MessagesTab = () => {
                   }
                   
                   return (
-                    <button
+                    <Button
                       key={chat.id}
                       onClick={() => handleChatClick(chat.id)}
-                      className="w-full p-2 sm:p-3 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-all duration-150 border-b border-gray-100 dark:border-gray-700 text-left outline-none focus:outline-none active:scale-[0.98]"
+                      fullWidth
+                      sx={{
+                        p: { xs: 1, sm: 1.5 },
+                        textTransform: 'none',
+                        justifyContent: 'flex-start',
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        borderRadius: 0,
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        },
+                        '&:active': {
+                          bgcolor: 'action.selected',
+                          transform: 'scale(0.98)',
+                        },
+                      }}
                     >
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        {/* Avatar - Left Side */}
-                        <div className="flex-shrink-0">
-                          {avatarUrl ? (
-                            <img
-                              src={avatarUrl}
-                              alt={chatTitle}
-                              className="w-9 h-9 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
-                            />
-                          ) : (
-                            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-                              {isGroup ? (
-                                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                              ) : (
-                                <span className="text-sm sm:text-lg font-semibold text-indigo-600 dark:text-indigo-400">
-                                  {chatTitle.charAt(0).toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 }, width: '100%' }}>
+                        {/* Avatar */}
+                        <Avatar
+                          src={avatarUrl || `https://ui-avatars.com/api/?name=${chatTitle}&size=48`}
+                          alt={chatTitle}
+                          sx={{
+                            width: { xs: 36, sm: 48 },
+                            height: { xs: 36, sm: 48 },
+                            bgcolor: 'primary.light',
+                          }}
+                        >
+                          {!avatarUrl && chatTitle.charAt(0).toUpperCase()}
+                        </Avatar>
 
                         {/* Right Side - Name and Message */}
-                        <div className="flex-1 min-w-0">
+                        <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                           {/* User Name */}
-                          <div className="flex items-center justify-between mb-0.5 sm:mb-1">
-                            <h4 className="font-semibold text-xs sm:text-base text-gray-900 dark:text-gray-100 truncate">
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                color: 'text.primary',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
                               {chatTitle}
-                            </h4>
-                            <div className="flex items-center gap-1 sm:gap-2 ml-1 sm:ml-2 flex-shrink-0">
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, ml: 1, flexShrink: 0 }}>
                               {chat.last_message_at && (
-                                <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                                <Typography variant="caption" sx={{ fontSize: { xs: '0.625rem', sm: '0.75rem' }, color: 'text.secondary' }}>
                                   {formatTime(chat.last_message_at)}
-                                </span>
+                                </Typography>
                               )}
                               {chat.unread_count > 0 && (
-                                <span className="bg-indigo-600 text-white text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full">
-                                  {chat.unread_count}
-                                </span>
+                                <Badge
+                                  badgeContent={chat.unread_count}
+                                  color="primary"
+                                  max={99}
+                                  sx={{
+                                    '& .MuiBadge-badge': {
+                                      fontSize: { xs: '0.625rem', sm: '0.75rem' },
+                                      height: { xs: 16, sm: 18 },
+                                      minWidth: { xs: 16, sm: 18 },
+                                    },
+                                  }}
+                                />
                               )}
-                            </div>
-                          </div>
+                            </Box>
+                          </Box>
                           {/* Last Message */}
-                          <div className="flex items-center gap-1">
-                            <p className="text-[11px] sm:text-sm text-gray-600 dark:text-gray-400 truncate flex-1">
-                              {chat.last_message_sender && chat.last_message_sender !== currentUser?.username && (
-                                <span className="font-medium">{chat.last_message_sender}: </span>
-                              )}
-                              {formatLastMessage(chat)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </button>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontSize: { xs: '0.6875rem', sm: '0.8125rem' },
+                              color: 'text.secondary',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {chat.last_message_sender && chat.last_message_sender !== currentUser?.username && (
+                              <Typography component="span" sx={{ fontWeight: 500 }}>
+                                {chat.last_message_sender}:{' '}
+                              </Typography>
+                            )}
+                            {formatLastMessage(chat)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Button>
                   );
                 })
                 .filter(Boolean) // Remove null entries
               )}
-            </div>
-          </div>
+            </Box>
+          </Paper>
         )}
 
         {/* Collapsed Tab */}
         {!isExpanded && (
-          <button
+          <Button
             onClick={() => setIsExpanded(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:px-6 sm:py-3 rounded-t-lg shadow-lg transition flex items-center gap-1.5 sm:gap-2 relative"
+            variant="contained"
+            sx={{
+              px: { xs: 1.5, sm: 3 },
+              py: { xs: 1, sm: 1.5 },
+              borderRadius: '12px 12px 0 0',
+              boxShadow: 3,
+              display: 'flex',
+              alignItems: 'center',
+              gap: { xs: 0.75, sm: 1 },
+              position: 'relative',
+              textTransform: 'none',
+            }}
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <span className="font-semibold text-xs sm:text-base">Messages</span>
+            <ChatIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem' } }}>
+              Messages
+            </Typography>
             {totalUnreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-red-500 text-white text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full min-w-[18px] sm:min-w-[20px] text-center">
-                {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
-              </span>
+              <Badge
+                badgeContent={totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                color="error"
+                sx={{
+                  position: 'absolute',
+                  top: { xs: -6, sm: -8 },
+                  right: { xs: -6, sm: -8 },
+                  '& .MuiBadge-badge': {
+                    fontSize: { xs: '0.625rem', sm: '0.75rem' },
+                    fontWeight: 700,
+                    minWidth: { xs: 18, sm: 20 },
+                    height: { xs: 18, sm: 20 },
+                  },
+                }}
+              />
             )}
-          </button>
+          </Button>
         )}
-      </div>
+      </Box>
 
       {/* Floating Chat Popup */}
       {selectedChat && (() => {

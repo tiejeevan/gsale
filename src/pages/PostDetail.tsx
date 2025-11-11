@@ -223,9 +223,10 @@ const PostDetail: React.FC = () => {
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Card
           sx={{
-            background: 'rgba(30, 41, 59, 0.7)',
+            bgcolor: 'background.paper',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(148, 163, 184, 0.1)',
+            border: 1,
+            borderColor: 'divider',
             borderRadius: 2,
             minHeight: 400,
             display: 'flex',
@@ -243,9 +244,9 @@ const PostDetail: React.FC = () => {
                 startIcon={<ArrowBack />}
                 onClick={() => navigate(-1)}
                 sx={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  bgcolor: 'primary.main',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+                    bgcolor: 'primary.dark',
                   },
                 }}
               >
@@ -263,9 +264,10 @@ const PostDetail: React.FC = () => {
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Card
           sx={{
-            background: 'rgba(30, 41, 59, 0.7)',
+            bgcolor: 'background.paper',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(148, 163, 184, 0.1)',
+            border: 1,
+            borderColor: 'divider',
             borderRadius: 2,
             minHeight: 400,
             display: 'flex',
@@ -283,9 +285,9 @@ const PostDetail: React.FC = () => {
                 startIcon={<ArrowBack />}
                 onClick={() => navigate(-1)}
                 sx={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  bgcolor: 'primary.main',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+                    bgcolor: 'primary.dark',
                   },
                 }}
               >
@@ -304,9 +306,10 @@ const PostDetail: React.FC = () => {
       <Card
         sx={{
           mb: 0,
-          background: 'rgba(30, 41, 59, 0.7)',
+          bgcolor: 'background.paper',
           backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(148, 163, 184, 0.1)',
+          border: 1,
+          borderColor: 'divider',
           borderRadius: '16px 16px 0 0',
           borderBottom: 'none',
         }}
@@ -319,11 +322,11 @@ const PostDetail: React.FC = () => {
               startIcon={<ArrowBack />}
               onClick={() => navigate(-1)}
               sx={{
-                borderColor: 'rgba(148, 163, 184, 0.3)',
+                borderColor: 'divider',
                 color: 'text.primary',
                 '&:hover': {
-                  borderColor: 'rgba(148, 163, 184, 0.5)',
-                  backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                  borderColor: 'primary.main',
+                  bgcolor: 'action.hover',
                 },
               }}
             >
@@ -355,11 +358,11 @@ const PostDetail: React.FC = () => {
                     <IconButton
                       onClick={openVisibilityMenu}
                       sx={{
-                        bgcolor: 'rgba(30, 41, 59, 0.8)',
-                        color: 'rgba(255, 255, 255, 0.7)',
+                        bgcolor: 'action.hover',
+                        color: 'text.secondary',
                         '&:hover': { 
-                          bgcolor: 'rgba(30, 41, 59, 0.9)',
-                          color: '#90caf9',
+                          bgcolor: 'action.selected',
+                          color: 'info.main',
                         },
                       }}
                     >
@@ -371,11 +374,11 @@ const PostDetail: React.FC = () => {
                     <IconButton
                       onClick={handleToggleComments}
                       sx={{
-                        bgcolor: 'rgba(30, 41, 59, 0.8)',
-                        color: post.comments_enabled !== false ? '#22c55e' : 'rgba(255, 255, 255, 0.5)',
+                        bgcolor: 'action.hover',
+                        color: post.comments_enabled !== false ? 'success.main' : 'text.disabled',
                         '&:hover': { 
-                          bgcolor: 'rgba(30, 41, 59, 0.9)',
-                          color: post.comments_enabled !== false ? '#16a34a' : '#9ca3af',
+                          bgcolor: 'action.selected',
+                          color: post.comments_enabled !== false ? 'success.dark' : 'text.secondary',
                         },
                       }}
                     >
@@ -389,11 +392,11 @@ const PostDetail: React.FC = () => {
                     <IconButton
                       onClick={handleTogglePin}
                       sx={{
-                        bgcolor: 'rgba(30, 41, 59, 0.8)',
-                        color: post.is_pinned ? '#fbbf24' : 'rgba(255, 255, 255, 0.7)',
+                        bgcolor: 'action.hover',
+                        color: post.is_pinned ? 'warning.main' : 'text.secondary',
                         '&:hover': { 
-                          bgcolor: 'rgba(30, 41, 59, 0.9)',
-                          color: '#fbbf24',
+                          bgcolor: 'action.selected',
+                          color: 'warning.main',
                         },
                       }}
                     >
@@ -405,11 +408,11 @@ const PostDetail: React.FC = () => {
                     <IconButton
                       onClick={() => handleEdit(post)}
                       sx={{
-                        bgcolor: 'rgba(30, 41, 59, 0.8)',
-                        color: 'rgba(255, 255, 255, 0.7)',
+                        bgcolor: 'action.hover',
+                        color: 'text.secondary',
                         '&:hover': { 
-                          bgcolor: 'rgba(30, 41, 59, 0.9)',
-                          color: '#667eea',
+                          bgcolor: 'action.selected',
+                          color: 'primary.main',
                         },
                       }}
                     >
@@ -421,11 +424,11 @@ const PostDetail: React.FC = () => {
                     <IconButton
                       onClick={() => handleDelete(post)}
                       sx={{
-                        bgcolor: 'rgba(30, 41, 59, 0.8)',
-                        color: 'rgba(255, 255, 255, 0.7)',
+                        bgcolor: 'action.hover',
+                        color: 'text.secondary',
                         '&:hover': { 
-                          bgcolor: 'rgba(30, 41, 59, 0.9)',
-                          color: '#ef4444',
+                          bgcolor: 'action.selected',
+                          color: 'error.main',
                         },
                       }}
                     >
@@ -439,11 +442,11 @@ const PostDetail: React.FC = () => {
                   <IconButton
                     onClick={() => setMenuExpanded(!menuExpanded)}
                     sx={{
-                      bgcolor: 'rgba(30, 41, 59, 0.8)',
-                      color: 'rgba(255, 255, 255, 0.7)',
+                      bgcolor: 'action.hover',
+                      color: 'text.secondary',
                       '&:hover': { 
-                        bgcolor: 'rgba(30, 41, 59, 0.9)',
-                        color: '#ffffff',
+                        bgcolor: 'action.selected',
+                        color: 'text.primary',
                       },
                       transform: menuExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
                       transition: 'transform 0.3s ease',
@@ -489,10 +492,11 @@ const PostDetail: React.FC = () => {
           {/* Author Info */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar
+              src={post.profile_image}
               sx={{
                 width: 48,
                 height: 48,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                bgcolor: 'primary.main',
                 fontSize: '1.2rem',
                 fontWeight: 600,
               }}
@@ -509,7 +513,7 @@ const PostDetail: React.FC = () => {
                   fontWeight={600}
                   sx={{ 
                     color: 'text.primary',
-                    '&:hover': { color: '#667eea' },
+                    '&:hover': { color: 'primary.main' },
                     transition: 'color 0.2s',
                   }}
                 >
@@ -558,9 +562,10 @@ const PostDetail: React.FC = () => {
       {/* Post Details Card */}
       <Card
         sx={{
-          background: 'rgba(30, 41, 59, 0.7)',
+          bgcolor: 'background.paper',
           backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(148, 163, 184, 0.1)',
+          border: 1,
+          borderColor: 'divider',
           borderRadius: 2,
         }}
       >
@@ -601,8 +606,8 @@ const PostDetail: React.FC = () => {
                     size="small"
                     clickable
                     sx={{ 
-                      '&:hover': { backgroundColor: 'rgba(102, 126, 234, 0.1)' },
-                      color: '#667eea',
+                      '&:hover': { bgcolor: 'action.hover' },
+                      color: 'primary.main',
                     }}
                   />
                 </Link>

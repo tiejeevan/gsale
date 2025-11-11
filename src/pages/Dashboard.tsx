@@ -122,7 +122,12 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+      }}
+    >
       <main className="flex-1 p-6">
         <div className="max-w-3xl mx-auto space-y-6">
           {/* Create Post */}
@@ -157,16 +162,21 @@ const Dashboard: React.FC = () => {
                   borderRadius: 3,
                   fontSize: '0.875rem',
                   fontWeight: 500,
-                  bgcolor: 'rgba(99, 102, 241, 0.08)',
-                  border: 'none',
+                  bgcolor: 'action.hover',
                   '& .MuiOutlinedInput-notchedOutline': {
-                    border: 'none',
+                    borderColor: 'divider',
                   },
                   '&:hover': {
-                    bgcolor: 'rgba(99, 102, 241, 0.12)',
+                    bgcolor: 'action.selected',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'primary.main',
+                    },
                   },
                   '&.Mui-focused': {
-                    bgcolor: 'rgba(99, 102, 241, 0.12)',
+                    bgcolor: 'action.selected',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'primary.main',
+                    },
                   },
                   '& .MuiSelect-select': {
                     py: 0.75,
@@ -180,9 +190,6 @@ const Dashboard: React.FC = () => {
                   sx={{
                     fontSize: '0.875rem',
                     py: 1,
-                    '&:hover': {
-                      bgcolor: 'rgba(99, 102, 241, 0.08)',
-                    },
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -195,9 +202,6 @@ const Dashboard: React.FC = () => {
                   sx={{
                     fontSize: '0.875rem',
                     py: 1,
-                    '&:hover': {
-                      bgcolor: 'rgba(99, 102, 241, 0.08)',
-                    },
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -210,9 +214,6 @@ const Dashboard: React.FC = () => {
                   sx={{
                     fontSize: '0.875rem',
                     py: 1,
-                    '&:hover': {
-                      bgcolor: 'rgba(99, 102, 241, 0.08)',
-                    },
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -293,7 +294,7 @@ const Dashboard: React.FC = () => {
           )}
         </div>
       </main>
-    </div>
+    </Box>
   );
 };
 

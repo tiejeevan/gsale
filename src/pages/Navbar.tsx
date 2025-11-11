@@ -12,13 +12,17 @@ import {
 } from "@mui/material";
 import {
   Logout as LogoutIcon,
+  LightMode as LightModeIcon,
+  DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
 import NotificationsBell from "../components/NotificationsBell";
 import UserSearch from "../components/UserSearch";
 import { useUserContext } from "../context/UserContext";
+import { useThemeMode } from "../context/ThemeContext";
 
 const Navbar: React.FC = () => {
   const { currentUser: user, logout } = useUserContext();
+  const { mode, toggleTheme } = useThemeMode();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
 
@@ -81,6 +85,15 @@ const Navbar: React.FC = () => {
             >
               {/* Search Icon - Expands left */}
               <UserSearch token={localStorage.getItem('token') || ''} />
+              
+              {/* Theme Toggle */}
+              <IconButton
+                onClick={toggleTheme}
+                color="inherit"
+                title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+              </IconButton>
               
               {/* Notification Bell */}
               <NotificationsBell />

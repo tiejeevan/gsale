@@ -411,7 +411,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                         px: { xs: 0.75, sm: 1.5 },
                         py: { xs: 0.375, sm: 0.75 },
                         borderRadius: { xs: '10px', sm: '16px' },
-                        bgcolor: isOwn ? 'primary.main' : 'grey.200',
+                        bgcolor: isOwn ? 'primary.main' : 'action.hover',
                         boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
                         ...(isOwn
                           ? { borderBottomRightRadius: '3px' }
@@ -427,7 +427,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                         variant="body2" 
                         sx={{ 
                           wordBreak: 'break-word',
-                          color: isOwn ? '#ffffff' : '#1a1a1a',
+                          color: isOwn ? 'white' : 'text.primary',
                           fontSize: { xs: '0.75rem', sm: '0.875rem' },
                           lineHeight: 1.3,
                         }}
@@ -440,7 +440,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                           sx={{
                             opacity: 0.6,
                             fontSize: { xs: '0.5625rem', sm: '0.65rem' },
-                            color: isOwn ? '#ffffff' : '#1a1a1a',
+                            color: isOwn ? 'white' : 'text.primary',
                           }}
                         >
                           {formatTime(message.created_at)}

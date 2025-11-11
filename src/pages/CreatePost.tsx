@@ -231,49 +231,86 @@ const CreatePost: React.FC = () => {
   };
 
   return (
-    <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300">
-      <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
+    <Paper
+      elevation={3}
+      sx={{
+        p: 3,
+        borderRadius: 3,
+        bgcolor: 'background.paper',
+      }}
+    >
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
         Welcome {user?.first_name || user?.username || 'User'}
-      </h2>
+      </Typography>
       {message && (
-        <div className={`mb-3 text-sm ${
-          message.startsWith("✅") ? "text-green-600" :
-          message.startsWith("❌") ? "text-red-500" : "text-yellow-600"
-        }`}>{message}</div>
+        <Typography
+          variant="body2"
+          sx={{
+            mb: 2,
+            color: message.startsWith("✅") ? "success.main" :
+                   message.startsWith("❌") ? "error.main" : "warning.main"
+          }}
+        >
+          {message}
+        </Typography>
       )}
 
       {/* Title Input (Optional) */}
       {showAdvanced && (
-        <div className="mb-3">
+        <Box sx={{ mb: 2 }}>
           <input
             type="text"
-            className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '12px',
+              border: '1px solid',
+              borderColor: 'var(--mui-palette-divider)',
+              backgroundColor: 'var(--mui-palette-background-default)',
+              color: 'var(--mui-palette-text-primary)',
+              fontSize: '14px',
+              outline: 'none',
+            }}
             placeholder="Post title (optional)"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-        </div>
+        </Box>
       )}
 
-      <div className="relative mb-4">
+      <Box sx={{ position: 'relative', mb: 3 }}>
         <textarea
           ref={textareaRef}
-          className="w-full p-3 pr-10 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none min-h-[100px]"
+          style={{
+            width: '100%',
+            padding: '12px 40px 12px 12px',
+            borderRadius: '12px',
+            border: '1px solid',
+            borderColor: 'var(--mui-palette-divider)',
+            backgroundColor: 'var(--mui-palette-background-default)',
+            color: 'var(--mui-palette-text-primary)',
+            fontSize: '14px',
+            outline: 'none',
+            resize: 'none',
+            minHeight: '100px',
+            fontFamily: 'inherit',
+          }}
           placeholder="What's on your mind? Type @ to mention someone (Press Enter to post, Shift+Enter for new line)"
           value={content}
           onChange={handleContentChange}
           onKeyDown={handleKeyDown}
         />
 
-        <div className="absolute top-2 right-2 flex items-center gap-1">
+        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5 }}>
           <Tooltip title={showAdvanced ? "Show less options" : "Show more options"} arrow>
             <IconButton 
               size="small" 
               onClick={() => setShowAdvanced(!showAdvanced)}
               sx={{ 
-                backgroundColor: showAdvanced ? 'rgba(99, 102, 241, 0.1)' : 'rgba(0,0,0,0.05)',
+                bgcolor: showAdvanced ? 'primary.main' : 'action.hover',
+                color: showAdvanced ? 'white' : 'text.secondary',
                 '&:hover': {
-                  backgroundColor: showAdvanced ? 'rgba(99, 102, 241, 0.2)' : 'rgba(0,0,0,0.1)',
+                  bgcolor: showAdvanced ? 'primary.dark' : 'action.selected',
                 }
               }}
             >
@@ -289,11 +326,18 @@ const CreatePost: React.FC = () => {
               )}
             </IconButton>
           </Tooltip>
-        </div>
+        </Box>
 
-        <div className="absolute bottom-2 right-2">
+        <Box sx={{ position: 'absolute', bottom: 8, right: 8 }}>
           <Tooltip title={visibility === "public" ? "Public" : visibility === "follows" ? "Follows" : "Private"} arrow>
-            <IconButton size="small" onClick={openVisibilityMenu} sx={{ backgroundColor: 'rgba(0,0,0,0.05)' }}>
+            <IconButton 
+              size="small" 
+              onClick={openVisibilityMenu}
+              sx={{ 
+                bgcolor: 'action.hover',
+                '&:hover': { bgcolor: 'action.selected' }
+              }}
+            >
               {renderVisibilityIcon("small")}
             </IconButton>
           </Tooltip>
@@ -305,78 +349,71 @@ const CreatePost: React.FC = () => {
             transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           >
             <MenuItem onClick={() => selectVisibility("public")}>
-              <Tooltip title="Public" placement="left" arrow>
-                <div className="flex items-center gap-2">
-                  <PublicIcon fontSize="small" />
-                  <span className="text-sm">Public</span>
-                </div>
-              </Tooltip>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PublicIcon fontSize="small" />
+                <Typography variant="body2">Public</Typography>
+              </Box>
             </MenuItem>
             <MenuItem onClick={() => selectVisibility("follows")}>
-              <Tooltip title="Follows" placement="left" arrow>
-                <div className="flex items-center gap-2">
-                  <GroupIcon fontSize="small" />
-                  <span className="text-sm">Follows</span>
-                </div>
-              </Tooltip>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <GroupIcon fontSize="small" />
+                <Typography variant="body2">Follows</Typography>
+              </Box>
             </MenuItem>
             <MenuItem onClick={() => selectVisibility("private")}>
-              <Tooltip title="Private" placement="left" arrow>
-                <div className="flex items-center gap-2">
-                  <LockIcon fontSize="small" />
-                  <span className="text-sm">Private</span>
-                </div>
-              </Tooltip>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LockIcon fontSize="small" />
+                <Typography variant="body2">Private</Typography>
+              </Box>
             </MenuItem>
           </Menu>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <label 
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 16px',
-              backgroundColor: '#e0e7ff',
-              color: '#3730a3',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'all 0.2s ease',
-              border: 'none',
-              WebkitAppearance: 'none',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#c7d2fe';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#e0e7ff';
-            }}
-          >
-            <FiImage style={{ fontSize: '16px' }} /> 
-            <span>Attach Files</span>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <label>
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1,
+                px: 2,
+                py: 1,
+                bgcolor: 'primary.main',
+                color: 'white',
+                borderRadius: 2,
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                transition: 'all 0.2s',
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                  transform: 'scale(1.02)',
+                },
+              }}
+            >
+              <FiImage style={{ fontSize: '16px' }} /> 
+              <span>Attach Files</span>
+            </Box>
             <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} />
           </label>
-        </div>
+        </Box>
 
-        <div className="flex items-center gap-2">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {showAdvanced && (
             <Tooltip title={commentsEnabled ? "Comments enabled" : "Comments disabled"} arrow>
               <IconButton
                 size="small"
                 onClick={() => setCommentsEnabled(!commentsEnabled)}
                 sx={{
-                  backgroundColor: commentsEnabled ? '#22c55e' : '#d1d5db',
+                  bgcolor: commentsEnabled ? 'success.main' : 'action.disabled',
                   color: 'white',
                   width: 32,
                   height: 32,
                   '&:hover': {
-                    backgroundColor: commentsEnabled ? '#16a34a' : '#9ca3af',
+                    bgcolor: commentsEnabled ? 'success.dark' : 'action.disabledBackground',
                   },
                 }}
               >
@@ -387,56 +424,80 @@ const CreatePost: React.FC = () => {
             </Tooltip>
           )}
 
-          <button
+          <Box
+            component="button"
             onClick={createPost}
             disabled={loading}
-            style={{
-              backgroundColor: loading ? '#a5b4fc' : '#4f46e5',
-              color: '#ffffff',
+            sx={{
+              bgcolor: loading ? 'action.disabledBackground' : 'primary.main',
+              color: 'white',
               border: 'none',
-              borderRadius: '12px',
-              padding: '8px 20px',
-              fontWeight: '600',
-              fontSize: '14px',
+              borderRadius: 2,
+              px: 2.5,
+              py: 1,
+              fontWeight: 600,
+              fontSize: '0.875rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: 1,
               cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: loading ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              WebkitAppearance: 'none',
-              WebkitTapHighlightColor: 'transparent',
-              outline: 'none',
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.currentTarget.style.backgroundColor = '#3730a3';
-                e.currentTarget.style.transform = 'scale(1.02)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.currentTarget.style.backgroundColor = '#4f46e5';
-                e.currentTarget.style.transform = 'scale(1)';
-              }
+              transition: 'all 0.2s',
+              boxShadow: loading ? 'none' : 2,
+              '&:hover': {
+                bgcolor: loading ? 'action.disabledBackground' : 'primary.dark',
+                transform: loading ? 'none' : 'scale(1.02)',
+              },
             }}
           >
             {loading ? <><FiLoader className="animate-spin" /> Posting...</> : <><FiSend /> Post</>}
-          </button>
-        </div>
-      </div>
+          </Box>
+        </Box>
+      </Box>
 
       {files.length > 0 && (
-        <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
           {files.map((file, idx) => {
             const url = URL.createObjectURL(file);
             if (file.type.startsWith("image/")) {
-              return <img key={idx} src={url} alt={file.name} className="rounded-xl object-cover h-32 w-full border border-gray-300 dark:border-gray-600" />;
+              return (
+                <Box
+                  key={idx}
+                  component="img"
+                  src={url}
+                  alt={file.name}
+                  sx={{
+                    borderRadius: 2,
+                    objectFit: 'cover',
+                    height: 128,
+                    width: '100%',
+                    border: 1,
+                    borderColor: 'divider',
+                  }}
+                />
+              );
             } else {
-              return <div key={idx} className="flex items-center justify-center text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-xl p-3">📄 {file.name}</div>;
+              return (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.875rem',
+                    color: 'text.primary',
+                    bgcolor: 'background.default',
+                    borderRadius: 2,
+                    p: 2,
+                    border: 1,
+                    borderColor: 'divider',
+                  }}
+                >
+                  📄 {file.name}
+                </Box>
+              );
             }
           })}
-        </div>
+        </Box>
       )}
 
       {/* Mentions Dropdown */}
@@ -486,7 +547,7 @@ const CreatePost: React.FC = () => {
           ))}
         </Paper>
       )}
-    </div>
+    </Paper>
   );
 };
 

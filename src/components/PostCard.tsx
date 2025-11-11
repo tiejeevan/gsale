@@ -165,7 +165,7 @@ const PostCard: React.FC<PostCardProps> = ({
             key={index}
             to={`/profile/${username}`}
             style={{
-              color: '#667eea',
+              color: theme.palette.primary.main,
               textDecoration: 'none',
               fontWeight: 600,
             }}
@@ -260,9 +260,10 @@ const PostCard: React.FC<PostCardProps> = ({
         position: 'relative',
         transition: 'all 0.2s ease-in-out',
         transform: hovered ? 'translateY(-1px)' : 'translateY(0)',
-        background: 'rgba(30, 41, 59, 0.7)',
+        bgcolor: 'background.paper',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(148, 163, 184, 0.1)',
+        border: 1,
+        borderColor: 'divider',
       }}
     >
       {/* Edit/Delete/Pin Actions */}
@@ -284,11 +285,11 @@ const PostCard: React.FC<PostCardProps> = ({
                   size="small"
                   onClick={() => onPin(post)}
                   sx={{
-                    bgcolor: 'rgba(30, 41, 59, 0.8)',
-                    color: post.is_pinned ? '#fbbf24' : 'rgba(255, 255, 255, 0.7)',
+                    bgcolor: 'action.hover',
+                    color: post.is_pinned ? 'warning.main' : 'text.secondary',
                     '&:hover': { 
-                      bgcolor: 'rgba(30, 41, 59, 0.9)',
-                      color: '#fbbf24',
+                      bgcolor: 'action.selected',
+                      color: 'warning.main',
                     },
                     width: 28,
                     height: 28,
@@ -304,11 +305,11 @@ const PostCard: React.FC<PostCardProps> = ({
                   size="small"
                   onClick={() => onEdit(post)}
                   sx={{
-                    bgcolor: 'rgba(30, 41, 59, 0.8)',
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    bgcolor: 'action.hover',
+                    color: 'text.secondary',
                     '&:hover': { 
-                      bgcolor: 'rgba(30, 41, 59, 0.9)',
-                      color: '#667eea',
+                      bgcolor: 'action.selected',
+                      color: 'primary.main',
                     },
                     width: 28,
                     height: 28,
@@ -324,11 +325,11 @@ const PostCard: React.FC<PostCardProps> = ({
                   size="small"
                   onClick={() => onDelete(post)}
                   sx={{
-                    bgcolor: 'rgba(30, 41, 59, 0.8)',
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    bgcolor: 'action.hover',
+                    color: 'text.secondary',
                     '&:hover': { 
-                      bgcolor: 'rgba(30, 41, 59, 0.9)',
-                      color: '#ef4444',
+                      bgcolor: 'action.selected',
+                      color: 'error.main',
                     },
                     width: 28,
                     height: 28,
@@ -358,10 +359,11 @@ const PostCard: React.FC<PostCardProps> = ({
                 style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex' }}
               >
                 <Avatar
+                  src={post.profile_image}
                   sx={{
                     width: 40,
                     height: 40,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    bgcolor: 'primary.main',
                     fontSize: '1rem',
                     fontWeight: 600,
                   }}
@@ -405,7 +407,7 @@ const PostCard: React.FC<PostCardProps> = ({
                       <PushPin 
                         sx={{ 
                           fontSize: '0.75rem', 
-                          color: '#fbbf24',
+                          color: 'warning.main',
                           verticalAlign: 'middle',
                         }} 
                       />
@@ -438,7 +440,8 @@ const PostCard: React.FC<PostCardProps> = ({
                 mb: 1,
                 fontWeight: 600,
                 cursor: 'pointer',
-                '&:hover': { color: '#667eea' },
+                color: 'text.primary',
+                '&:hover': { color: 'primary.main' },
                 transition: 'color 0.2s',
               }}
             >
@@ -448,41 +451,49 @@ const PostCard: React.FC<PostCardProps> = ({
         )}
 
         {/* Post Content */}
-        <Typography
-          variant="body1"
-          sx={{
-            mb: 1.5,
-            lineHeight: 1.5,
-            whiteSpace: 'pre-line',
-            fontSize: '0.95rem',
-          }}
-        >
-          {renderContentWithMentions(post.content)}
-        </Typography>
+        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Typography
+            variant="body1"
+            sx={{
+              mb: 1.5,
+              lineHeight: 1.5,
+              whiteSpace: 'pre-line',
+              fontSize: '0.95rem',
+              color: 'text.primary',
+              cursor: 'pointer',
+              '&:hover': {
+                color: 'text.primary',
+              },
+            }}
+          >
+            {renderContentWithMentions(post.content)}
+          </Typography>
+        </Link>
 
         {/* Post Image */}
         {post.image_url && (
-          <Box sx={{ mb: 1.5 }}>
-            <img
-              src={getPublicUrl(post.image_url)}
-              alt="Post"
-              style={{
-                width: '100%',
-                maxHeight: isMobile ? '200px' : '300px',
-                objectFit: 'cover',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'transform 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.01)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
-              onClick={() => window.open(getPublicUrl(post.image_url!), '_blank')}
-            />
-          </Box>
+          <Link to={`/post/${post.id}`} style={{ textDecoration: 'none' }}>
+            <Box sx={{ mb: 1.5 }}>
+              <img
+                src={getPublicUrl(post.image_url)}
+                alt="Post"
+                style={{
+                  width: '100%',
+                  maxHeight: isMobile ? '200px' : '300px',
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.01)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              />
+            </Box>
+          </Link>
         )}
 
         {/* Attachments */}
@@ -560,13 +571,13 @@ const PostCard: React.FC<PostCardProps> = ({
             onClick={handleLike}
             disabled={isLiking}
             sx={{
-              color: liked ? '#ef4444' : 'text.secondary',
+              color: liked ? 'error.main' : 'text.secondary',
               textTransform: 'none',
               fontSize: '0.875rem',
               fontWeight: 500,
               '&:hover': {
-                bgcolor: 'rgba(239, 68, 68, 0.1)',
-                color: '#ef4444',
+                bgcolor: 'error.lighter',
+                color: 'error.main',
               },
             }}
           >
@@ -584,8 +595,8 @@ const PostCard: React.FC<PostCardProps> = ({
                 fontSize: '0.875rem',
                 fontWeight: 500,
                 '&:hover': {
-                  bgcolor: 'rgba(103, 126, 234, 0.1)',
-                  color: '#667eea',
+                  bgcolor: 'action.hover',
+                  color: 'primary.main',
                 },
               }}
             >
@@ -603,8 +614,8 @@ const PostCard: React.FC<PostCardProps> = ({
               fontSize: '0.875rem',
               fontWeight: 500,
               '&:hover': {
-                bgcolor: 'rgba(103, 126, 234, 0.1)',
-                color: '#667eea',
+                bgcolor: 'action.hover',
+                color: 'primary.main',
               },
             }}
           >
@@ -616,7 +627,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
       {/* Comments Section - Only show when toggled */}
       {post.comments_enabled !== false && showComments && (
-        <Box sx={{ borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
+        <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
           <CommentsSection
             key={`comments-${post.id}`}
             postId={post.id}
