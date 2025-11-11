@@ -1,7 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, IconButton, Typography, Avatar, Paper, Fade } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Box, IconButton, Typography, Avatar, Paper, Fade, useTheme, useMediaQuery } from '@mui/material';
+import { 
+  ArrowBack as ArrowBackIcon,
+  MoreVert as MoreVertIcon,
+  AttachFile as AttachFileIcon,
+  Mic as MicIcon,
+  EmojiEmotions as EmojiIcon,
+  Send as SendIcon
+} from '@mui/icons-material';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserContext } from '../../context/UserContext';
 import { useChatContext } from '../../context/ChatContext';
 import { useChat } from '../../hooks/useChat';
@@ -18,6 +25,9 @@ interface FloatingChatPopupProps {
 
 const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingChatPopupProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { token, currentUser } = useUserContext();
   const { chats, messages: contextMessages, setMessages, addMessage, updateChatInList } = useChatContext();
   const { startDirectChat } = useChat();
@@ -28,6 +38,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const initialLocationRef = useRef(location.pathname + location.search);
   
   // Use context messages and ensure they're sorted
   const messages = chatId 
@@ -167,10 +178,15 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
     }
   }, [loading]);
 
-  // Focus input on mount and when messages change
+  // Don't auto-focus input - removed for better UX
+
+  // Close popup when route changes (handles back button on mobile)
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [loading, messages.length]);
+    const currentLocation = location.pathname + location.search;
+    if (currentLocation !== initialLocationRef.current) {
+      onClose();
+    }
+  }, [location, onClose]);
 
   // Handle ESC key to close popup
   useEffect(() => {
@@ -181,7 +197,10 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
     };
 
     window.addEventListener('keydown', handleEscKey);
-    return () => window.removeEventListener('keydown', handleEscKey);
+    
+    return () => {
+      window.removeEventListener('keydown', handleEscKey);
+    };
   }, [onClose]);
 
   const handleSend = async () => {
@@ -242,7 +261,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -257,105 +276,140 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
   return (
     <Fade in timeout={300}>
       <Paper
-        elevation={8}
+        elevation={isMobile ? 0 : 8}
         sx={{
           position: 'fixed',
-          bottom: { xs: 8, sm: 16 },
-          right: { xs: 8, sm: 16 },
-          width: { xs: 224, sm: 320 },
-          height: { xs: 320, sm: 450 },
+          ...(isMobile ? {
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            borderRadius: 0,
+          } : {
+            bottom: 16,
+            right: 16,
+            width: 420,
+            height: 600,
+            borderRadius: 2,
+          }),
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: { xs: 1.5, sm: 2 },
           overflow: 'hidden',
           zIndex: 1300,
-          bgcolor: 'background.paper',
+          bgcolor: 'background.default',
         }}
       >
         {/* Header */}
         <Box
           sx={{
-            px: { xs: 1, sm: 2 },
-            py: { xs: 0.5, sm: 1.5 },
+            px: 2,
+            py: 1,
             bgcolor: 'primary.main',
             color: 'white',
             display: 'flex',
             alignItems: 'center',
-            gap: { xs: 0.5, sm: 1 },
-            minHeight: { xs: 36, sm: 56 },
+            gap: 1,
+            minHeight: 60,
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
           }}
         >
-          <Avatar
-            onClick={() => navigate(`/profile/${userId}`)}
-            src={avatarUrl || `https://ui-avatars.com/api/?name=${username}&size=32`}
-            alt={username}
-            sx={{ 
-              width: { xs: 24, sm: 32 }, 
-              height: { xs: 24, sm: 32 },
-              cursor: 'pointer',
-              transition: 'opacity 0.2s',
-              '&:hover': {
-                opacity: 0.8,
-              },
-              '&:active': {
-                opacity: 0.6,
-              },
-            }}
-          />
-          <Typography 
-            variant="subtitle2" 
-            onClick={() => navigate(`/profile/${userId}`)}
-            sx={{ 
-              fontWeight: 600,
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              cursor: 'pointer',
-              transition: 'opacity 0.2s',
-              '&:hover': {
-                opacity: 0.8,
-              },
-              '&:active': {
-                opacity: 0.6,
-              },
-            }}
-          >
-            {userId === currentUser?.id ? 'You' : username}
-          </Typography>
-          <Box sx={{ flex: 1 }} />
           <IconButton
             onClick={onClose}
             size="small"
             sx={{
               color: 'white',
-              padding: 0,
               '&:hover': {
                 bgcolor: 'rgba(255, 255, 255, 0.1)',
               },
             }}
           >
-            <CloseIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
+            <ArrowBackIcon />
+          </IconButton>
+          
+          <Avatar
+            onClick={() => navigate(`/profile/${userId}`)}
+            src={avatarUrl || `https://ui-avatars.com/api/?name=${username}&size=40`}
+            alt={username}
+            sx={{ 
+              width: 40, 
+              height: 40,
+              cursor: 'pointer',
+              transition: 'opacity 0.2s',
+              '&:hover': {
+                opacity: 0.9,
+              },
+            }}
+          />
+          
+          <Box 
+            onClick={() => navigate(`/profile/${userId}`)}
+            sx={{ 
+              flex: 1, 
+              cursor: 'pointer',
+              '&:hover': {
+                opacity: 0.9,
+              },
+            }}
+          >
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                fontWeight: 500,
+                fontSize: '1rem',
+                lineHeight: 1.2,
+              }}
+            >
+              {userId === currentUser?.id ? 'You' : username}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                fontSize: '0.8125rem',
+                opacity: 0.8,
+              }}
+            >
+              {loading ? 'Loading...' : 'Online'}
+            </Typography>
+          </Box>
+          
+          <IconButton
+            size="small"
+            sx={{
+              color: 'white',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
+          >
+            <MoreVertIcon />
           </IconButton>
         </Box>
 
-        {/* Messages */}
+        {/* Messages Area */}
         <Box
           sx={{
             flex: 1,
             overflowY: 'auto',
-            p: { xs: 0.75, sm: 1.5 },
+            p: 2,
             bgcolor: 'background.default',
             display: 'flex',
             flexDirection: 'column',
-            gap: { xs: 0.5, sm: 1 },
+            gap: 0.5,
+            backgroundImage: theme.palette.mode === 'dark' 
+              ? 'none'
+              : 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%23f0f0f0\' fill-opacity=\'0.05\'/%3E%3C/svg%3E")',
             // Custom scrollbar
             '&::-webkit-scrollbar': {
-              width: '3px',
+              width: '6px',
             },
             '&::-webkit-scrollbar-track': {
               background: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
               background: 'rgba(0,0,0,0.2)',
-              borderRadius: '2px',
+              borderRadius: '3px',
               '&:hover': {
                 background: 'rgba(0,0,0,0.3)',
               },
@@ -403,23 +457,25 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                     sx={{
                       display: 'flex',
                       justifyContent: isOwn ? 'flex-end' : 'flex-start',
+                      mb: 0.5,
                     }}
                   >
                     <Box
                       sx={{
                         maxWidth: '75%',
-                        px: { xs: 0.75, sm: 1.5 },
-                        py: { xs: 0.375, sm: 0.75 },
-                        borderRadius: { xs: '10px', sm: '16px' },
-                        bgcolor: isOwn ? 'primary.main' : 'action.hover',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                        px: 1.5,
+                        py: 0.75,
+                        borderRadius: '8px',
+                        bgcolor: isOwn ? 'primary.main' : 'background.paper',
+                        boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)',
                         ...(isOwn
-                          ? { borderBottomRightRadius: '3px' }
-                          : { borderBottomLeftRadius: '3px' }),
-                        animation: 'fadeIn 0.2s ease-in',
+                          ? { borderTopRightRadius: '2px' }
+                          : { borderTopLeftRadius: '2px' }),
+                        position: 'relative',
+                        animation: 'fadeIn 0.15s ease-out',
                         '@keyframes fadeIn': {
-                          '0%': { opacity: 0, transform: 'translateY(4px)' },
-                          '100%': { opacity: 1, transform: 'translateY(0)' },
+                          '0%': { opacity: 0, transform: 'scale(0.95)' },
+                          '100%': { opacity: 1, transform: 'scale(1)' },
                         },
                       }}
                     >
@@ -428,35 +484,40 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                         sx={{ 
                           wordBreak: 'break-word',
                           color: isOwn ? 'white' : 'text.primary',
-                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                          lineHeight: 1.3,
+                          fontSize: '0.9375rem',
+                          lineHeight: 1.4,
+                          mb: 0.25,
                         }}
                       >
                         {message.content}
                       </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, mt: 0.125 }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 0.5, 
+                        justifyContent: 'flex-end',
+                      }}>
                         <Typography
                           variant="caption"
                           sx={{
-                            opacity: 0.6,
-                            fontSize: { xs: '0.5625rem', sm: '0.65rem' },
-                            color: isOwn ? 'white' : 'text.primary',
+                            fontSize: '0.6875rem',
+                            color: isOwn ? 'rgba(255,255,255,0.7)' : 'text.secondary',
                           }}
                         >
                           {formatTime(message.created_at)}
                         </Typography>
                         {isOwn && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.125 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             {message.read_by && message.read_by.some(r => r.user_id !== currentUser?.id) ? (
                               // Double check for read
-                              <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                                <path d="M2 8.5L5 11.5L9 7.5" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <path d="M6 8.5L9 11.5L13 7.5" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
+                                <path d="M1 5L4 8L8 4" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M5 5L8 8L15 1" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
                             ) : (
                               // Single check for sent
-                              <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                                <path d="M3 8.5L6 11.5L13 4.5" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
+                                <path d="M1 5L5 9L15 1" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
                             )}
                           </Box>
@@ -471,45 +532,63 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
           )}
         </Box>
 
-        {/* Input */}
+        {/* Input Area */}
         <Box
           sx={{
-            p: { xs: 0.75, sm: 1.5 },
+            p: 1.5,
+            bgcolor: 'background.paper',
             borderTop: 1,
             borderColor: 'divider',
-            bgcolor: 'background.paper',
-            minHeight: { xs: 40, sm: 60 },
           }}
         >
-          <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+            <IconButton
+              size="small"
+              sx={{
+                color: 'text.secondary',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <EmojiIcon />
+            </IconButton>
+            
+            <IconButton
+              size="small"
+              sx={{
+                color: 'text.secondary',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <AttachFileIcon />
+            </IconButton>
+            
             <Box
               component="input"
               ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e: any) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Message..."
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message"
               disabled={loading || sending}
               sx={{
                 flex: 1,
-                padding: { xs: '5px 8px', sm: '7px 12px' },
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: { xs: '10px', sm: '16px' },
+                padding: '10px 16px',
+                border: 'none',
+                borderRadius: '24px',
                 outline: 'none',
-                fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                fontSize: '0.9375rem',
                 fontFamily: 'inherit',
-                bgcolor: 'background.paper',
+                bgcolor: 'background.default',
                 color: 'text.primary',
                 transition: 'all 0.2s',
                 '&::placeholder': {
                   color: 'text.secondary',
-                  opacity: 0.5,
-                },
-                '&:focus': {
-                  borderColor: 'primary.main',
-                  bgcolor: 'background.paper',
+                  opacity: 0.6,
                 },
                 '&:disabled': {
                   opacity: 0.5,
@@ -517,29 +596,40 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                 },
               }}
             />
-            <IconButton
-              onClick={handleSend}
-              disabled={!inputValue.trim() || loading || sending}
-              size="small"
-              sx={{
-                bgcolor: 'primary.main',
-                color: 'white',
-                width: { xs: 28, sm: 32 },
-                height: { xs: 28, sm: 32 },
-                minWidth: { xs: 28, sm: 32 },
-                '&:hover': {
-                  bgcolor: 'primary.dark',
-                },
-                '&:disabled': {
-                  bgcolor: 'grey.300',
-                  color: 'grey.500',
-                },
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
-              </svg>
-            </IconButton>
+            
+            {inputValue.trim() ? (
+              <IconButton
+                onClick={handleSend}
+                disabled={loading || sending}
+                sx={{
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  width: 42,
+                  height: 42,
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  },
+                  '&:disabled': {
+                    bgcolor: 'action.disabledBackground',
+                    color: 'action.disabled',
+                  },
+                }}
+              >
+                <SendIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+            ) : (
+              <IconButton
+                size="small"
+                sx={{
+                  color: 'text.secondary',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  },
+                }}
+              >
+                <MicIcon />
+              </IconButton>
+            )}
           </Box>
         </Box>
       </Paper>

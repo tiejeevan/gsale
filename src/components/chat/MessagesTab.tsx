@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useChatContext } from '../../context/ChatContext';
 import { useUserContext } from '../../context/UserContext';
 import FloatingChatPopup from './FloatingChatPopup';
@@ -6,6 +7,8 @@ import { Box, Paper, Typography, Avatar, Badge, IconButton, Button } from '@mui/
 import { ExpandMore as ExpandMoreIcon, Chat as ChatIcon } from '@mui/icons-material';
 
 const MessagesTab = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const { chats, totalUnreadCount } = useChatContext();
@@ -32,11 +35,24 @@ const MessagesTab = () => {
   const handleChatClick = (chatId: number) => {
     setSelectedChatId(chatId);
     setIsExpanded(false);
+    // Add hash to URL for back button support on mobile
+    navigate(location.pathname + location.search + '#chat', { replace: false });
   };
 
   const handleClosePopup = () => {
     setSelectedChatId(null);
+    // Remove hash from URL
+    if (location.hash === '#chat') {
+      navigate(-1);
+    }
   };
+
+  // Close popup when hash changes (back button pressed)
+  useEffect(() => {
+    if (location.hash !== '#chat' && selectedChatId !== null) {
+      setSelectedChatId(null);
+    }
+  }, [location.hash]);
 
   const formatLastMessage = (chat: any) => {
     if (!chat.last_message_content) return 'No messages yet';
