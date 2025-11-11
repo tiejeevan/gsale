@@ -7,7 +7,8 @@ import {
   Mic as MicIcon,
   EmojiEmotions as EmojiIcon,
   Send as SendIcon,
-  Reply as ReplyIcon
+  Reply as ReplyIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useSpring } from 'framer-motion';
@@ -32,22 +33,34 @@ interface MessageBubbleProps {
   currentUserId?: number;
   onReply: (message: Message) => void;
   formatTime: (timestamp: string) => string;
+  repliedMessage?: Message | null;
 }
 
-const MessageBubble = memo(({ message, currentUserId, onReply, formatTime }: MessageBubbleProps) => {
+const MessageBubble = memo(({ message, currentUserId, onReply, formatTime, repliedMessage }: MessageBubbleProps) => {
   const isOwn = message.sender_id === currentUserId;
   const x = useSpring(0, { stiffness: 300, damping: 30 });
+  const swipeDistanceRef = useRef(0);
   
   const bind = useDrag(
-    ({ down, movement: [mx], direction: [xDir], cancel }) => {
-      // Swipe to reply
-      const threshold = 60;
+    ({ down, movement: [mx], direction: [xDir], last }) => {
+      // Swipe to reply - reduced threshold for better UX
+      const threshold = 20;
       const swipeDirection = isOwn ? -1 : 1;
       
-      if (!down && Math.abs(mx) > threshold && xDir === swipeDirection) {
-        onReply(message);
+      // Store the movement distance while dragging
+      if (!last && down) {
+        swipeDistanceRef.current = mx;
+      }
+      
+      if (last) {
+        // Check stored distance instead of current mx (which is 0 on release)
+        const finalDistance = swipeDistanceRef.current;
+        
+        if (Math.abs(finalDistance) > threshold && xDir === swipeDirection) {
+          onReply(message);
+        }
         x.set(0);
-        cancel();
+        swipeDistanceRef.current = 0; // Reset for next swipe
       } else {
         x.set(down ? mx : 0);
       }
@@ -66,7 +79,7 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime }: Mes
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ duration: 0.2 }}
-      style={{ x: x as any }}
+      style={{ x: x as any, touchAction: 'none' }}
       {...(bind() as any)}
     >
       <Box
@@ -77,19 +90,6 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime }: Mes
           position: 'relative',
         }}
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            [isOwn ? 'left' : 'right']: 10,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            opacity: 0.3,
-            pointerEvents: 'none',
-          }}
-        >
-          <ReplyIcon sx={{ fontSize: 24, color: 'text.secondary' }} />
-        </Box>
-
         <Box
           sx={{
             maxWidth: '75%',
@@ -108,7 +108,7 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime }: Mes
             },
           }}
         >
-          {message.reply_to && (
+          {message.reply_to && repliedMessage && (
             <Box
               sx={{
                 mb: 0.5,
@@ -119,8 +119,11 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime }: Mes
                 borderRadius: 0.5,
               }}
             >
-              <Typography variant="caption" sx={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                Replying to message
+              <Typography variant="caption" sx={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: 600 }}>
+                {repliedMessage.username}
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: '0.7rem', opacity: 0.7, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {repliedMessage.content}
               </Typography>
             </Box>
           )}
@@ -175,7 +178,6 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime }: Mes
 });
 
 const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingChatPopupProps) => {
-  console.log('🔄 FloatingChatPopup RENDER');
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -193,8 +195,6 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
   const [refreshing, setRefreshing] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
   
-  console.log('📊 State:', { chatId, inputValue: inputValue.length, loading, sending, isInputFocused });
-  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -208,14 +208,11 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
   const chatMessages = chatId ? contextMessages[chatId] : undefined;
   
   const messages = useMemo(() => {
-    console.log('📝 Messages useMemo recalculating');
     if (!chatId || !chatMessages) return [];
     return [...chatMessages].sort((a, b) => 
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
   }, [chatId, chatMessages]);
-  
-  console.log('💬 Messages count:', messages.length);
 
   // Initialize chat
   useEffect(() => {
@@ -297,7 +294,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
           });
         }
       } catch (error) {
-        console.error('Failed to initialize chat:', error);
+        // Failed to initialize chat
       } finally {
         setLoading(false);
       }
@@ -324,8 +321,8 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
       updateChatInList({ id: chatId, unread_count: 0 });
       
       // Mark as read on server
-      markMessagesAsRead(token, chatId, { lastMessageId: lastMessage.id }).catch(err => {
-        console.error('Failed to mark messages as read:', err);
+      markMessagesAsRead(token, chatId, { lastMessageId: lastMessage.id }).catch(() => {
+        // Failed to mark as read
       });
     }
   }, [messages.length, chatId, currentUser?.id, token]);
@@ -384,7 +381,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
     
     // Optimistically add message to UI immediately
     const tempMessage: Message = {
-      id: Date.now(), // Temporary ID
+      id: Date.now() + Math.random(), // Temporary unique ID
       chat_id: chatId,
       sender_id: currentUser?.id || 0,
       content: messageContent,
@@ -408,6 +405,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
       const response = await sendMessage(token, chatId, {
         content: messageContent,
         type: 'text',
+        replyTo: replyTo?.id,
       });
       
       // Replace temp message with real message from server
@@ -421,7 +419,6 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
         setMessages(chatId, withReal);
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
       // Remove temp message on error
       const currentMessages = contextMessages[chatId] || [];
       setMessages(chatId, currentMessages.filter(msg => msg.id !== tempMessage.id));
@@ -460,7 +457,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
       );
       setMessages(chatId, sortedMessages);
     } catch (error) {
-      console.error('Failed to refresh messages:', error);
+      // Failed to refresh messages
     } finally {
       setRefreshing(false);
       pullY.set(0);
@@ -705,15 +702,22 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
           ) : (
             <>
               <AnimatePresence>
-                {messages.map((message) => (
-                  <MessageBubble 
-                    key={message.id} 
-                    message={message} 
-                    currentUserId={currentUser?.id}
-                    onReply={handleReply}
-                    formatTime={formatTime}
-                  />
-                ))}
+                {messages.map((message) => {
+                  const repliedMessage = message.reply_to 
+                    ? messages.find(m => m.id === message.reply_to)
+                    : null;
+                  
+                  return (
+                    <MessageBubble 
+                      key={message.id} 
+                      message={message} 
+                      currentUserId={currentUser?.id}
+                      onReply={handleReply}
+                      formatTime={formatTime}
+                      repliedMessage={repliedMessage}
+                    />
+                  );
+                })}
               </AnimatePresence>
               <div ref={messagesEndRef} />
             </>
@@ -751,7 +755,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                   </Typography>
                 </Box>
                 <IconButton size="small" onClick={() => setReplyTo(null)}>
-                  <ArrowBackIcon sx={{ fontSize: 18, transform: 'rotate(180deg)' }} />
+                  <CloseIcon sx={{ fontSize: 20 }} />
                 </IconButton>
               </Box>
             </motion.div>
@@ -797,10 +801,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
               ref={inputRef}
               type="text"
               value={inputValue}
-              onChange={(e: any) => {
-                console.log('⌨️ Input change:', e.target.value);
-                setInputValue(e.target.value);
-              }}
+              onChange={(e: any) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               onFocus={() => setIsInputFocused(true)}
               onBlur={() => setIsInputFocused(false)}
