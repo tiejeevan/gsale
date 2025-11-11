@@ -1,14 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
-import { Box, IconButton, Typography, Avatar, Paper, Fade, useTheme, useMediaQuery } from '@mui/material';
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { Box, IconButton, Typography, Avatar, Paper, useTheme, useMediaQuery, CircularProgress } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon,
   MoreVert as MoreVertIcon,
   AttachFile as AttachFileIcon,
   Mic as MicIcon,
   EmojiEmotions as EmojiIcon,
-  Send as SendIcon
+  Send as SendIcon,
+  Reply as ReplyIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence, useSpring } from 'framer-motion';
+import { useDrag } from '@use-gesture/react';
 import { useUserContext } from '../../context/UserContext';
 import { useChatContext } from '../../context/ChatContext';
 import { useChat } from '../../hooks/useChat';
@@ -23,7 +26,157 @@ interface FloatingChatPopupProps {
   onClose: () => void;
 }
 
+// Message Bubble Component - Memoized and outside main component to prevent re-creation
+interface MessageBubbleProps {
+  message: Message;
+  currentUserId?: number;
+  onReply: (message: Message) => void;
+  formatTime: (timestamp: string) => string;
+}
+
+const MessageBubble = memo(({ message, currentUserId, onReply, formatTime }: MessageBubbleProps) => {
+  const isOwn = message.sender_id === currentUserId;
+  const x = useSpring(0, { stiffness: 300, damping: 30 });
+  
+  const bind = useDrag(
+    ({ down, movement: [mx], direction: [xDir], cancel }) => {
+      // Swipe to reply
+      const threshold = 60;
+      const swipeDirection = isOwn ? -1 : 1;
+      
+      if (!down && Math.abs(mx) > threshold && xDir === swipeDirection) {
+        onReply(message);
+        x.set(0);
+        cancel();
+      } else {
+        x.set(down ? mx : 0);
+      }
+    },
+    {
+      axis: 'x',
+      bounds: { left: isOwn ? -100 : 0, right: isOwn ? 0 : 100 },
+      rubberband: true,
+      filterTaps: true,
+    }
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.2 }}
+      style={{ x: x as any }}
+      {...(bind() as any)}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: isOwn ? 'flex-end' : 'flex-start',
+          mb: 0.5,
+          position: 'relative',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            [isOwn ? 'left' : 'right']: 10,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            opacity: 0.3,
+            pointerEvents: 'none',
+          }}
+        >
+          <ReplyIcon sx={{ fontSize: 24, color: 'text.secondary' }} />
+        </Box>
+
+        <Box
+          sx={{
+            maxWidth: '75%',
+            px: 1.5,
+            py: 0.75,
+            borderRadius: '8px',
+            bgcolor: isOwn ? 'primary.main' : 'background.paper',
+            boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)',
+            ...(isOwn
+              ? { borderTopRightRadius: '2px' }
+              : { borderTopLeftRadius: '2px' }),
+            position: 'relative',
+            cursor: 'grab',
+            '&:active': {
+              cursor: 'grabbing',
+            },
+          }}
+        >
+          {message.reply_to && (
+            <Box
+              sx={{
+                mb: 0.5,
+                p: 0.5,
+                borderLeft: 3,
+                borderColor: isOwn ? 'rgba(255,255,255,0.5)' : 'primary.main',
+                bgcolor: isOwn ? 'rgba(255,255,255,0.1)' : 'action.hover',
+                borderRadius: 0.5,
+              }}
+            >
+              <Typography variant="caption" sx={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                Replying to message
+              </Typography>
+            </Box>
+          )}
+          
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              wordBreak: 'break-word',
+              color: isOwn ? 'white' : 'text.primary',
+              fontSize: '0.9375rem',
+              lineHeight: 1.4,
+              mb: 0.25,
+            }}
+          >
+            {message.content}
+          </Typography>
+          
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 0.5, 
+            justifyContent: 'flex-end',
+          }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: '0.6875rem',
+                color: isOwn ? 'rgba(255,255,255,0.7)' : 'text.secondary',
+              }}
+            >
+              {formatTime(message.created_at)}
+            </Typography>
+            {isOwn && (
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {message.read_by && message.read_by.some(r => r.user_id !== currentUserId) ? (
+                  <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
+                    <path d="M1 5L4 8L8 4" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M5 5L8 8L15 1" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ) : (
+                  <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
+                    <path d="M1 5L5 9L15 1" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </Box>
+            )}
+          </Box>
+        </Box>
+      </Box>
+    </motion.div>
+  );
+});
+
 const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingChatPopupProps) => {
+  console.log('🔄 FloatingChatPopup RENDER');
+  
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -36,16 +189,33 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  
+  console.log('📊 State:', { chatId, inputValue: inputValue.length, loading, sending, isInputFocused });
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const initialLocationRef = useRef(location.pathname + location.search);
   
-  // Use context messages and ensure they're sorted
-  const messages = chatId 
-    ? (contextMessages[chatId] || []).sort((a, b) => 
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      )
-    : [];
+  // Spring animation for pull to refresh (disabled when typing)
+  const pullY = useSpring(0, { stiffness: 300, damping: 30 });
+  
+  // Get only this chat's messages from context - memoized to prevent re-sorting on every render
+  // Only depends on the specific chat's messages, not the entire contextMessages object
+  const chatMessages = chatId ? contextMessages[chatId] : undefined;
+  
+  const messages = useMemo(() => {
+    console.log('📝 Messages useMemo recalculating');
+    if (!chatId || !chatMessages) return [];
+    return [...chatMessages].sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  }, [chatId, chatMessages]);
+  
+  console.log('💬 Messages count:', messages.length);
 
   // Initialize chat
   useEffect(() => {
@@ -219,7 +389,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
       sender_id: currentUser?.id || 0,
       content: messageContent,
       type: 'text',
-      reply_to: undefined,
+      reply_to: replyTo?.id,
       is_edited: false,
       is_deleted: false,
       created_at: new Date().toISOString(),
@@ -232,6 +402,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
     
     // Add temp message using context's addMessage (which handles duplicates and sorting)
     addMessage(chatId, tempMessage);
+    setReplyTo(null); // Clear reply after sending
     
     try {
       const response = await sendMessage(token, chatId, {
@@ -268,13 +439,77 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
     }
   };
 
-  const formatTime = (timestamp: string) => {
+  const formatTime = useCallback((timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }, []);
+  
+  const handleReply = useCallback((message: Message) => {
+    setReplyTo(message);
+  }, []);
+
+  // Pull to refresh handler
+  const handleRefresh = async () => {
+    if (!chatId || !token || refreshing) return;
+    
+    setRefreshing(true);
+    try {
+      const fetchedMessages = await getChatMessages(token, chatId);
+      const sortedMessages = [...fetchedMessages].sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      setMessages(chatId, sortedMessages);
+    } catch (error) {
+      console.error('Failed to refresh messages:', error);
+    } finally {
+      setRefreshing(false);
+      pullY.set(0);
+    }
   };
 
+  // Pull to refresh gesture (disabled when typing)
+  const bindPull = useDrag(
+    ({ down, movement: [, my], cancel }) => {
+      // Disable pull-to-refresh when input is focused (typing)
+      if (isInputFocused) {
+        cancel();
+        return;
+      }
+
+      if (messagesContainerRef.current) {
+        const scrollTop = messagesContainerRef.current.scrollTop;
+        
+        // Only allow pull when scrolled to top
+        if (scrollTop === 0 && my > 0) {
+          pullY.set(down ? Math.min(my, 100) : 0);
+          
+          // Trigger refresh if pulled enough
+          if (!down && my > 80) {
+            handleRefresh();
+          }
+        } else if (scrollTop > 0) {
+          cancel();
+        }
+      }
+    },
+    {
+      axis: 'y',
+      filterTaps: true,
+      pointer: { touch: true },
+      enabled: !isInputFocused, // Disable when typing
+    }
+  );
+
+
+
   return (
-    <Fade in timeout={300}>
+      <motion.div
+        initial={{ opacity: 0, y: isMobile ? '100%' : 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: isMobile ? '100%' : 20 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        style={{ height: '100%', width: '100%' }}
+      >
       <Paper
         elevation={isMobile ? 0 : 8}
         sx={{
@@ -389,6 +624,8 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
 
         {/* Messages Area */}
         <Box
+          ref={messagesContainerRef}
+          {...(!isInputFocused ? (bindPull() as any) : {})}
           sx={{
             flex: 1,
             overflowY: 'auto',
@@ -397,6 +634,9 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
             display: 'flex',
             flexDirection: 'column',
             gap: 0.5,
+            position: 'relative',
+            touchAction: isInputFocused ? 'auto' : 'pan-y',
+            willChange: isInputFocused ? 'auto' : 'transform',
             backgroundImage: theme.palette.mode === 'dark' 
               ? 'none'
               : 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%23f0f0f0\' fill-opacity=\'0.05\'/%3E%3C/svg%3E")',
@@ -416,6 +656,21 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
             },
           }}
         >
+          {/* Pull to Refresh Indicator */}
+          <motion.div
+            style={{
+              y: pullY as any,
+              position: 'absolute',
+              top: -50,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 10,
+            }}
+          >
+            {refreshing && (
+              <CircularProgress size={24} sx={{ color: 'primary.main' }} />
+            )}
+          </motion.div>
           {loading ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', gap: 1 }}>
               <Box sx={{ 
@@ -449,88 +704,59 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
             </Box>
           ) : (
             <>
-              {messages.map((message) => {
-                const isOwn = message.sender_id === currentUser?.id;
-                return (
-                  <Box
-                    key={message.id}
-                    sx={{
-                      display: 'flex',
-                      justifyContent: isOwn ? 'flex-end' : 'flex-start',
-                      mb: 0.5,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        maxWidth: '75%',
-                        px: 1.5,
-                        py: 0.75,
-                        borderRadius: '8px',
-                        bgcolor: isOwn ? 'primary.main' : 'background.paper',
-                        boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)',
-                        ...(isOwn
-                          ? { borderTopRightRadius: '2px' }
-                          : { borderTopLeftRadius: '2px' }),
-                        position: 'relative',
-                        animation: 'fadeIn 0.15s ease-out',
-                        '@keyframes fadeIn': {
-                          '0%': { opacity: 0, transform: 'scale(0.95)' },
-                          '100%': { opacity: 1, transform: 'scale(1)' },
-                        },
-                      }}
-                    >
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          wordBreak: 'break-word',
-                          color: isOwn ? 'white' : 'text.primary',
-                          fontSize: '0.9375rem',
-                          lineHeight: 1.4,
-                          mb: 0.25,
-                        }}
-                      >
-                        {message.content}
-                      </Typography>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 0.5, 
-                        justifyContent: 'flex-end',
-                      }}>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontSize: '0.6875rem',
-                            color: isOwn ? 'rgba(255,255,255,0.7)' : 'text.secondary',
-                          }}
-                        >
-                          {formatTime(message.created_at)}
-                        </Typography>
-                        {isOwn && (
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {message.read_by && message.read_by.some(r => r.user_id !== currentUser?.id) ? (
-                              // Double check for read
-                              <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
-                                <path d="M1 5L4 8L8 4" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <path d="M5 5L8 8L15 1" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                            ) : (
-                              // Single check for sent
-                              <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
-                                <path d="M1 5L5 9L15 1" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                            )}
-                          </Box>
-                        )}
-                      </Box>
-                    </Box>
-                  </Box>
-                );
-              })}
+              <AnimatePresence>
+                {messages.map((message) => (
+                  <MessageBubble 
+                    key={message.id} 
+                    message={message} 
+                    currentUserId={currentUser?.id}
+                    onReply={handleReply}
+                    formatTime={formatTime}
+                  />
+                ))}
+              </AnimatePresence>
               <div ref={messagesEndRef} />
             </>
           )}
         </Box>
+
+        {/* Reply Preview */}
+        <AnimatePresence>
+          {replyTo && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Box
+                sx={{
+                  px: 2,
+                  py: 1,
+                  bgcolor: 'action.hover',
+                  borderTop: 1,
+                  borderColor: 'divider',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                <ReplyIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="caption" color="primary" sx={{ fontWeight: 600 }}>
+                    Replying to {replyTo.sender_id === currentUser?.id ? 'yourself' : username}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {replyTo.content}
+                  </Typography>
+                </Box>
+                <IconButton size="small" onClick={() => setReplyTo(null)}>
+                  <ArrowBackIcon sx={{ fontSize: 18, transform: 'rotate(180deg)' }} />
+                </IconButton>
+              </Box>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Input Area */}
         <Box
@@ -571,8 +797,13 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
               ref={inputRef}
               type="text"
               value={inputValue}
-              onChange={(e: any) => setInputValue(e.target.value)}
+              onChange={(e: any) => {
+                console.log('⌨️ Input change:', e.target.value);
+                setInputValue(e.target.value);
+              }}
               onKeyDown={handleKeyDown}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
               placeholder="Type a message"
               disabled={loading || sending}
               sx={{
@@ -585,7 +816,8 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
                 fontFamily: 'inherit',
                 bgcolor: 'background.default',
                 color: 'text.primary',
-                transition: 'all 0.2s',
+                transition: 'border-color 0.2s',
+                willChange: 'auto',
                 '&::placeholder': {
                   color: 'text.secondary',
                   opacity: 0.6,
@@ -633,7 +865,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
           </Box>
         </Box>
       </Paper>
-    </Fade>
+      </motion.div>
   );
 };
 
