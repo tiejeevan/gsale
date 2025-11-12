@@ -23,6 +23,7 @@ import {
 import { adminService, type AdminStats } from '../services/adminService';
 import AdminUserManagement from '../components/admin/AdminUserManagement';
 import AdminProductsController from '../components/admin/AdminProductsController';
+import SystemSettings from '../components/admin/SystemSettings';
 
 const AdminDashboard: React.FC = () => {
   const { currentUser, token } = useUserContext();
@@ -120,6 +121,7 @@ const AdminDashboard: React.FC = () => {
           <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
             <Tab label="Products Controller" />
             <Tab label="Admin Dashboard" />
+            <Tab label="System Settings" />
           </Tabs>
         </Box>
 
@@ -211,6 +213,12 @@ const AdminDashboard: React.FC = () => {
 
             {/* User Management */}
             <AdminUserManagement />
+          </Box>
+        )}
+
+        {activeTab === 2 && (
+          <Box>
+            <SystemSettings />
           </Box>
         )}
       </Container>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -83,6 +83,7 @@ const PostCard: React.FC<PostCardProps> = ({
   showCommentsInitially = false,
   highlightCommentId,
 }) => {
+  const navigate = useNavigate();
   const [hovered, setHovered] = useState(false);
   const [showComments, setShowComments] = useState(showCommentsInitially);
   const [liked, setLiked] = useState(post.liked_by_user || false);
@@ -166,15 +167,19 @@ const PostCard: React.FC<PostCardProps> = ({
       if (part.match(/^@\w+$/)) {
         const username = part.substring(1);
         return (
-          <Link
+          <span
             key={index}
-            to={`/profile/${username}`}
             style={{
               color: theme.palette.primary.main,
               textDecoration: 'none',
               fontWeight: 600,
+              cursor: 'pointer',
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate(`/profile/${username}`);
+            }}
             onMouseEnter={(e) => {
               e.currentTarget.style.textDecoration = 'underline';
             }}
@@ -183,7 +188,7 @@ const PostCard: React.FC<PostCardProps> = ({
             }}
           >
             {part}
-          </Link>
+          </span>
         );
       }
       return part;
@@ -572,18 +577,23 @@ const PostCard: React.FC<PostCardProps> = ({
         )}
 
         {/* Post Content */}
-        <Typography
-          variant="body1"
-          sx={{
-            mb: 1.5,
-            lineHeight: 1.5,
-            whiteSpace: 'pre-line',
-            fontSize: '0.95rem',
-            color: 'text.primary',
-          }}
-        >
-          {renderContentWithMentions(post.content)}
-        </Typography>
+        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Typography
+            variant="body1"
+            sx={{
+              mb: 1.5,
+              lineHeight: 1.5,
+              whiteSpace: 'pre-line',
+              fontSize: '0.95rem',
+              color: 'text.primary',
+              cursor: 'pointer',
+              '&:hover': { opacity: 0.8 },
+              transition: 'opacity 0.2s',
+            }}
+          >
+            {renderContentWithMentions(post.content)}
+          </Typography>
+        </Link>
 
         {/* Post Image */}
         {post.image_url && (
