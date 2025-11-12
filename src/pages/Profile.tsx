@@ -415,7 +415,14 @@ const Profile: React.FC = () => {
         pb: 4,
       }}
     >
-      <Container maxWidth="md" sx={{ pt: 4 }}>
+      <Container 
+        maxWidth="lg" 
+        sx={{ 
+          pt: { xs: 2, sm: 4 },
+          pb: { xs: 10, sm: 4 },
+          px: { xs: 1, sm: 2, md: 3 },
+        }}
+      >
         {/* Cover Image */}
         <Paper
           elevation={0}
@@ -977,9 +984,16 @@ const Profile: React.FC = () => {
           )}
         </Paper>
 
-        {/* Feed Tab Content - Outside Paper with normal styling */}
+        {/* Feed Tab Content - Facebook-style layout */}
         {activeTab === 1 && (
-          <Box sx={{ mt: 3 }}>
+          <Box 
+            sx={{ 
+              mt: 3,
+              maxWidth: '680px',
+              mx: 'auto',
+              width: '100%',
+            }}
+          >
             {postsLoading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                 <CircularProgress />
@@ -989,14 +1003,22 @@ const Profile: React.FC = () => {
                 {postsError}
               </Alert>
             ) : posts.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Paper 
+                elevation={1}
+                sx={{ 
+                  textAlign: 'center', 
+                  py: 8,
+                  borderRadius: 2,
+                  bgcolor: 'background.paper',
+                }}
+              >
                 <Typography variant="h6" color="text.secondary" gutterBottom>
                   No posts yet
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {isOwnProfile ? "Start sharing your thoughts!" : "This user hasn't posted anything yet."}
                 </Typography>
-              </Box>
+              </Paper>
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {posts.map((post) => (
@@ -1005,10 +1027,11 @@ const Profile: React.FC = () => {
                     post={post}
                     token={token ?? ""}
                     userId={currentUser?.id ?? 0}
-                    showUsername={false}
+                    showUsername={true}
                     r2PublicUrl={R2_PUBLIC_URL}
                     currentUserId={currentUser?.id ?? 0}
                     showEditDeleteOnHover={isOwnProfile}
+                    onBookmarkChange={() => fetchPosts(profileUser?.id ?? 0)}
                   />
                 ))}
               </Box>

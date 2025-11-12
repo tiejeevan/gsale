@@ -13,5 +13,6 @@ export const onPostCreated = (cb: Callback) => {
 };
 
 export const triggerPostCreated = () => {
+  console.log(`🔔 triggerPostCreated called, notifying ${listeners.length} listeners`);
   listeners.forEach((cb) => cb());
 };
