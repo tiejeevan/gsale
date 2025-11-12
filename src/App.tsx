@@ -26,6 +26,7 @@ import { ChatProvider } from "./context/ChatContext";
 import { CartProvider } from "./context/CartContext";
 import Navbar from "./pages/Navbar";
 import MessagesTab from "./components/chat/MessagesTab";
+import { LocationDisplay } from "./components/LocationDisplay";
 
 function AppContent() {
   const { token, isLoading } = useUserContext();
@@ -214,6 +215,9 @@ function AppContent() {
 
         {/* Messages Tab - Show only when logged in */}
         {token && <MessagesTab />}
+        
+        {/* Location Display - Show only when logged in */}
+        {token && <LocationDisplay />}
         </>
       )}
     </>

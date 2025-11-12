@@ -11,6 +11,26 @@ export interface SocialLinks {
   [key: string]: string | undefined;
 }
 
+export interface LocationInfo {
+  country: string;
+  country_name: string;
+  region: string;
+  city: string;
+  timezone: string;
+  latitude: number | null;
+  longitude: number | null;
+  location_last_updated?: string;
+  currency?: {
+    code: string;
+    symbol: string;
+    name: string;
+  };
+  language?: {
+    code: string;
+    name: string;
+  };
+}
+
 export interface User {
   id: number;
   username: string;
@@ -36,6 +56,16 @@ export interface User {
   is_active?: boolean;
   follower_count?: number;
   following_count?: number;
+  // Location fields
+  country?: string;
+  country_name?: string;
+  region?: string;
+  city?: string;
+  timezone?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_last_updated?: string;
+  location_info?: LocationInfo;
 }
 
 // -------------------- 🟢 HELPER --------------------
