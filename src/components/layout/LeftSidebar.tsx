@@ -11,6 +11,9 @@ import {
   Public as PublicIcon,
   SportsFootball as SportsIcon,
   Movie as MovieIcon,
+  ShoppingBag as MarketIcon,
+  Storefront as SellIcon,
+  Receipt as OrdersIcon,
 } from "@mui/icons-material";
 
 const LeftSidebar: React.FC = () => {
@@ -36,6 +39,9 @@ const LeftSidebar: React.FC = () => {
     { icon: <HomeIcon />, label: "Home", path: "/dashboard" },
     { icon: <PersonIcon />, label: "Profile", path: `/profile/${user.id}` },
     { icon: <GroupIcon />, label: "Friends", path: "/friends" },
+    { icon: <MarketIcon />, label: "Market", path: "/market" },
+    { icon: <SellIcon />, label: "Sell Product", path: "/sell" },
+    { icon: <OrdersIcon />, label: "My Orders", path: "/orders" },
     { icon: <BookmarkIcon />, label: "Watch List", path: "/saved" },
   ];
 

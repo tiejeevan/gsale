@@ -11,6 +11,8 @@ import {
   CircularProgress,
   Alert,
   Button,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -20,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import { adminService, type AdminStats } from '../services/adminService';
 import AdminUserManagement from '../components/admin/AdminUserManagement';
+import AdminProductsController from '../components/admin/AdminProductsController';
 
 const AdminDashboard: React.FC = () => {
   const { currentUser, token } = useUserContext();
@@ -27,6 +30,7 @@ const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     // Check if user is admin
@@ -72,10 +76,10 @@ const AdminDashboard: React.FC = () => {
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-              Admin Dashboard
+              Admin Panel
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Manage users and monitor platform activity
+              Manage products, users and monitor platform activity
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -94,6 +98,14 @@ const AdminDashboard: React.FC = () => {
             >
               🧪 Test Dashboard
             </Button>
+            <Button
+              variant="outlined"
+              onClick={() => navigate('/admin/products-test')}
+              sx={{ height: 'fit-content' }}
+              color="secondary"
+            >
+              🛍️ Products Test
+            </Button>
           </Box>
         </Box>
 
@@ -103,85 +115,104 @@ const AdminDashboard: React.FC = () => {
           </Alert>
         )}
 
-        {/* Stats Cards */}
-        {stats && (
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Total Users
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                        {stats.total_users}
-                      </Typography>
-                    </Box>
-                    <PeopleIcon sx={{ fontSize: 40, color: 'primary.main', opacity: 0.3 }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+        {/* Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
+            <Tab label="Products Controller" />
+            <Tab label="Admin Dashboard" />
+          </Tabs>
+        </Box>
 
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Active Users
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
-                        {stats.active_users}
-                      </Typography>
-                    </Box>
-                    <PersonAddIcon sx={{ fontSize: 40, color: 'success.main', opacity: 0.3 }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Suspended/Muted
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
-                        {stats.suspended_users + stats.muted_users}
-                      </Typography>
-                    </Box>
-                    <BlockIcon sx={{ fontSize: 40, color: 'warning.main', opacity: 0.3 }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Admins
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: 'info.main' }}>
-                        {stats.admin_count}
-                      </Typography>
-                    </Box>
-                    <AdminIcon sx={{ fontSize: 40, color: 'info.main', opacity: 0.3 }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
+        {/* Tab Content */}
+        {activeTab === 0 && (
+          <Box>
+            <AdminProductsController />
+          </Box>
         )}
 
-        {/* User Management */}
-        <AdminUserManagement />
+        {activeTab === 1 && (
+          <Box>
+            {/* Stats Cards */}
+            {stats && (
+              <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Total Users
+                          </Typography>
+                          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                            {stats.total_users}
+                          </Typography>
+                        </Box>
+                        <PeopleIcon sx={{ fontSize: 40, color: 'primary.main', opacity: 0.3 }} />
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Active Users
+                          </Typography>
+                          <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
+                            {stats.active_users}
+                          </Typography>
+                        </Box>
+                        <PersonAddIcon sx={{ fontSize: 40, color: 'success.main', opacity: 0.3 }} />
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Suspended/Muted
+                          </Typography>
+                          <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
+                            {stats.suspended_users + stats.muted_users}
+                          </Typography>
+                        </Box>
+                        <BlockIcon sx={{ fontSize: 40, color: 'warning.main', opacity: 0.3 }} />
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Admins
+                          </Typography>
+                          <Typography variant="h4" sx={{ fontWeight: 700, color: 'info.main' }}>
+                            {stats.admin_count}
+                          </Typography>
+                        </Box>
+                        <AdminIcon sx={{ fontSize: 40, color: 'info.main', opacity: 0.3 }} />
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            )}
+
+            {/* User Management */}
+            <AdminUserManagement />
+          </Box>
+        )}
       </Container>
     </Box>
   );

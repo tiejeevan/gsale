@@ -17,6 +17,8 @@ import {
 } from "@mui/icons-material";
 import NotificationsBell from "../components/NotificationsBell";
 import UserSearch from "../components/UserSearch";
+import CartIconButton from "../components/cart/CartIcon";
+import CartDrawer from "../components/cart/CartDrawer";
 import { useUserContext } from "../context/UserContext";
 import { useThemeMode } from "../context/ThemeContext";
 
@@ -24,6 +26,7 @@ const Navbar: React.FC = () => {
   const { currentUser: user, logout } = useUserContext();
   const { mode, toggleTheme } = useThemeMode();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -94,6 +97,9 @@ const Navbar: React.FC = () => {
               >
                 {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
               </IconButton>
+              
+              {/* Cart Icon */}
+              <CartIconButton onClick={() => setCartDrawerOpen(true)} />
               
               {/* Notification Bell */}
               <NotificationsBell />
@@ -175,6 +181,9 @@ const Navbar: React.FC = () => {
           <LogoutIcon fontSize="small" />
         </MenuItem>
       </Menu>
+
+      {/* Cart Drawer */}
+      <CartDrawer open={cartDrawerOpen} onClose={() => setCartDrawerOpen(false)} />
     </>
   );
 };

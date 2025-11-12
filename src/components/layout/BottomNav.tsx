@@ -20,7 +20,6 @@ import {
   Home as HomeIcon,
   Public as WorldIcon,
   SportsBasketball as SportsIcon,
-  Movie as EntertainmentIcon,
   Menu as MenuIcon,
   Person as PersonIcon,
   Notifications as NotificationsIcon,
@@ -28,6 +27,7 @@ import {
   Bookmark as BookmarkIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
+  ShoppingBag as MarketIcon,
 } from "@mui/icons-material";
 
 const BottomNav: React.FC = () => {
@@ -40,9 +40,9 @@ const BottomNav: React.FC = () => {
 
   const getActiveTab = () => {
     if (location.pathname === "/dashboard") return 0;
-    if (location.pathname === "/news/general") return 1;
-    if (location.pathname === "/news/sports") return 2;
-    if (location.pathname === "/news/entertainment") return 3;
+    if (location.pathname === "/market") return 1;
+    if (location.pathname === "/news/world") return 2;
+    if (location.pathname === "/news/sports") return 3;
     return 0;
   };
 
@@ -84,13 +84,13 @@ const BottomNav: React.FC = () => {
                 navigate("/dashboard");
                 break;
               case 1:
-                navigate("/news/general");
+                navigate("/market");
                 break;
               case 2:
-                navigate("/news/sports");
+                navigate("/news/world");
                 break;
               case 3:
-                navigate("/news/entertainment");
+                navigate("/news/sports");
                 break;
               case 4:
                 setDrawerOpen(true);
@@ -105,9 +105,9 @@ const BottomNav: React.FC = () => {
           }}
         >
           <BottomNavigationAction label="Home" icon={<HomeIcon />} />
+          <BottomNavigationAction label="Market" icon={<MarketIcon />} />
           <BottomNavigationAction label="World" icon={<WorldIcon />} />
           <BottomNavigationAction label="Sports" icon={<SportsIcon />} />
-          <BottomNavigationAction label="Entertainment" icon={<EntertainmentIcon />} />
           <BottomNavigationAction label="Menu" icon={<MenuIcon />} />
         </BottomNavigation>
       </Paper>
