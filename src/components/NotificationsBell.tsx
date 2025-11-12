@@ -114,18 +114,43 @@ const NotificationsBell = () => {
   };
 
   const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    // Parse the date string properly, handling timezone
+    let date: Date;
     
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    // If the date string doesn't have timezone info, treat it as UTC
+    if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
+      date = new Date(dateString + 'Z');
+    } else {
+      date = new Date(dateString);
+    }
+    
+    // Validate the date
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date:', dateString);
+      return 'Recently';
+    }
+    
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    
+    // If the difference is negative or very small, it's just now
+    if (diffInMs < 0 || diffInMs < 60000) return 'Just now';
+    
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    if (diffInMinutes === 1) return '1 min ago';
+    if (diffInMinutes < 60) return `${diffInMinutes} mins ago`;
     
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours === 1) return '1 hour ago';
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
     
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}d ago`;
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    if (diffInWeeks === 1) return '1 week ago';
+    if (diffInWeeks < 4) return `${diffInWeeks} weeks ago`;
     
     return date.toLocaleDateString();
   };

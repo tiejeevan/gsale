@@ -8,6 +8,8 @@ import DatabaseGUI from "./pages/DatabaseGUI";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Profile from "./pages/Profile";
 import PostDetail from "./pages/PostDetail";
+import NewsPage from "./pages/NewsPage";
+import NewsArticleDetail from "./pages/NewsArticleDetail";
 import { useUserContext } from "./context/UserContext";
 import { NotificationsProvider } from "./NotificationsContext";
 import { ChatProvider } from "./context/ChatContext";
@@ -65,6 +67,22 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <PostDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/news/:category"
+            element={
+              <ProtectedRoute>
+                <NewsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/news/:category/:articleIndex"
+            element={
+              <ProtectedRoute>
+                <NewsArticleDetail />
               </ProtectedRoute>
             }
           />

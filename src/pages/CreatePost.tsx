@@ -4,7 +4,7 @@ import PublicIcon from "@mui/icons-material/Public";
 import LockIcon from "@mui/icons-material/Lock";
 import GroupIcon from "@mui/icons-material/Group";
 import { useUserContext } from "../context/UserContext";
-import { FiImage, FiLoader, FiSend } from "react-icons/fi";
+import { FiImage, FiLoader, FiSend, FiX } from "react-icons/fi";
 import { triggerPostCreated } from "../utils/eventBus";
 import { createPost as createPostService } from "../services/postService";
 import { searchUsersForMentions } from "../services/userService";
@@ -22,6 +22,7 @@ const CreatePost: React.FC = () => {
   const [visibilityAnchorEl, setVisibilityAnchorEl] = useState<null | HTMLElement>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // Mentions state
   const [mentionSearch, setMentionSearch] = useState("");
@@ -75,7 +76,6 @@ const CreatePost: React.FC = () => {
     try {
       // Extract mentions from content
       const mentions = extractMentions(content);
-      console.log('📝 Extracted mentions:', mentions);
       
       const postData = {
         content,
@@ -86,8 +86,6 @@ const CreatePost: React.FC = () => {
         mentions: mentions.length > 0 ? mentions : undefined,
       };
       
-      console.log('📤 Sending post data:', postData);
-      
       await createPostService(token!, postData);
 
       setMessage("✅ Post created successfully!");
@@ -96,9 +94,9 @@ const CreatePost: React.FC = () => {
       setFiles([]);
       setShowAdvanced(false);
       setCommentsEnabled(true);
-      triggerPostCreated(); // ✅ Notify UserPosts to refresh
+      setIsExpanded(false);
+      triggerPostCreated();
       
-      // Clear success message after 6 seconds
       setTimeout(() => {
         setMessage("");
       }, 6000);
@@ -142,13 +140,11 @@ const CreatePost: React.FC = () => {
     if (lastAtSymbol !== -1) {
       const textAfterAt = textBeforeCursor.slice(lastAtSymbol + 1);
       
-      // Check if there's a space after @ (which would end the mention)
       if (!textAfterAt.includes(' ') && textAfterAt.length <= 20) {
         setMentionSearch(textAfterAt);
         setShowMentions(true);
         setSelectedMentionIndex(0);
         
-        // Calculate position for mention dropdown
         if (textareaRef.current) {
           const textarea = textareaRef.current;
           const rect = textarea.getBoundingClientRect();
@@ -182,7 +178,6 @@ const CreatePost: React.FC = () => {
       setShowMentions(false);
       setMentionSearch("");
       
-      // Focus back on textarea
       setTimeout(() => {
         if (textareaRef.current) {
           const newCursorPos = lastAtSymbol + username.length + 2;
@@ -194,7 +189,6 @@ const CreatePost: React.FC = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Handle mention navigation
     if (showMentions && mentionResults.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -221,7 +215,6 @@ const CreatePost: React.FC = () => {
       }
     }
 
-    // Normal enter to post
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!loading && (content.trim() || files.length > 0)) {
@@ -234,318 +227,367 @@ const CreatePost: React.FC = () => {
     <Paper
       elevation={3}
       sx={{
-        p: 3,
-        borderRadius: 3,
+        p: { xs: 2, sm: 3 },
+        borderRadius: { xs: 2, sm: 3 },
         bgcolor: 'background.paper',
       }}
     >
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
-        Welcome {user?.first_name || user?.username || 'User'}
-      </Typography>
-      {message && (
-        <Typography
-          variant="body2"
+      {!isExpanded && (
+        <Box
+          onClick={() => setIsExpanded(true)}
           sx={{
-            mb: 2,
-            color: message.startsWith("✅") ? "success.main" :
-                   message.startsWith("❌") ? "error.main" : "warning.main"
+            display: 'flex',
+            alignItems: 'center',
+            gap: { xs: 1.5, sm: 2 },
+            cursor: 'pointer',
+            p: { xs: 0.5, sm: 1 },
           }}
         >
-          {message}
-        </Typography>
-      )}
-
-      {/* Title Input (Optional) */}
-      {showAdvanced && (
-        <Box sx={{ mb: 2 }}>
-          <input
-            type="text"
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '12px',
-              border: '1px solid',
-              borderColor: 'var(--mui-palette-divider)',
-              backgroundColor: 'var(--mui-palette-background-default)',
-              color: 'var(--mui-palette-text-primary)',
-              fontSize: '14px',
-              outline: 'none',
-            }}
-            placeholder="Post title (optional)"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+          <Avatar
+            src={user.profile_image || ""}
+            alt={user.first_name}
+            sx={{ width: { xs: 36, sm: 40 }, height: { xs: 36, sm: 40 } }}
           />
-        </Box>
-      )}
-
-      <Box sx={{ position: 'relative', mb: 3 }}>
-        <textarea
-          ref={textareaRef}
-          style={{
-            width: '100%',
-            padding: '12px 40px 12px 12px',
-            borderRadius: '12px',
-            border: '1px solid',
-            borderColor: 'var(--mui-palette-divider)',
-            backgroundColor: 'var(--mui-palette-background-default)',
-            color: 'var(--mui-palette-text-primary)',
-            fontSize: '14px',
-            outline: 'none',
-            resize: 'none',
-            minHeight: '100px',
-            fontFamily: 'inherit',
-          }}
-          placeholder="What's on your mind? Type @ to mention someone (Press Enter to post, Shift+Enter for new line)"
-          value={content}
-          onChange={handleContentChange}
-          onKeyDown={handleKeyDown}
-        />
-
-        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5 }}>
-          <Tooltip title={showAdvanced ? "Show less options" : "Show more options"} arrow>
-            <IconButton 
-              size="small" 
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              sx={{ 
-                bgcolor: showAdvanced ? 'primary.main' : 'action.hover',
-                color: showAdvanced ? 'white' : 'text.secondary',
-                '&:hover': {
-                  bgcolor: showAdvanced ? 'primary.dark' : 'action.selected',
-                }
-              }}
-            >
-              {showAdvanced ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              )}
-            </IconButton>
-          </Tooltip>
-        </Box>
-
-        <Box sx={{ position: 'absolute', bottom: 8, right: 8 }}>
-          <Tooltip title={visibility === "public" ? "Public" : visibility === "follows" ? "Follows" : "Private"} arrow>
-            <IconButton 
-              size="small" 
-              onClick={openVisibilityMenu}
-              sx={{ 
-                bgcolor: 'action.hover',
-                '&:hover': { bgcolor: 'action.selected' }
-              }}
-            >
-              {renderVisibilityIcon("small")}
-            </IconButton>
-          </Tooltip>
-          <Menu
-            anchorEl={visibilityAnchorEl}
-            open={Boolean(visibilityAnchorEl)}
-            onClose={closeVisibilityMenu}
-            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          >
-            <MenuItem onClick={() => selectVisibility("public")}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PublicIcon fontSize="small" />
-                <Typography variant="body2">Public</Typography>
-              </Box>
-            </MenuItem>
-            <MenuItem onClick={() => selectVisibility("follows")}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <GroupIcon fontSize="small" />
-                <Typography variant="body2">Follows</Typography>
-              </Box>
-            </MenuItem>
-            <MenuItem onClick={() => selectVisibility("private")}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LockIcon fontSize="small" />
-                <Typography variant="body2">Private</Typography>
-              </Box>
-            </MenuItem>
-          </Menu>
-        </Box>
-      </Box>
-
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <label>
-            <Box
-              component="span"
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 1,
-                px: 2,
-                py: 1,
-                bgcolor: 'primary.main',
-                color: 'white',
-                borderRadius: 2,
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  bgcolor: 'primary.dark',
-                  transform: 'scale(1.02)',
-                },
-              }}
-            >
-              <FiImage style={{ fontSize: '16px' }} /> 
-              <span>Attach Files</span>
-            </Box>
-            <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} />
-          </label>
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {showAdvanced && (
-            <Tooltip title={commentsEnabled ? "Comments enabled" : "Comments disabled"} arrow>
-              <IconButton
-                size="small"
-                onClick={() => setCommentsEnabled(!commentsEnabled)}
-                sx={{
-                  bgcolor: commentsEnabled ? 'success.main' : 'action.disabled',
-                  color: 'white',
-                  width: 32,
-                  height: 32,
-                  '&:hover': {
-                    bgcolor: commentsEnabled ? 'success.dark' : 'action.disabledBackground',
-                  },
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </IconButton>
-            </Tooltip>
-          )}
-
           <Box
-            component="button"
-            onClick={createPost}
-            disabled={loading}
             sx={{
-              bgcolor: loading ? 'action.disabledBackground' : 'primary.main',
-              color: 'white',
-              border: 'none',
-              borderRadius: 2,
-              px: 2.5,
-              py: 1,
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: loading ? 'none' : 2,
+              flex: 1,
+              p: { xs: 1.25, sm: 1.5 },
+              borderRadius: 5,
+              bgcolor: 'action.hover',
+              color: 'text.secondary',
+              fontSize: { xs: '0.875rem', sm: '0.95rem' },
               '&:hover': {
-                bgcolor: loading ? 'action.disabledBackground' : 'primary.dark',
-                transform: loading ? 'none' : 'scale(1.02)',
+                bgcolor: 'action.selected',
               },
             }}
           >
-            {loading ? <><FiLoader className="animate-spin" /> Posting...</> : <><FiSend /> Post</>}
+            What's on your mind, {user.first_name}?
           </Box>
-        </Box>
-      </Box>
-
-      {files.length > 0 && (
-        <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
-          {files.map((file, idx) => {
-            const url = URL.createObjectURL(file);
-            if (file.type.startsWith("image/")) {
-              return (
-                <Box
-                  key={idx}
-                  component="img"
-                  src={url}
-                  alt={file.name}
-                  sx={{
-                    borderRadius: 2,
-                    objectFit: 'cover',
-                    height: 128,
-                    width: '100%',
-                    border: 1,
-                    borderColor: 'divider',
-                  }}
-                />
-              );
-            } else {
-              return (
-                <Box
-                  key={idx}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.875rem',
-                    color: 'text.primary',
-                    bgcolor: 'background.default',
-                    borderRadius: 2,
-                    p: 2,
-                    border: 1,
-                    borderColor: 'divider',
-                  }}
-                >
-                  📄 {file.name}
-                </Box>
-              );
-            }
-          })}
         </Box>
       )}
 
-      {/* Mentions Dropdown */}
-      {showMentions && mentionResults.length > 0 && (
-        <Paper
-          elevation={8}
-          sx={{
-            position: 'fixed',
-            top: mentionPosition.top,
-            left: mentionPosition.left,
-            maxWidth: 300,
-            maxHeight: 200,
-            overflow: 'auto',
-            zIndex: 1000,
-            borderRadius: 2,
-          }}
-        >
-          {mentionResults.map((user, index) => (
-            <Box
-              key={user.id}
-              onClick={() => insertMention(user.username)}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                p: 1.5,
-                cursor: 'pointer',
-                bgcolor: index === selectedMentionIndex ? 'action.hover' : 'transparent',
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
+      {isExpanded && (
+        <>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 600, 
+                color: 'text.primary',
+                fontSize: { xs: '1rem', sm: '1.25rem' }
               }}
             >
-              <Avatar
-                src={user.profile_image || `https://ui-avatars.com/api/?name=${user.display_name || user.username}&size=32`}
-                sx={{ width: 32, height: 32 }}
+              Create Post
+            </Typography>
+            <IconButton size="small" onClick={() => setIsExpanded(false)}>
+              <FiX />
+            </IconButton>
+          </Box>
+
+          {message && (
+            <Typography
+              variant="body2"
+              sx={{
+                mb: 2,
+                color: message.startsWith("✅") ? "success.main" :
+                       message.startsWith("❌") ? "error.main" : "warning.main"
+              }}
+            >
+              {message}
+            </Typography>
+          )}
+
+          {showAdvanced && (
+            <Box sx={{ mb: 2 }}>
+              <input
+                type="text"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: '1px solid',
+                  borderColor: 'var(--mui-palette-divider)',
+                  backgroundColor: 'var(--mui-palette-background-default)',
+                  color: 'var(--mui-palette-text-primary)',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+                placeholder="Post title (optional)"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
               />
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="body2" fontWeight={600} noWrap>
-                  {user.display_name || user.username}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" noWrap>
-                  @{user.username}
-                </Typography>
+            </Box>
+          )}
+
+          <Box sx={{ position: 'relative', mb: 3 }}>
+            <textarea
+              ref={textareaRef}
+              style={{
+                width: '100%',
+                padding: '12px 40px 12px 12px',
+                borderRadius: '12px',
+                border: '1px solid',
+                borderColor: 'var(--mui-palette-divider)',
+                backgroundColor: 'var(--mui-palette-background-default)',
+                color: 'var(--mui-palette-text-primary)',
+                fontSize: '14px',
+                outline: 'none',
+                resize: 'none',
+                minHeight: '100px',
+                fontFamily: 'inherit',
+              }}
+              placeholder="What's on your mind? Type @ to mention someone"
+              value={content}
+              onChange={handleContentChange}
+              onKeyDown={handleKeyDown}
+            />
+
+            <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5 }}>
+              <Tooltip title={showAdvanced ? "Show less options" : "Show more options"} arrow>
+                <IconButton 
+                  size="small" 
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  sx={{ 
+                    bgcolor: showAdvanced ? 'primary.main' : 'action.hover',
+                    color: showAdvanced ? 'white' : 'text.secondary',
+                    '&:hover': {
+                      bgcolor: showAdvanced ? 'primary.dark' : 'action.selected',
+                    }
+                  }}
+                >
+                  {showAdvanced ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Box>
+
+            <Box sx={{ position: 'absolute', bottom: 8, right: 8 }}>
+              <Tooltip title={visibility === "public" ? "Public" : visibility === "follows" ? "Follows" : "Private"} arrow>
+                <IconButton 
+                  size="small" 
+                  onClick={openVisibilityMenu}
+                  sx={{ 
+                    bgcolor: 'action.hover',
+                    '&:hover': { bgcolor: 'action.selected' }
+                  }}
+                >
+                  {renderVisibilityIcon("small")}
+                </IconButton>
+              </Tooltip>
+              <Menu
+                anchorEl={visibilityAnchorEl}
+                open={Boolean(visibilityAnchorEl)}
+                onClose={closeVisibilityMenu}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              >
+                <MenuItem onClick={() => selectVisibility("public")}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PublicIcon fontSize="small" />
+                    <Typography variant="body2">Public</Typography>
+                  </Box>
+                </MenuItem>
+                <MenuItem onClick={() => selectVisibility("follows")}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <GroupIcon fontSize="small" />
+                    <Typography variant="body2">Follows</Typography>
+                  </Box>
+                </MenuItem>
+                <MenuItem onClick={() => selectVisibility("private")}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LockIcon fontSize="small" />
+                    <Typography variant="body2">Private</Typography>
+                  </Box>
+                </MenuItem>
+              </Menu>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: { xs: 1, sm: 1.5 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <label>
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: { xs: 0.5, sm: 1 },
+                    px: { xs: 1.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 },
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    borderRadius: 2,
+                    cursor: 'pointer',
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                    fontWeight: 500,
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                      transform: 'scale(1.02)',
+                    },
+                  }}
+                >
+                  <FiImage style={{ fontSize: '16px' }} /> 
+                  <span style={{ display: 'inline' }}>Add Photo/Video</span>
+                </Box>
+                <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} />
+              </label>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {showAdvanced && (
+                <Tooltip title={commentsEnabled ? "Comments enabled" : "Comments disabled"} arrow>
+                  <IconButton
+                    size="small"
+                    onClick={() => setCommentsEnabled(!commentsEnabled)}
+                    sx={{
+                      bgcolor: commentsEnabled ? 'success.main' : 'action.disabled',
+                      color: 'white',
+                      width: 32,
+                      height: 32,
+                      '&:hover': {
+                        bgcolor: commentsEnabled ? 'success.dark' : 'action.disabledBackground',
+                      },
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </IconButton>
+                </Tooltip>
+              )}
+
+              <Box
+                component="button"
+                onClick={createPost}
+                disabled={loading}
+                sx={{
+                  bgcolor: loading ? 'action.disabledBackground' : 'primary.main',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 2,
+                  px: { xs: 2, sm: 2.5 },
+                  py: { xs: 0.75, sm: 1 },
+                  fontWeight: 600,
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: { xs: 0.5, sm: 1 },
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: loading ? 'none' : 2,
+                  '&:hover': {
+                    bgcolor: loading ? 'action.disabledBackground' : 'primary.dark',
+                    transform: loading ? 'none' : 'scale(1.02)',
+                  },
+                }}
+              >
+                {loading ? <><FiLoader className="animate-spin" /> Posting...</> : <><FiSend /> Post</>}
               </Box>
             </Box>
-          ))}
-        </Paper>
+          </Box>
+
+          {files.length > 0 && (
+            <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
+              {files.map((file, idx) => {
+                const url = URL.createObjectURL(file);
+                if (file.type.startsWith("image/")) {
+                  return (
+                    <Box
+                      key={idx}
+                      component="img"
+                      src={url}
+                      alt={file.name}
+                      sx={{
+                        borderRadius: 2,
+                        objectFit: 'cover',
+                        height: 128,
+                        width: '100%',
+                        border: 1,
+                        borderColor: 'divider',
+                      }}
+                    />
+                  );
+                } else {
+                  return (
+                    <Box
+                      key={idx}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.875rem',
+                        color: 'text.primary',
+                        bgcolor: 'background.default',
+                        borderRadius: 2,
+                        p: 2,
+                        border: 1,
+                        borderColor: 'divider',
+                      }}
+                    >
+                      📄 {file.name}
+                    </Box>
+                  );
+                }
+              })}
+            </Box>
+          )}
+
+          {showMentions && mentionResults.length > 0 && (
+            <Paper
+              elevation={8}
+              sx={{
+                position: 'fixed',
+                top: mentionPosition.top,
+                left: mentionPosition.left,
+                maxWidth: 300,
+                maxHeight: 200,
+                overflow: 'auto',
+                zIndex: 1000,
+                borderRadius: 2,
+              }}
+            >
+              {mentionResults.map((user, index) => (
+                <Box
+                  key={user.id}
+                  onClick={() => insertMention(user.username)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    p: 1.5,
+                    cursor: 'pointer',
+                    bgcolor: index === selectedMentionIndex ? 'action.hover' : 'transparent',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                  }}
+                >
+                  <Avatar
+                    src={user.profile_image || `https://ui-avatars.com/api/?name=${user.display_name || user.username}&size=32`}
+                    sx={{ width: 32, height: 32 }}
+                  />
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={600} noWrap>
+                      {user.display_name || user.username}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      @{user.username}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Paper>
+          )}
+        </>
       )}
     </Paper>
   );

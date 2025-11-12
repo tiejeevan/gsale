@@ -61,12 +61,16 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   const sortedInitialComments = React.useMemo(() => {
     if (!initialComments) return [];
     
+    console.log('Initial comments before sort:', initialComments.map(c => ({ id: c.id, created_at: c.created_at })));
+    
     // Only sort if we have a highlightCommentId (coming from notification)
     if (!highlightCommentId) {
       // Default behavior: sort by created_at DESC (latest first)
-      return [...initialComments].sort((a, b) => 
+      const sorted = [...initialComments].sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
+      console.log('Sorted comments:', sorted.map(c => ({ id: c.id, created_at: c.created_at })));
+      return sorted;
     }
     
     const findAndExtractComment = (comments: Comment[], targetId: number): { found: Comment | null; remaining: Comment[] } => {
@@ -108,6 +112,11 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState<number>(initialVisibleCount);
 
+  // Update comments when sortedInitialComments changes
+  useEffect(() => {
+    setComments(sortedInitialComments);
+  }, [sortedInitialComments]);
+
   const fetchComments = async () => {
     setLoading(true);
     try {
@@ -118,7 +127,13 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
       });
       if (!res.ok) throw new Error("Failed to fetch comments");
       const data = await res.json();
-      setComments(data);
+      
+      // Sort comments by created_at DESC (newest first)
+      const sortedData = [...data].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      setComments(sortedData);
     } catch (err) {
       console.error("Failed to fetch comments:", err);
       setComments([]);
@@ -309,7 +324,8 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         });
       setComments(updateTree(comments));
     } else {
-      setComments([...comments, comment]);
+      // Add new top-level comment at the beginning (newest first)
+      setComments([comment, ...comments]);
     }
   };
 

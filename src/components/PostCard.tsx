@@ -14,8 +14,9 @@ import {
   Tooltip,
   Button,
 } from "@mui/material";
-import { Edit, Delete, PushPin, PushPinOutlined, FavoriteBorder, Favorite, ChatBubbleOutline, Share } from "@mui/icons-material";
+import { Edit, Delete, PushPin, PushPinOutlined, FavoriteBorder, Favorite, ChatBubbleOutline, Share, StarBorder, Star } from "@mui/icons-material";
 import { addLike, removeLike } from "../services/likeService";
+import { addBookmark, removeBookmark } from "../services/bookmarkService";
 import CommentsSection, { type Comment } from "./Comments/CommentsSection";
 import { socket } from "../socket";
 
@@ -41,6 +42,7 @@ export interface Post {
   is_edited: boolean;
   is_pinned?: boolean;
   liked_by_user: boolean;
+  bookmarked_by_user?: boolean;
   visibility?: string;
   attachments?: Attachment[];
   comments?: Comment[];
@@ -58,6 +60,7 @@ interface PostCardProps {
   onEdit?: (post: Post) => void;
   onDelete?: (post: Post) => void;
   onPin?: (post: Post) => void;
+  onBookmarkChange?: () => void;
   r2PublicUrl?: string;
   collapseComments?: boolean;
   showCommentsInitially?: boolean;
@@ -75,6 +78,7 @@ const PostCard: React.FC<PostCardProps> = ({
   onEdit,
   onDelete,
   onPin,
+  onBookmarkChange,
   collapseComments = true,
   showCommentsInitially = false,
   highlightCommentId,
@@ -85,6 +89,8 @@ const PostCard: React.FC<PostCardProps> = ({
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
   const [commentCount, setCommentCount] = useState(post.comments?.length || 0);
   const [isLiking, setIsLiking] = useState(false);
+  const [bookmarked, setBookmarked] = useState(post.bookmarked_by_user || false);
+  const [isBookmarking, setIsBookmarking] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -97,7 +103,6 @@ const PostCard: React.FC<PostCardProps> = ({
     const joinRoom = () => {
       if (socket.connected) {
         socket.emit("join", postRoom);
-        console.log(`🔌 PostCard joined room: ${postRoom}`);
       }
     };
 
@@ -193,17 +198,66 @@ const PostCard: React.FC<PostCardProps> = ({
   const canEdit = post.user_id === currentUserId;
 
   const formatDate = (dateString: string) => {
+    // Parse the date - JavaScript automatically handles timezone conversion
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
     
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffInHours < 168) { // 7 days
-      return date.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
-    } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    // Calculate difference in milliseconds
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInSeconds = Math.floor(diffInMs / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+    
+    // If date is in the future (shouldn't happen), show the actual date
+    if (diffInMs < 0) {
+      return date.toLocaleString([], { 
+        month: 'short', 
+        day: 'numeric', 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
     }
+    
+    // Less than 1 minute
+    if (diffInSeconds < 60) {
+      return 'Just now';
+    }
+    
+    // Less than 1 hour - show minutes
+    if (diffInMinutes < 60) {
+      return diffInMinutes === 1 ? '1 min ago' : `${diffInMinutes} mins ago`;
+    }
+    
+    // Less than 24 hours - show hours
+    if (diffInHours < 24) {
+      return diffInHours === 1 ? '1 hour ago' : `${diffInHours} hours ago`;
+    }
+    
+    // Yesterday
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = date.getDate() === yesterday.getDate() && 
+                        date.getMonth() === yesterday.getMonth() && 
+                        date.getFullYear() === yesterday.getFullYear();
+    
+    if (isYesterday) {
+      return `Yesterday at ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+    }
+    
+    // Less than 7 days - show day name
+    if (diffInDays < 7) {
+      return `${date.toLocaleDateString([], { weekday: 'long' })} at ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+    }
+    
+    // This year - show month and day
+    if (date.getFullYear() === now.getFullYear()) {
+      return `${date.toLocaleDateString([], { month: 'long', day: 'numeric' })} at ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+    }
+    
+    // Previous years - show full date
+    return `${date.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} at ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`;
   };
 
   const handleLike = async () => {
@@ -230,6 +284,35 @@ const PostCard: React.FC<PostCardProps> = ({
       console.error("Failed to like/unlike post:", error);
     } finally {
       setIsLiking(false);
+    }
+  };
+
+  const handleBookmark = async () => {
+    if (isBookmarking) return;
+    
+    setIsBookmarking(true);
+    const previousBookmarked = bookmarked;
+    
+    // Optimistic update
+    setBookmarked(!bookmarked);
+    
+    try {
+      if (bookmarked) {
+        await removeBookmark(token, post.id);
+      } else {
+        await addBookmark(token, post.id);
+      }
+      
+      // Notify parent to refresh posts
+      if (onBookmarkChange) {
+        onBookmarkChange();
+      }
+    } catch (error) {
+      // Revert on error
+      setBookmarked(previousBookmarked);
+      console.error("Failed to bookmark/unbookmark post:", error);
+    } finally {
+      setIsBookmarking(false);
     }
   };
 
@@ -345,8 +428,8 @@ const PostCard: React.FC<PostCardProps> = ({
 
       <CardContent sx={{ p: 2, pb: 0 }}>
         {/* User Header */}
-        {showUsername && post.username && (
-          <Box sx={{ mb: 1.5 }}>
+        <Box sx={{ mb: 1.5 }}>
+          {showUsername && post.username ? (
             <Box
               sx={{
                 display: 'flex',
@@ -374,17 +457,17 @@ const PostCard: React.FC<PostCardProps> = ({
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Link 
                   to={`/profile/${post.user_id}`}
-                  style={{ textDecoration: 'none', color: 'inherit', display: 'inline' }}
+                  style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
                 >
                   <Typography
                     variant="subtitle1"
-                    component="span"
+                    component="div"
                     sx={{
                       fontWeight: 600,
                       color: 'text.primary',
                       mb: 0,
-                      display: 'inline',
                       fontSize: '0.95rem',
+                      lineHeight: 1.2,
                       '&:hover': { opacity: 0.8 },
                       transition: 'opacity 0.2s',
                     }}
@@ -392,12 +475,13 @@ const PostCard: React.FC<PostCardProps> = ({
                     {post.username}
                   </Typography>
                 </Link>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                   <Typography
                     variant="caption"
                     sx={{
                       color: 'text.secondary',
-                      fontSize: '0.75rem',
+                      fontSize: '0.8rem',
+                      fontWeight: 500,
                     }}
                   >
                     {formatDate(post.created_at)}
@@ -428,8 +512,45 @@ const PostCard: React.FC<PostCardProps> = ({
                 </Box>
               </Box>
             </Box>
-          </Box>
-        )}
+          ) : (
+            // Show only date when username is hidden (profile page)
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                }}
+              >
+                {formatDate(post.created_at)}
+              </Typography>
+              {post.is_pinned && (
+                <Tooltip title="Pinned post" arrow>
+                  <PushPin 
+                    sx={{ 
+                      fontSize: '0.75rem', 
+                      color: 'warning.main',
+                      verticalAlign: 'middle',
+                    }} 
+                  />
+                </Tooltip>
+              )}
+              {post.is_edited && (
+                <Chip
+                  label="Edited"
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    height: 16,
+                    fontSize: '0.65rem',
+                    '& .MuiChip-label': { px: 0.5, py: 0 },
+                  }}
+                />
+              )}
+            </Box>
+          )}
+        </Box>
 
         {/* Post Title */}
         {post.title && (
@@ -451,24 +572,18 @@ const PostCard: React.FC<PostCardProps> = ({
         )}
 
         {/* Post Content */}
-        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <Typography
-            variant="body1"
-            sx={{
-              mb: 1.5,
-              lineHeight: 1.5,
-              whiteSpace: 'pre-line',
-              fontSize: '0.95rem',
-              color: 'text.primary',
-              cursor: 'pointer',
-              '&:hover': {
-                color: 'text.primary',
-              },
-            }}
-          >
-            {renderContentWithMentions(post.content)}
-          </Typography>
-        </Link>
+        <Typography
+          variant="body1"
+          sx={{
+            mb: 1.5,
+            lineHeight: 1.5,
+            whiteSpace: 'pre-line',
+            fontSize: '0.95rem',
+            color: 'text.primary',
+          }}
+        >
+          {renderContentWithMentions(post.content)}
+        </Typography>
 
         {/* Post Image */}
         {post.image_url && (
@@ -620,6 +735,26 @@ const PostCard: React.FC<PostCardProps> = ({
             }}
           >
             Share
+          </Button>
+
+          {/* Watch List Button */}
+          <Button
+            startIcon={bookmarked ? <Star /> : <StarBorder />}
+            onClick={handleBookmark}
+            disabled={isBookmarking}
+            sx={{
+              color: bookmarked ? '#ffd700' : 'text.secondary',
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              ml: 'auto',
+              '&:hover': {
+                bgcolor: 'rgba(255, 215, 0, 0.1)',
+                color: '#ffd700',
+              },
+            }}
+          >
+            {bookmarked ? 'Watching' : 'Watch'}
           </Button>
         </Box>
 

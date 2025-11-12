@@ -54,6 +54,7 @@ export interface Post {
   last_name?: string;
   profile_image?: string;
   liked_by_user: boolean;
+  bookmarked_by_user?: boolean;
   attachments?: Attachment[];
   likes?: Like[];
   comments?: Comment[];

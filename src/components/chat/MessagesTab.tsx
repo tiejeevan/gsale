@@ -5,7 +5,7 @@ import { useUserContext } from '../../context/UserContext';
 import FloatingChatPopup from './FloatingChatPopup';
 import { Box, Paper, Typography, Avatar, Badge, IconButton, Button } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Chat as ChatIcon } from '@mui/icons-material';
-
+ 
 const MessagesTab = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,7 +14,7 @@ const MessagesTab = () => {
   const { chats, totalUnreadCount } = useChatContext();
   const { currentUser } = useUserContext();
   const messagesTabRef = useRef<HTMLDivElement>(null);
-
+ 
   // Close expanded tab when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -22,23 +22,23 @@ const MessagesTab = () => {
         setIsExpanded(false);
       }
     };
-
+ 
     if (isExpanded) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-
+ 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isExpanded]);
-
+ 
   const handleChatClick = (chatId: number) => {
     setSelectedChatId(chatId);
     setIsExpanded(false);
     // Add hash to URL for back button support on mobile
     navigate(location.pathname + location.search + '#chat', { replace: false });
   };
-
+ 
   const handleClosePopup = () => {
     setSelectedChatId(null);
     // Remove hash from URL
@@ -46,20 +46,20 @@ const MessagesTab = () => {
       navigate(-1);
     }
   };
-
+ 
   // Close popup when hash changes (back button pressed)
   useEffect(() => {
     if (location.hash !== '#chat' && selectedChatId !== null) {
       setSelectedChatId(null);
     }
   }, [location.hash]);
-
+ 
   const formatLastMessage = (chat: any) => {
     if (!chat.last_message_content) return 'No messages yet';
     const preview = chat.last_message_content.substring(0, 40);
     return preview.length < chat.last_message_content.length ? `${preview}...` : preview;
   };
-
+ 
   const formatTime = (timestamp: string) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -68,16 +68,16 @@ const MessagesTab = () => {
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-
+ 
     if (minutes < 1) return 'Just now';
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     if (days < 7) return `${days}d`;
     return date.toLocaleDateString();
   };
-
+ 
   const selectedChat = chats.find(c => c.id === selectedChatId);
-
+ 
   return (
     <>
       {/* Messages Tab */}
@@ -117,7 +117,7 @@ const MessagesTab = () => {
                 <ExpandMoreIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
               </IconButton>
             </Box>
-
+ 
             {/* Chat List */}
             <Box sx={{ maxHeight: { xs: 320, sm: 384 }, overflowY: 'auto' }}>
               {chats.length === 0 ? (
@@ -183,7 +183,7 @@ const MessagesTab = () => {
                         >
                           {!avatarUrl && chatTitle.charAt(0).toUpperCase()}
                         </Avatar>
-
+ 
                         {/* Right Side - Name and Message */}
                         <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                           {/* User Name */}
@@ -251,7 +251,7 @@ const MessagesTab = () => {
             </Box>
           </Paper>
         )}
-
+ 
         {/* Collapsed Tab */}
         {!isExpanded && (
           <Button
@@ -293,7 +293,7 @@ const MessagesTab = () => {
           </Button>
         )}
       </Box>
-
+ 
       {/* Floating Chat Popup */}
       {selectedChat && (() => {
         const otherParticipant = selectedChat.participants?.find(p => p.id !== currentUser?.id);
@@ -316,5 +316,5 @@ const MessagesTab = () => {
     </>
   );
 };
-
+ 
 export default MessagesTab;
