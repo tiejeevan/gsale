@@ -44,7 +44,7 @@ const NewsWidget: React.FC<NewsWidgetProps> = ({
       
       switch (type) {
         case 'world':
-          data = await newsService.getWorldNews(token, 5);
+          data = await newsService.getWorldNews(token, country, 5);
           break;
         case 'regional':
           data = await newsService.getRegionalNews(token, country, 5);
