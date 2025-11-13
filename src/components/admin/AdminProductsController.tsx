@@ -63,7 +63,11 @@ interface ProductStats {
   total_sales: number;
 }
 
-const AdminProductsController: React.FC = () => {
+interface AdminProductsControllerProps {
+  highlightProductId?: number | null;
+}
+
+const AdminProductsController: React.FC<AdminProductsControllerProps> = ({ highlightProductId }) => {
   const { token } = useUserContext();
   const [activeTab, setActiveTab] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
@@ -99,6 +103,13 @@ const AdminProductsController: React.FC = () => {
     fetchProducts();
     fetchCategories();
   }, [page, rowsPerPage, statusFilter, categoryFilter, showDeleted, showFeaturedOnly]);
+
+  // Switch to pending approval tab when highlightProductId is provided
+  useEffect(() => {
+    if (highlightProductId) {
+      setActiveTab(1); // Switch to Pending Approval tab
+    }
+  }, [highlightProductId]);
   
   const fetchCategories = async () => {
     try {
@@ -736,6 +747,7 @@ const AdminProductsController: React.FC = () => {
           onApprove={handleApprove}
           onReject={handleReject}
           onView={handleOpenView}
+          highlightProductId={highlightProductId}
         />
       )}
 

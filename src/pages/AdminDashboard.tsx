@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useUserContext } from '../context/UserContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -28,10 +28,12 @@ import SystemSettings from '../components/admin/SystemSettings';
 const AdminDashboard: React.FC = () => {
   const { currentUser, token } = useUserContext();
   const navigate = useNavigate();
+  const location = useLocation();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState(0);
+  const [highlightProductId, setHighlightProductId] = useState<number | null>(null);
 
   useEffect(() => {
     // Check if user is admin
@@ -40,8 +42,16 @@ const AdminDashboard: React.FC = () => {
       return;
     }
 
+    // Handle navigation state from notifications
+    if (location.state?.tab === 'products') {
+      setActiveTab(0); // Products Controller tab
+      if (location.state?.highlightProductId) {
+        setHighlightProductId(location.state.highlightProductId);
+      }
+    }
+
     fetchStats();
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, location.state]);
 
   const fetchStats = async () => {
     if (!token) return;
@@ -128,7 +138,7 @@ const AdminDashboard: React.FC = () => {
         {/* Tab Content */}
         {activeTab === 0 && (
           <Box>
-            <AdminProductsController />
+            <AdminProductsController highlightProductId={highlightProductId} />
           </Box>
         )}
 

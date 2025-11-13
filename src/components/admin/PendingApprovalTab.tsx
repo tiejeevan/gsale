@@ -32,6 +32,7 @@ interface PendingApprovalTabProps {
   onApprove: (productId: string) => void;
   onReject: (productId: string) => void;
   onView: (productId: string) => void;
+  highlightProductId?: number | null;
 }
 
 const PendingApprovalTab: React.FC<PendingApprovalTabProps> = ({
@@ -39,6 +40,7 @@ const PendingApprovalTab: React.FC<PendingApprovalTabProps> = ({
   onApprove,
   onReject,
   onView,
+  highlightProductId,
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -164,9 +166,27 @@ const PendingApprovalTab: React.FC<PendingApprovalTabProps> = ({
       </Box>
 
       <Grid container spacing={2}>
-        {products.map((product) => (
+        {products.map((product) => {
+          const isHighlighted = highlightProductId && Number(product.id) === highlightProductId;
+          return (
           <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={product.id}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 3 } }}>
+            <Card sx={{ 
+              height: '100%', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              transition: 'all 0.3s', 
+              '&:hover': { transform: 'translateY(-2px)', boxShadow: 3 },
+              ...(isHighlighted && {
+                border: '2px solid',
+                borderColor: 'primary.main',
+                boxShadow: 6,
+                animation: 'pulse 2s ease-in-out 3',
+                '@keyframes pulse': {
+                  '0%, 100%': { boxShadow: 6 },
+                  '50%': { boxShadow: 12 },
+                }
+              })
+            }}>
               <CardMedia
                 component="img"
                 height="160"
@@ -266,7 +286,8 @@ const PendingApprovalTab: React.FC<PendingApprovalTabProps> = ({
               </CardActions>
             </Card>
           </Grid>
-        ))}
+        );
+        })}
       </Grid>
 
       {/* Approve Confirmation Dialog */}

@@ -221,6 +221,18 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       }
     } else if (toastNotification.type === 'follow') {
       navigate(`/profile/${toastNotification.actor_user_id}`);
+    } else if (toastNotification.type === 'product_approval') {
+      navigate('/admin', { state: { tab: 'products', highlightProductId: toastNotification.payload?.productId } });
+    } else if (toastNotification.type === 'product_approved') {
+      const productId = toastNotification.payload?.productId;
+      if (productId) {
+        navigate(`/market/product/${productId}`);
+      }
+    } else if (toastNotification.type === 'product_rejected') {
+      const productId = toastNotification.payload?.productId;
+      if (productId) {
+        navigate(`/market/product/${productId}`);
+      }
     }
   };
 
@@ -239,6 +251,13 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       case "mention":
         const mentionText = notif.payload?.text ? `: "${notif.payload.text}"` : "";
         return `${notif.actor_name} mentioned you in a comment${mentionText}`;
+      case "product_approval":
+        return `New product "${notif.payload?.productTitle}" needs approval`;
+      case "product_approved":
+        return `Your product "${notif.payload?.productTitle}" is now listed!`;
+      case "product_rejected":
+        const reason = notif.payload?.reason ? ` - ${notif.payload.reason}` : "";
+        return `Your product "${notif.payload?.productTitle}" was rejected${reason}`;
       default:
         return `New notification from ${notif.actor_name}`;
     }

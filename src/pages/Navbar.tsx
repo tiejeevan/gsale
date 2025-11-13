@@ -16,6 +16,7 @@ import {
   DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
 import NotificationsBell from "../components/NotificationsBell";
+import ProductApprovalBell from "../components/ProductApprovalBell";
 import UserSearch from "../components/UserSearch";
 import CartIconButton from "../components/cart/CartIcon";
 import CartDrawer from "../components/cart/CartDrawer";
@@ -100,6 +101,9 @@ const Navbar: React.FC = () => {
               
               {/* Cart Icon */}
               <CartIconButton onClick={() => setCartDrawerOpen(true)} />
+              
+              {/* Product Approval Bell (Admin Only) */}
+              <ProductApprovalBell />
               
               {/* Notification Bell */}
               <NotificationsBell />
