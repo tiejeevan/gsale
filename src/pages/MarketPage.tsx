@@ -39,6 +39,8 @@ import LeftSidebar from '../components/layout/LeftSidebar';
 import RightSidebar from '../components/layout/RightSidebar';
 import BottomNav from '../components/layout/BottomNav';
 
+const R2_PUBLIC_URL = 'https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev';
+
 const MarketPage: React.FC = () => {
   const navigate = useNavigate();
   const { token } = useUserContext();
@@ -129,9 +131,14 @@ const MarketPage: React.FC = () => {
     setTimeout(fetchProducts, 0);
   };
 
+  const getPublicUrl = (file_url: string) => {
+    const filename = file_url.split('/').pop();
+    return `${R2_PUBLIC_URL}/${filename}`;
+  };
+
   const getProductImage = (product: Product) => {
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-      return product.images[0];
+      return getPublicUrl(product.images[0]);
     }
     return 'https://via.placeholder.com/300x200?text=No+Image';
   };

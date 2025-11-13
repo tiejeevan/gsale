@@ -10,24 +10,19 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Chip,
   Alert,
   CircularProgress,
   InputAdornment,
   Card,
   CardMedia,
-  CardContent,
-  Stepper,
-  Step,
-  StepLabel,
-  Divider,
+  IconButton,
+  Collapse,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
-  Add as AddIcon,
-  ArrowBack as BackIcon,
-  ArrowForward as ForwardIcon,
-  Check as CheckIcon,
+  PhotoCamera as PhotoCameraIcon,
+  Upload as UploadIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useUserContext } from '../context/UserContext';
@@ -36,46 +31,41 @@ import LeftSidebar from '../components/layout/LeftSidebar';
 import RightSidebar from '../components/layout/RightSidebar';
 import BottomNav from '../components/layout/BottomNav';
 
-const steps = ['Basic Info', 'Pricing & Stock', 'Images & Details', 'Review'];
+const conditionOptions = [
+  { value: 'new', label: '✨ Brand New' },
+  { value: 'like_new', label: '🌟 Like New' },
+  { value: 'good', label: '👍 Good' },
+  { value: 'fair', label: '👌 Fair' },
+  { value: 'poor', label: '⚠️ Poor' },
+];
+
+const R2_PUBLIC_URL = 'https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev';
 
 const SellProductPage: React.FC = () => {
   const navigate = useNavigate();
   const { token, currentUser } = useUserContext();
-  const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Form data
+  // Simplified form data
   const [formData, setFormData] = useState({
     title: '',
-    short_description: '',
     description: '',
     price: '',
-    compare_at_price: '',
-    cost_price: '',
-    sku: '',
-    barcode: '',
     category_id: '',
     brand: '',
-    stock_quantity: '',
-    low_stock_threshold: '10',
-    weight: '',
+    condition: 'good',
+    stock_quantity: '1',
     images: [] as string[],
-    video_url: '',
-    tags: [] as string[],
-    is_featured: false,
-    seo_title: '',
-    seo_description: '',
-    meta_keywords: '',
   });
-
-  const [tagInput, setTagInput] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
 
   useEffect(() => {
     fetchCategories();
+    console.log('API URL:', import.meta.env.VITE_API_URL);
   }, []);
 
   const fetchCategories = async () => {
@@ -91,34 +81,71 @@ const SellProductPage: React.FC = () => {
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setError('');
   };
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+  const getPublicUrl = (file_url: string) => {
+    const filename = file_url.split('/').pop();
+    return `${R2_PUBLIC_URL}/${filename}`;
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = 5 - formData.images.length;
+    if (remainingSlots <= 0) {
+      setError('Maximum 5 images allowed');
+      return;
+    }
+
+    const filesToProcess = Array.from(files).slice(0, remainingSlots);
+    setUploadingImage(true);
+    setError('');
+
+    try {
+      const uploadFormData = new FormData();
+      
+      for (const file of filesToProcess) {
+        if (!file.type.startsWith('image/')) {
+          setError(`${file.name} is not an image file`);
+          continue;
+        }
+        uploadFormData.append('files', file);
+      }
+
+      // Upload to R2 storage
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: uploadFormData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload images');
+      }
+
+      const result = await response.json();
+      const uploadedUrls = result.files.map((f: any) => f.url);
+
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()]
+        images: [...prev.images, ...uploadedUrls]
       }));
-      setTagInput('');
+
+      console.log(`Uploaded ${uploadedUrls.length} images to R2 storage`);
+    } catch (err: any) {
+      setError('Failed to upload images');
+      console.error('Image upload error:', err);
+    } finally {
+      setUploadingImage(false);
+      event.target.value = '';
     }
   };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
-  };
 
-  const handleAddImage = () => {
-    if (imageUrl.trim() && !formData.images.includes(imageUrl.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, imageUrl.trim()]
-      }));
-      setImageUrl('');
-    }
-  };
 
   const handleRemoveImage = (index: number) => {
     setFormData(prev => ({
@@ -127,56 +154,46 @@ const SellProductPage: React.FC = () => {
     }));
   };
 
-  const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 0: // Basic Info
-        if (!formData.title.trim()) {
-          setError('Product title is required');
-          return false;
-        }
-        if (!formData.short_description.trim()) {
-          setError('Short description is required');
-          return false;
-        }
-        if (!formData.category_id) {
-          setError('Please select a category');
-          return false;
-        }
-        break;
-      case 1: // Pricing & Stock
-        if (!formData.price || parseFloat(formData.price) <= 0) {
-          setError('Valid price is required');
-          return false;
-        }
-        if (!formData.stock_quantity || parseInt(formData.stock_quantity) < 0) {
-          setError('Valid stock quantity is required');
-          return false;
-        }
-        break;
-      case 2: // Images & Details
-        if (formData.images.length === 0) {
-          setError('At least one product image is required');
-          return false;
-        }
-        break;
+  const validateForm = (): boolean => {
+    console.log('Validating form...', formData);
+    
+    if (!formData.title.trim()) {
+      setError('Please enter a product title');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return false;
     }
-    setError('');
+    if (!formData.description.trim()) {
+      setError('Please describe your product');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return false;
+    }
+    if (!formData.category_id) {
+      setError('Please select a category');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return false;
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      setError('Please enter a valid price');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return false;
+    }
+    if (formData.images.length === 0) {
+      setError('Please add at least one photo');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return false;
+    }
+    
+    console.log('Form validation passed!');
     return true;
   };
 
-  const handleNext = () => {
-    if (validateStep(activeStep)) {
-      setActiveStep(prev => prev + 1);
-    }
-  };
-
-  const handleBack = () => {
-    setActiveStep(prev => prev - 1);
-    setError('');
-  };
-
   const handleSubmit = async () => {
-    if (!validateStep(activeStep)) return;
+    console.log('Submit button clicked');
+    
+    if (!validateForm()) {
+      console.log('Validation failed');
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -185,455 +202,42 @@ const SellProductPage: React.FC = () => {
     try {
       const productData = {
         title: formData.title,
-        short_description: formData.short_description,
-        description: formData.description || formData.short_description,
+        short_description: formData.description.substring(0, 200),
+        description: formData.description,
         price: parseFloat(formData.price),
-        compare_at_price: formData.compare_at_price ? parseFloat(formData.compare_at_price) : undefined,
-        cost_price: formData.cost_price ? parseFloat(formData.cost_price) : undefined,
-        sku: formData.sku || undefined,
-        barcode: formData.barcode || undefined,
         category_id: formData.category_id,
         brand: formData.brand || undefined,
         stock_quantity: parseInt(formData.stock_quantity),
-        low_stock_threshold: parseInt(formData.low_stock_threshold),
-        weight: formData.weight ? parseFloat(formData.weight) : undefined,
-        images: formData.images,
-        video_url: formData.video_url || undefined,
-        tags: formData.tags,
-        status: 'pending', // Products start as pending for admin approval
-        is_featured: formData.is_featured,
+        low_stock_threshold: 5,
+        images: formData.images, // Now these are R2 URLs, not base64
+        tags: [formData.condition],
+        status: 'pending',
+        is_featured: false,
         owner_type: 'User',
         owner_id: currentUser?.id.toString() || '',
-        seo_title: formData.seo_title || undefined,
-        seo_description: formData.seo_description || undefined,
-        meta_keywords: formData.meta_keywords || undefined,
       };
+
+      console.log('Submitting product:', {
+        title: productData.title,
+        imageCount: formData.images.length,
+        imageUrls: formData.images
+      });
 
       const response = await productsService.createProduct(token!, productData);
 
       if (response.success) {
-        setSuccess('Product submitted successfully! It will be reviewed by our team.');
+        setSuccess('🎉 Product listed successfully! It will be reviewed by our team.');
         setTimeout(() => {
           navigate('/market');
         }, 2000);
       } else {
-        setError(response.error || 'Failed to submit product');
+        setError(response.error || 'Failed to list product');
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to submit product');
+      console.error('Product submission error:', err);
+      setError(err.message || 'Failed to list product. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const renderStepContent = (step: number) => {
-    switch (step) {
-      case 0: // Basic Info
-        return (
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                required
-                label="Product Title"
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="e.g., Wireless Bluetooth Headphones"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                required
-                label="Short Description"
-                value={formData.short_description}
-                onChange={(e) => handleInputChange('short_description', e.target.value)}
-                placeholder="Brief description (1-2 sentences)"
-                multiline
-                rows={2}
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Full Description"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Detailed product description"
-                multiline
-                rows={4}
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FormControl fullWidth required>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={formData.category_id}
-                  label="Category"
-                  onChange={(e) => handleInputChange('category_id', e.target.value)}
-                >
-                  {categories.map((cat) => (
-                    <MenuItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Brand"
-                value={formData.brand}
-                onChange={(e) => handleInputChange('brand', e.target.value)}
-                placeholder="e.g., Sony, Nike, Apple"
-              />
-            </Grid>
-          </Grid>
-        );
-
-      case 1: // Pricing & Stock
-        return (
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                required
-                type="number"
-                label="Price"
-                value={formData.price}
-                onChange={(e) => handleInputChange('price', e.target.value)}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                }}
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                type="number"
-                label="Compare at Price"
-                value={formData.compare_at_price}
-                onChange={(e) => handleInputChange('compare_at_price', e.target.value)}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                }}
-                helperText="Original price (for showing discounts)"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                type="number"
-                label="Cost Price"
-                value={formData.cost_price}
-                onChange={(e) => handleInputChange('cost_price', e.target.value)}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                }}
-                helperText="Your cost (optional)"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                required
-                type="number"
-                label="Stock Quantity"
-                value={formData.stock_quantity}
-                onChange={(e) => handleInputChange('stock_quantity', e.target.value)}
-                helperText="Available units"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                type="number"
-                label="Low Stock Threshold"
-                value={formData.low_stock_threshold}
-                onChange={(e) => handleInputChange('low_stock_threshold', e.target.value)}
-                helperText="Alert when stock falls below this"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="SKU"
-                value={formData.sku}
-                onChange={(e) => handleInputChange('sku', e.target.value)}
-                placeholder="Stock Keeping Unit"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Barcode"
-                value={formData.barcode}
-                onChange={(e) => handleInputChange('barcode', e.target.value)}
-                placeholder="Product barcode"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                type="number"
-                label="Weight (kg)"
-                value={formData.weight}
-                onChange={(e) => handleInputChange('weight', e.target.value)}
-                helperText="For shipping calculations"
-              />
-            </Grid>
-          </Grid>
-        );
-
-      case 2: // Images & Details
-        return (
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Product Images *
-              </Typography>
-              <Box display="flex" gap={1} mb={2}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Image URL"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddImage()}
-                />
-                <Button
-                  variant="contained"
-                  onClick={handleAddImage}
-                  startIcon={<AddIcon />}
-                >
-                  Add
-                </Button>
-              </Box>
-
-              {formData.images.length > 0 && (
-                <Grid container spacing={2}>
-                  {formData.images.map((img, index) => (
-                    <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
-                      <Card>
-                        <CardMedia
-                          component="img"
-                          height="140"
-                          image={img}
-                          alt={`Product ${index + 1}`}
-                          sx={{ objectFit: 'cover' }}
-                        />
-                        <CardContent sx={{ p: 1 }}>
-                          <Button
-                            fullWidth
-                            size="small"
-                            color="error"
-                            startIcon={<DeleteIcon />}
-                            onClick={() => handleRemoveImage(index)}
-                          >
-                            Remove
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              )}
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Video URL (Optional)"
-                value={formData.video_url}
-                onChange={(e) => handleInputChange('video_url', e.target.value)}
-                placeholder="https://youtube.com/watch?v=..."
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Tags
-              </Typography>
-              <Box display="flex" gap={1} mb={2}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Add Tag"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="e.g., wireless, bluetooth, portable"
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                />
-                <Button
-                  variant="outlined"
-                  onClick={handleAddTag}
-                  startIcon={<AddIcon />}
-                >
-                  Add
-                </Button>
-              </Box>
-
-              <Box display="flex" gap={1} flexWrap="wrap">
-                {formData.tags.map((tag, index) => (
-                  <Chip
-                    key={index}
-                    label={tag}
-                    onDelete={() => handleRemoveTag(tag)}
-                    color="primary"
-                    variant="outlined"
-                  />
-                ))}
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="subtitle2" gutterBottom>
-                SEO (Optional)
-              </Typography>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="SEO Title"
-                value={formData.seo_title}
-                onChange={(e) => handleInputChange('seo_title', e.target.value)}
-                placeholder="Optimized title for search engines"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="SEO Description"
-                value={formData.seo_description}
-                onChange={(e) => handleInputChange('seo_description', e.target.value)}
-                placeholder="Meta description for search results"
-                multiline
-                rows={2}
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Meta Keywords"
-                value={formData.meta_keywords}
-                onChange={(e) => handleInputChange('meta_keywords', e.target.value)}
-                placeholder="keyword1, keyword2, keyword3"
-              />
-            </Grid>
-          </Grid>
-        );
-
-      case 3: // Review
-        return (
-          <Box>
-            <Alert severity="info" sx={{ mb: 3 }}>
-              Please review your product details before submitting. Your product will be reviewed by our team before it appears in the marketplace.
-            </Alert>
-
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12 }}>
-                <Typography variant="h6" gutterBottom>
-                  {formData.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  {formData.short_description}
-                </Typography>
-              </Grid>
-
-              {formData.images.length > 0 && (
-                <Grid size={{ xs: 12 }}>
-                  <Box display="flex" gap={1} overflow="auto">
-                    {formData.images.map((img, index) => (
-                      <Box
-                        key={index}
-                        component="img"
-                        src={img}
-                        alt={`Product ${index + 1}`}
-                        sx={{
-                          width: 120,
-                          height: 120,
-                          objectFit: 'cover',
-                          borderRadius: 1,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Grid>
-              )}
-
-              <Grid size={{ xs: 6 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Price
-                </Typography>
-                <Typography variant="h6" color="primary">
-                  ${parseFloat(formData.price || '0').toFixed(2)}
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 6 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Stock
-                </Typography>
-                <Typography variant="h6">
-                  {formData.stock_quantity} units
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 6 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Category
-                </Typography>
-                <Typography variant="body1">
-                  {categories.find(c => c.id === formData.category_id)?.name || 'N/A'}
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 6 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Brand
-                </Typography>
-                <Typography variant="body1">
-                  {formData.brand || 'N/A'}
-                </Typography>
-              </Grid>
-
-              {formData.tags.length > 0 && (
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Tags
-                  </Typography>
-                  <Box display="flex" gap={1} flexWrap="wrap">
-                    {formData.tags.map((tag, index) => (
-                      <Chip key={index} label={tag} size="small" />
-                    ))}
-                  </Box>
-                </Grid>
-              )}
-            </Grid>
-          </Box>
-        );
-
-      default:
-        return null;
     }
   };
 
@@ -654,32 +258,38 @@ const SellProductPage: React.FC = () => {
           sx={{
             flex: 1,
             width: '100%',
-            maxWidth: { 
+            maxWidth: {
               xs: '100%',
               sm: '100%',
               md: '100%',
-              lg: '900px',
+              lg: '800px',
             },
             px: { xs: 2, sm: 3, md: 4 },
             py: { xs: 2, sm: 3 },
             pb: { xs: 10, lg: 3 },
           }}
         >
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-              🏪 Sell Your Product
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              List your product for sale. It will be reviewed by our team before going live.
-            </Typography>
-
-            <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
+          <Paper sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+            {/* Header */}
+            <Box sx={{ mb: 4 }}>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 700,
+                  mb: 1,
+                  fontSize: { xs: '1.75rem', sm: '2.125rem' }
+                }}
+              >
+                📦 List Your Product
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+              >
+                Fill in the details below to list your product for sale
+              </Typography>
+            </Box>
 
             {error && (
               <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
@@ -693,40 +303,281 @@ const SellProductPage: React.FC = () => {
               </Alert>
             )}
 
-            <Box sx={{ mb: 4 }}>
-              {renderStepContent(activeStep)}
-            </Box>
+            <Grid container spacing={3}>
+              {/* Photos Section */}
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  📸 Photos ({formData.images.length}/5)
+                </Typography>
 
-            <Box display="flex" justifyContent="space-between">
-              <Button
-                disabled={activeStep === 0}
-                onClick={handleBack}
-                startIcon={<BackIcon />}
-              >
-                Back
-              </Button>
-
-              <Box display="flex" gap={2}>
-                {activeStep < steps.length - 1 ? (
+                <Box
+                  display="flex"
+                  gap={2}
+                  mb={2}
+                  flexDirection={{ xs: 'column', sm: 'row' }}
+                >
                   <Button
                     variant="contained"
-                    onClick={handleNext}
-                    endIcon={<ForwardIcon />}
+                    component="label"
+                    startIcon={uploadingImage ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon />}
+                    disabled={uploadingImage || formData.images.length >= 5}
+                    fullWidth
+                    size="large"
+                    sx={{ py: 1.5 }}
                   >
-                    Next
+                    {uploadingImage ? 'Processing...' : 'Take Photo'}
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      capture="environment"
+                      multiple
+                      onChange={handleFileUpload}
+                      disabled={formData.images.length >= 5}
+                    />
                   </Button>
-                ) : (
+
                   <Button
-                    variant="contained"
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    startIcon={loading ? <CircularProgress size={20} /> : <CheckIcon />}
+                    variant="outlined"
+                    component="label"
+                    startIcon={uploadingImage ? <CircularProgress size={20} /> : <UploadIcon />}
+                    disabled={uploadingImage || formData.images.length >= 5}
+                    fullWidth
+                    size="large"
+                    sx={{ py: 1.5 }}
                   >
-                    {loading ? 'Submitting...' : 'Submit for Review'}
+                    {uploadingImage ? 'Processing...' : 'Upload from Gallery'}
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      disabled={formData.images.length >= 5}
+                    />
                   </Button>
+                </Box>
+
+                {formData.images.length > 0 && (
+                  <Grid container spacing={2}>
+                    {formData.images.map((img, index) => (
+                      <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
+                        <Card sx={{ position: 'relative' }}>
+                          <CardMedia
+                            component="img"
+                            height="160"
+                            image={getPublicUrl(img)}
+                            alt={`Product ${index + 1}`}
+                            sx={{ objectFit: 'cover' }}
+                          />
+                          <IconButton
+                            sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                              bgcolor: 'rgba(255,255,255,0.9)',
+                              '&:hover': { bgcolor: 'rgba(255,255,255,1)' }
+                            }}
+                            size="small"
+                            onClick={() => handleRemoveImage(index)}
+                          >
+                            <DeleteIcon fontSize="small" color="error" />
+                          </IconButton>
+                          {index === 0 && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                bottom: 4,
+                                left: 4,
+                                bgcolor: 'primary.main',
+                                color: 'white',
+                                px: 1,
+                                py: 0.5,
+                                borderRadius: 1,
+                                fontSize: '0.75rem',
+                                fontWeight: 600
+                              }}
+                            >
+                              Main Photo
+                            </Box>
+                          )}
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
                 )}
-              </Box>
-            </Box>
+
+                {formData.images.length === 0 && (
+                  <Alert severity="info">
+                    Add photos of your product. The first photo will be the main image.
+                  </Alert>
+                )}
+              </Grid>
+
+              {/* Title */}
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  📝 Product Details
+                </Typography>
+                <TextField
+                  fullWidth
+                  required
+                  label="What are you selling?"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  placeholder="e.g., iPhone 13 Pro Max 256GB"
+                />
+              </Grid>
+
+              {/* Category & Condition */}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth required>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={formData.category_id}
+                    label="Category"
+                    onChange={(e) => handleInputChange('category_id', e.target.value)}
+                  >
+                    {categories.map((cat) => (
+                      <MenuItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Condition</InputLabel>
+                  <Select
+                    value={formData.condition}
+                    label="Condition"
+                    onChange={(e) => handleInputChange('condition', e.target.value)}
+                  >
+                    {conditionOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Description */}
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="Describe your product, its condition, and any important details..."
+                  multiline
+                  rows={4}
+                  helperText="Be honest about the condition and include any defects"
+                />
+              </Grid>
+
+              {/* Price & Quantity */}
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  💰 Pricing
+                </Typography>
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  required
+                  type="number"
+                  label="Price"
+                  value={formData.price}
+                  onChange={(e) => handleInputChange('price', e.target.value)}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  }}
+                  helperText="Set a fair price for your item"
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Quantity Available"
+                  value={formData.stock_quantity}
+                  onChange={(e) => handleInputChange('stock_quantity', e.target.value)}
+                  helperText="How many do you have?"
+                />
+              </Grid>
+
+              {/* Advanced Options (Collapsible) */}
+              <Grid size={{ xs: 12 }}>
+                <Button
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  endIcon={
+                    <ExpandMoreIcon
+                      sx={{
+                        transform: showAdvanced ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: '0.3s'
+                      }}
+                    />
+                  }
+                  sx={{ mb: 1 }}
+                >
+                  {showAdvanced ? 'Hide' : 'Show'} Advanced Options
+                </Button>
+
+                <Collapse in={showAdvanced}>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12 }}>
+                      <TextField
+                        fullWidth
+                        label="Brand (Optional)"
+                        value={formData.brand}
+                        onChange={(e) => handleInputChange('brand', e.target.value)}
+                        placeholder="e.g., Apple, Samsung, Nike"
+                      />
+                    </Grid>
+                  </Grid>
+                </Collapse>
+              </Grid>
+
+              {/* Submit Button */}
+              <Grid size={{ xs: 12 }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  fullWidth
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  sx={{
+                    py: 2,
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    mt: 2
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <CircularProgress size={24} sx={{ mr: 1 }} color="inherit" />
+                      Listing Product...
+                    </>
+                  ) : (
+                    '🚀 List Product'
+                  )}
+                </Button>
+
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', textAlign: 'center', mt: 2 }}
+                >
+                  Your product will be reviewed by our team before going live
+                </Typography>
+              </Grid>
+            </Grid>
           </Paper>
         </Box>
 

@@ -16,18 +16,16 @@ import {
   DialogActions,
   TextField,
   CardMedia,
-  Divider,
-  Stack,
 } from '@mui/material';
 import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
   Visibility as ViewIcon,
   Info as InfoIcon,
-  Store as StoreIcon,
-  Person as PersonIcon,
 } from '@mui/icons-material';
 import { productsService, type Product } from '../../services/productsService';
+
+const R2_PUBLIC_URL = 'https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev';
 
 interface PendingApprovalTabProps {
   token: string;
@@ -112,9 +110,14 @@ const PendingApprovalTab: React.FC<PendingApprovalTabProps> = ({
     setRejectReason('');
   };
 
+  const getPublicUrl = (file_url: string) => {
+    const filename = file_url.split('/').pop();
+    return `${R2_PUBLIC_URL}/${filename}`;
+  };
+
   const getProductImage = (product: Product) => {
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-      return product.images[0];
+      return getPublicUrl(product.images[0]);
     }
     return 'https://via.placeholder.com/300x200?text=No+Image';
   };
@@ -160,39 +163,40 @@ const PendingApprovalTab: React.FC<PendingApprovalTabProps> = ({
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {products.map((product) => (
-          <Grid size={{ xs: 12, md: 6, lg: 4 }} key={product.id}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={product.id}>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 3 } }}>
               <CardMedia
                 component="img"
-                height="180"
+                height="160"
                 image={getProductImage(product)}
                 alt={product.title}
                 sx={{ objectFit: 'cover', bgcolor: 'grey.200' }}
               />
               
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+              <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', minHeight: '2.5em' }}>
                   {product.title}
                 </Typography>
                 
                 <Typography 
-                  variant="body2" 
+                  variant="caption" 
                   color="text.secondary" 
                   sx={{ 
-                    mb: 2,
+                    mb: 1.5,
+                    display: 'block',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
+                    minHeight: '2.5em',
                   }}
                 >
                   {product.short_description || product.description}
                 </Typography>
 
-                <Stack spacing={1} mb={2}>
+                <Box display="flex" gap={0.5} mb={1.5} flexWrap="wrap">
                   <Box display="flex" gap={1} flexWrap="wrap">
                     <Chip
                       label={`$${Number(product.price).toFixed(2)}`}
@@ -212,60 +216,53 @@ const PendingApprovalTab: React.FC<PendingApprovalTabProps> = ({
                       />
                     )}
                   </Box>
-                </Stack>
+                </Box>
 
-                <Divider sx={{ my: 1 }} />
-
-                <Stack spacing={0.5}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    {product.owner_type === 'Store' ? <StoreIcon fontSize="small" /> : <PersonIcon fontSize="small" />}
-                    <Typography variant="caption" color="text.secondary">
-                      {product.owner_type}: {product.owner_id}
-                    </Typography>
-                  </Box>
+                <Box>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    SKU: {product.sku || 'N/A'}
+                    {product.owner_type === 'Store' ? '🏪' : '👤'} {product.owner_type}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    Brand: {product.brand || 'N/A'}
+                    📅 {new Date(product.created_at).toLocaleDateString()}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Submitted: {new Date(product.created_at).toLocaleDateString()} at {new Date(product.created_at).toLocaleTimeString()}
-                  </Typography>
-                </Stack>
+                </Box>
               </CardContent>
 
-              <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-                <Button
-                  size="small"
-                  startIcon={<ViewIcon />}
-                  onClick={() => onView(product.id)}
-                  disabled={actionLoading === product.id}
-                >
-                  Details
-                </Button>
-                <Box display="flex" gap={1}>
+              <CardActions sx={{ p: 1.5, pt: 0, flexDirection: 'column', gap: 1 }}>
+                <Box display="flex" gap={1} width="100%">
                   <Button
+                    fullWidth
                     size="small"
                     variant="outlined"
                     color="error"
-                    startIcon={<RejectIcon />}
                     onClick={() => handleRejectClick(product)}
                     disabled={actionLoading === product.id}
+                    sx={{ fontSize: '0.75rem', py: 0.5 }}
                   >
                     Reject
                   </Button>
                   <Button
+                    fullWidth
                     size="small"
                     variant="contained"
                     color="success"
-                    startIcon={<ApproveIcon />}
                     onClick={() => handleApproveClick(product)}
                     disabled={actionLoading === product.id}
+                    sx={{ fontSize: '0.75rem', py: 0.5 }}
                   >
                     Approve
                   </Button>
                 </Box>
+                <Button
+                  fullWidth
+                  size="small"
+                  startIcon={<ViewIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => onView(product.id)}
+                  disabled={actionLoading === product.id}
+                  sx={{ fontSize: '0.75rem', py: 0.5 }}
+                >
+                  View Details
+                </Button>
               </CardActions>
             </Card>
           </Grid>

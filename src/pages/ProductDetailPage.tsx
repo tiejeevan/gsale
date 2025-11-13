@@ -28,6 +28,8 @@ import LeftSidebar from '../components/layout/LeftSidebar';
 import RightSidebar from '../components/layout/RightSidebar';
 import BottomNav from '../components/layout/BottomNav';
 
+const R2_PUBLIC_URL = 'https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev';
+
 const ProductDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { productId } = useParams<{ productId: string }>();
@@ -81,9 +83,14 @@ const ProductDetailPage: React.FC = () => {
     setAddingToCart(false);
   };
 
+  const getPublicUrl = (file_url: string) => {
+    const filename = file_url.split('/').pop();
+    return `${R2_PUBLIC_URL}/${filename}`;
+  };
+
   const getProductImages = () => {
     if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
-      return product.images;
+      return product.images.map(img => getPublicUrl(img));
     }
     return ['https://via.placeholder.com/600x600?text=No+Image'];
   };
