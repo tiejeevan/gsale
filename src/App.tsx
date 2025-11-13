@@ -9,8 +9,6 @@ import DatabaseGUI from "./pages/DatabaseGUI";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Profile from "./pages/Profile";
 import PostDetail from "./pages/PostDetail";
-import NewsPage from "./pages/NewsPage";
-import NewsArticleDetail from "./pages/NewsArticleDetail";
 import MarketPage from "./pages/MarketPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import SellProductPage from "./pages/SellProductPage";
@@ -82,22 +80,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/news/:category"
-            element={
-              <ProtectedRoute>
-                <NewsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/news/:category/:articleIndex"
-            element={
-              <ProtectedRoute>
-                <NewsArticleDetail />
-              </ProtectedRoute>
-            }
-          />
+
           <Route
             path="/admin"
             element={

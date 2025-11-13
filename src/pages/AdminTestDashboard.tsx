@@ -87,7 +87,7 @@ const AdminTestDashboard: React.FC = () => {
     setTestResults(results);
 
     try {
-      const response = await fetch('http://localhost:5001/api/test/admin-actions', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/test/admin-actions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -125,7 +125,7 @@ const AdminTestDashboard: React.FC = () => {
     setTestResults(results);
 
     try {
-      const response = await fetch('http://localhost:5001/api/test/realtime', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/test/realtime`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

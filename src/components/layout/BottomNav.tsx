@@ -18,8 +18,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useUserContext } from "../../context/UserContext";
 import {
   Home as HomeIcon,
-  Public as WorldIcon,
-  SportsBasketball as SportsIcon,
   Menu as MenuIcon,
   Person as PersonIcon,
   Notifications as NotificationsIcon,
@@ -28,6 +26,7 @@ import {
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   ShoppingBag as MarketIcon,
+  Storefront as SellIcon,
 } from "@mui/icons-material";
 
 const BottomNav: React.FC = () => {
@@ -41,8 +40,7 @@ const BottomNav: React.FC = () => {
   const getActiveTab = () => {
     if (location.pathname === "/dashboard") return 0;
     if (location.pathname === "/market") return 1;
-    if (location.pathname === "/news/world") return 2;
-    if (location.pathname === "/news/sports") return 3;
+    if (location.pathname === "/sell") return 2;
     return 0;
   };
 
@@ -87,12 +85,9 @@ const BottomNav: React.FC = () => {
                 navigate("/market");
                 break;
               case 2:
-                navigate("/news/world");
+                navigate("/sell");
                 break;
               case 3:
-                navigate("/news/sports");
-                break;
-              case 4:
                 setDrawerOpen(true);
                 break;
             }
@@ -106,8 +101,7 @@ const BottomNav: React.FC = () => {
         >
           <BottomNavigationAction label="Home" icon={<HomeIcon />} />
           <BottomNavigationAction label="Market" icon={<MarketIcon />} />
-          <BottomNavigationAction label="World" icon={<WorldIcon />} />
-          <BottomNavigationAction label="Sports" icon={<SportsIcon />} />
+          <BottomNavigationAction label="Sell" icon={<SellIcon />} />
           <BottomNavigationAction label="Menu" icon={<MenuIcon />} />
         </BottomNavigation>
       </Paper>

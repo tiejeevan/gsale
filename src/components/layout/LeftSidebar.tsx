@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Divider, Badge } from "@mui/material";
+import React from "react";
+import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Divider } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUserContext } from "../../context/UserContext";
 import {
@@ -8,9 +8,6 @@ import {
   Group as GroupIcon,
   Bookmark as BookmarkIcon,
   Settings as SettingsIcon,
-  Public as PublicIcon,
-  SportsFootball as SportsIcon,
-  Movie as MovieIcon,
   ShoppingBag as MarketIcon,
   Storefront as SellIcon,
   Receipt as OrdersIcon,
@@ -20,16 +17,6 @@ const LeftSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser: user, token } = useUserContext();
-  const [hasWorldFilter, setHasWorldFilter] = useState(false);
-  const [hasSportsFilter, setHasSportsFilter] = useState(false);
-
-  useEffect(() => {
-    // Check if filters are set
-    const worldCountry = localStorage.getItem('newsWorldCountry');
-    const sport = localStorage.getItem('newsSport');
-    setHasWorldFilter(worldCountry !== null && worldCountry !== 'us');
-    setHasSportsFilter(sport !== null && sport !== 'all');
-  }, [location]);
 
   if (!user || !token) return null;
 
@@ -43,12 +30,6 @@ const LeftSidebar: React.FC = () => {
     { icon: <SellIcon />, label: "Sell Product", path: "/sell" },
     { icon: <OrdersIcon />, label: "My Orders", path: "/orders" },
     { icon: <BookmarkIcon />, label: "Watch List", path: "/saved" },
-  ];
-
-  const newsItems = [
-    { icon: <PublicIcon />, label: "World News", path: "/news/world" },
-    { icon: <SportsIcon />, label: "Sports", path: "/news/sports", hasSettings: true },
-    { icon: <MovieIcon />, label: "Entertainment", path: "/news/entertainment" },
   ];
 
   return (
@@ -142,64 +123,6 @@ const LeftSidebar: React.FC = () => {
             </ListItemButton>
           </ListItem>
         ))}
-
-        <Divider sx={{ my: 1 }} />
-
-        {newsItems.map((item) => {
-          const showBadge = 
-            (item.path === '/news/world' && hasWorldFilter) ||
-            (item.path === '/news/sports' && hasSportsFilter);
-          
-          return (
-            <ListItem key={item.label} disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                onClick={() => navigate(item.path)}
-                sx={{ 
-                  borderRadius: 2, 
-                  py: 1.5,
-                  bgcolor: isActive(item.path) ? 'action.selected' : 'transparent',
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateX(4px)',
-                    bgcolor: isActive(item.path) ? 'action.selected' : 'action.hover',
-                  }
-                }}
-              >
-                <ListItemIcon sx={{ 
-                  minWidth: 48, 
-                  color: isActive(item.path) ? "primary.main" : "text.secondary",
-                  transition: 'color 0.2s ease-in-out'
-                }}>
-                  <Badge 
-                    variant="dot" 
-                    color="primary" 
-                    invisible={!showBadge}
-                    sx={{
-                      '& .MuiBadge-badge': {
-                        right: 2,
-                        top: 2,
-                      }
-                    }}
-                  >
-                    {item.icon}
-                  </Badge>
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  slotProps={{
-                    primary: { 
-                      style: { 
-                        fontWeight: isActive(item.path) ? 600 : 500, 
-                        fontSize: "0.95rem",
-                        transition: 'font-weight 0.2s ease-in-out'
-                      } 
-                    }
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
 
         <Divider sx={{ my: 1 }} />
 
