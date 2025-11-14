@@ -55,6 +55,7 @@ export interface Message {
   updated_at: string;
   username: string;
   avatar_url?: string;
+  sender_profile_image?: string;
   attachments?: MessageAttachment[];
   reactions?: MessageReaction[];
   read_by?: MessageReadStatus[];

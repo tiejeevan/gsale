@@ -86,17 +86,26 @@ const ProductDetailPage: React.FC = () => {
   const handleMessageSeller = async () => {
     if (!product?.user_id || !token) return;
     
+    console.log('[ProductDetailPage] Message seller clicked, user_id:', product.user_id);
+    
     try {
       const chatId = await startDirectChat(product.user_id);
+      console.log('[ProductDetailPage] Chat created/retrieved, chatId:', chatId);
+      
       if (chatId) {
         setSnackbar({ open: true, message: 'Opening chat with seller...', severity: 'success' });
-        // Trigger the chat to open by navigating with hash and state
+        
+        // Navigate first to ensure the chat component is mounted
+        navigate(window.location.pathname + '#chat', { replace: false });
+        
+        // Then dispatch the event after a short delay
         setTimeout(() => {
+          console.log('[ProductDetailPage] Dispatching openChat event');
           window.dispatchEvent(new CustomEvent('openChat', { detail: { chatId } }));
-          navigate(window.location.pathname + '#chat', { replace: false });
-        }, 300);
+        }, 200);
       }
     } catch (err) {
+      console.error('[ProductDetailPage] Error starting chat:', err);
       setSnackbar({ open: true, message: 'Failed to start chat', severity: 'error' });
     }
   };
@@ -104,10 +113,13 @@ const ProductDetailPage: React.FC = () => {
   const handleImInterested = async () => {
     if (!product?.user_id || !token || !product?.title) return;
     
+    console.log('[ProductDetailPage] Im Interested clicked');
     setSendingInterest(true);
+    
     try {
       // Start a direct chat first
       const chatId = await startDirectChat(product.user_id);
+      console.log('[ProductDetailPage] Chat created for interest, chatId:', chatId);
       
       if (chatId) {
         // Send the interest message
@@ -120,13 +132,17 @@ const ProductDetailPage: React.FC = () => {
           severity: 'success' 
         });
         
-        // Trigger the chat to open
+        // Navigate first to ensure the chat component is mounted
+        navigate(window.location.pathname + '#chat', { replace: false });
+        
+        // Then trigger the chat to open
         setTimeout(() => {
+          console.log('[ProductDetailPage] Dispatching openChat event for interest');
           window.dispatchEvent(new CustomEvent('openChat', { detail: { chatId } }));
-          navigate(window.location.pathname + '#chat', { replace: false });
-        }, 500);
+        }, 200);
       }
     } catch (err) {
+      console.error('[ProductDetailPage] Error sending interest:', err);
       setSnackbar({ open: true, message: 'Failed to send interest', severity: 'error' });
     } finally {
       setSendingInterest(false);

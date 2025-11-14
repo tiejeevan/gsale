@@ -162,24 +162,41 @@ const MarketPage: React.FC = () => {
       return;
     }
 
+    console.log('[MarketPage] Contact seller clicked for product:', product.id, 'seller:', product.user_id);
+
     try {
       // Import chatService dynamically
       const { createDirectChat } = await import('../services/chatService');
       
       // Create or get existing chat with seller
+      console.log('[MarketPage] Creating direct chat...');
       const response = await createDirectChat(token!, {
         otherUserId: product.user_id,
       });
 
+      console.log('[MarketPage] Chat response:', response);
+
       if (response.success && response.chatId) {
-        // Open the chat using custom event
+        console.log('[MarketPage] Opening chat with ID:', response.chatId);
+        
+        // Navigate first to ensure the chat component is mounted
+        navigate(window.location.pathname + '#chat', { replace: false });
+        
+        // Then dispatch the event after a short delay to ensure component is ready
         setTimeout(() => {
+          console.log('[MarketPage] Dispatching openChat event');
           window.dispatchEvent(new CustomEvent('openChat', { detail: { chatId: response.chatId } }));
-          navigate(window.location.pathname + '#chat', { replace: false });
-        }, 100);
+        }, 200);
+        
+        setSnackbarMessage('Opening chat...');
+        setSnackbarOpen(true);
+      } else {
+        console.error('[MarketPage] Failed to create chat:', response);
+        setSnackbarMessage('Failed to create chat');
+        setSnackbarOpen(true);
       }
     } catch (error: any) {
-      console.error('Error opening chat:', error);
+      console.error('[MarketPage] Error opening chat:', error);
       setSnackbarMessage('Failed to open chat with seller');
       setSnackbarOpen(true);
     }
@@ -575,7 +592,10 @@ const MarketPage: React.FC = () => {
                         {/* Contact Seller Icon Button */}
                         <IconButton
                           color="primary"
-                          onClick={() => handleContactSeller(product)}
+                          onClick={() => {
+                            console.log('🔵 BUTTON CLICKED - Product:', product.id, 'Seller:', product.user_id);
+                            handleContactSeller(product);
+                          }}
                           sx={{
                             border: '1px solid',
                             borderColor: 'primary.main',

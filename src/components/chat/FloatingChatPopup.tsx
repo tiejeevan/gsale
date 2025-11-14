@@ -86,13 +86,29 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime, repli
         sx={{
           display: 'flex',
           justifyContent: isOwn ? 'flex-end' : 'flex-start',
+          alignItems: 'flex-end',
           mb: 0.5,
           position: 'relative',
+          gap: 0.5,
         }}
       >
+        {/* Avatar for other user (left side) */}
+        {!isOwn && (
+          <Avatar
+            src={message.sender_profile_image || undefined}
+            sx={{ 
+              width: 28, 
+              height: 28,
+              flexShrink: 0,
+            }}
+          >
+            {message.username?.[0]?.toUpperCase()}
+          </Avatar>
+        )}
+        
         <Box
           sx={{
-            maxWidth: '75%',
+            maxWidth: { xs: '70%', sm: '75%' },
             px: 1.5,
             py: 0.75,
             borderRadius: '8px',
@@ -172,6 +188,20 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime, repli
             )}
           </Box>
         </Box>
+        
+        {/* Avatar for own messages (right side) */}
+        {isOwn && (
+          <Avatar
+            src={message.sender_profile_image || undefined}
+            sx={{ 
+              width: 28, 
+              height: 28,
+              flexShrink: 0,
+            }}
+          >
+            {message.username?.[0]?.toUpperCase()}
+          </Avatar>
+        )}
       </Box>
     </motion.div>
   );
@@ -626,7 +656,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
           sx={{
             flex: 1,
             overflowY: 'auto',
-            p: 2,
+            p: { xs: 1, sm: 2 },
             bgcolor: 'background.default',
             display: 'flex',
             flexDirection: 'column',

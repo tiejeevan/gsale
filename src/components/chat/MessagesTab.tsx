@@ -49,22 +49,31 @@ const MessagesTab = () => {
  
   // Close popup when hash changes (back button pressed)
   useEffect(() => {
+    console.log('[MessagesTab] Hash changed:', location.hash, 'selectedChatId:', selectedChatId);
     if (location.hash !== '#chat' && selectedChatId !== null) {
+      console.log('[MessagesTab] Closing chat due to hash change');
       setSelectedChatId(null);
     }
-  }, [location.hash]);
+  }, [location.hash, selectedChatId]);
 
   // Listen for custom event to open specific chat
   useEffect(() => {
     const handleOpenChat = (event: any) => {
+      console.log('[MessagesTab] Received openChat event:', event.detail);
       const { chatId } = event.detail;
       if (chatId) {
+        console.log('[MessagesTab] Setting selected chat ID:', chatId);
         setSelectedChatId(chatId);
+        setIsExpanded(false);
       }
     };
 
+    console.log('[MessagesTab] Adding openChat event listener');
     window.addEventListener('openChat', handleOpenChat);
-    return () => window.removeEventListener('openChat', handleOpenChat);
+    return () => {
+      console.log('[MessagesTab] Removing openChat event listener');
+      window.removeEventListener('openChat', handleOpenChat);
+    };
   }, []);
  
   const formatLastMessage = (chat: any) => {
