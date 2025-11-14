@@ -1,30 +1,40 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Signup from "./pages/Signup";
-import Signin from "./pages/Signin";
-import Dashboard from "./pages/Dashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminTestDashboard from "./pages/AdminTestDashboard";
-import ProductsTestPage from "./pages/ProductsTestPage";
-import DatabaseGUI from "./pages/DatabaseGUI";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Profile from "./pages/Profile";
-import PostDetail from "./pages/PostDetail";
-import MarketPage from "./pages/MarketPage";
-import ProductDetailPage from "./pages/ProductDetailPage";
-import SellProductPage from "./pages/SellProductPage";
-import CartPage from "./pages/CartPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import OrderConfirmationPage from "./pages/OrderConfirmationPage";
-import OrdersPage from "./pages/OrdersPage";
-import OrderDetailPage from "./pages/OrderDetailPage";
-import OrderTrackingPage from "./pages/OrderTrackingPage";
-import BookmarksPage from "./pages/BookmarksPage";
 import { useUserContext } from "./context/UserContext";
 import { NotificationsProvider } from "./NotificationsContext";
 import { ChatProvider } from "./context/ChatContext";
 import { CartProvider } from "./context/CartContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./pages/Navbar";
 import MessagesTab from "./components/chat/MessagesTab";
+
+// Lazy load all page components
+const Signup = lazy(() => import("./pages/Signup"));
+const Signin = lazy(() => import("./pages/Signin"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminTestDashboard = lazy(() => import("./pages/AdminTestDashboard"));
+const ProductsTestPage = lazy(() => import("./pages/ProductsTestPage"));
+const DatabaseGUI = lazy(() => import("./pages/DatabaseGUI"));
+const Profile = lazy(() => import("./pages/Profile"));
+const PostDetail = lazy(() => import("./pages/PostDetail"));
+const MarketPage = lazy(() => import("./pages/MarketPage"));
+const ProductDetailPage = lazy(() => import("./pages/ProductDetailPage"));
+const SellProductPage = lazy(() => import("./pages/SellProductPage"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const OrderConfirmationPage = lazy(() => import("./pages/OrderConfirmationPage"));
+const OrdersPage = lazy(() => import("./pages/OrdersPage"));
+const OrderDetailPage = lazy(() => import("./pages/OrderDetailPage"));
+const OrderTrackingPage = lazy(() => import("./pages/OrderTrackingPage"));
+const BookmarksPage = lazy(() => import("./pages/BookmarksPage"));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="text-lg">Loading...</div>
+  </div>
+);
 
 function AppContent() {
   const { token, isLoading } = useUserContext();
@@ -38,12 +48,11 @@ function AppContent() {
 
       {/* Routes */}
       {isLoading ? (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-lg">Loading...</div>
-        </div>
+        <LoadingFallback />
       ) : (
         <>
-          <Routes>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
           <Route
             path="/"
             element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
@@ -202,7 +211,8 @@ function AppContent() {
             }
           />
           <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
+            </Routes>
+          </Suspense>
 
         {/* Messages Tab - Show only when logged in */}
         {token && <MessagesTab />}
