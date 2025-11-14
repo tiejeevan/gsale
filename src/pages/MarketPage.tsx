@@ -9,8 +9,6 @@ import {
   Grid,
   Chip,
   Button,
-  TextField,
-  InputAdornment,
   Select,
   MenuItem,
   FormControl,
@@ -25,8 +23,6 @@ import {
   ListItemText,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
-  Clear as ClearIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
   Visibility as VisibilityIcon,
@@ -39,6 +35,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useUserContext } from '../context/UserContext';
 import { productsService, type Product } from '../services/productsService';
+import { searchProducts } from '../services/searchService';
+import ProductSearchWithTypeahead from '../components/ProductSearchWithTypeahead';
 import LeftSidebar from '../components/layout/LeftSidebar';
 import RightSidebar from '../components/layout/RightSidebar';
 import BottomNav from '../components/layout/BottomNav';
@@ -80,7 +78,7 @@ const MarketPage: React.FC = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [page, categoryFilter, sortBy, showFeaturedOnly]);
+  }, [page, categoryFilter, sortBy, showFeaturedOnly, searchQuery]);
 
   const fetchCategories = async () => {
     try {
@@ -97,26 +95,42 @@ const MarketPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const params: any = {
-        page: page.toString(),
-        limit: limit.toString(),
-        status: 'active',
-        sort_by: sortBy,
-        sort_order: 'DESC',
-      };
-      
-      if (categoryFilter !== 'all') params.category_id = categoryFilter;
-      if (searchQuery) params.search = searchQuery;
-      if (showFeaturedOnly) params.is_featured = 'true';
-
-      const response = await productsService.getProducts(token!, params);
-      
-      if (response.success) {
-        setProducts(response.products);
-        setTotalPages(response.pagination.pages);
-        setTotalProducts(response.pagination.total);
+      // Use Fuse.js search if there's a search query
+      if (searchQuery && searchQuery.trim().length >= 2) {
+        const searchResponse = await searchProducts(token!, searchQuery, {
+          category_id: categoryFilter !== 'all' ? categoryFilter : undefined,
+          limit: limit,
+        });
+        
+        if (searchResponse.success) {
+          setProducts(searchResponse.results as any);
+          setTotalPages(1); // Search results are not paginated
+          setTotalProducts(searchResponse.count);
+        } else {
+          setError('Failed to search products');
+        }
       } else {
-        setError(response.error || 'Failed to fetch products');
+        // Use regular product fetch for browsing
+        const params: any = {
+          page: page.toString(),
+          limit: limit.toString(),
+          status: 'active',
+          sort_by: sortBy,
+          sort_order: 'DESC',
+        };
+        
+        if (categoryFilter !== 'all') params.category_id = categoryFilter;
+        if (showFeaturedOnly) params.is_featured = 'true';
+
+        const response = await productsService.getProducts(token!, params);
+        
+        if (response.success) {
+          setProducts(response.products);
+          setTotalPages(response.pagination.pages);
+          setTotalProducts(response.pagination.total);
+        } else {
+          setError(response.error || 'Failed to fetch products');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch products');
@@ -125,16 +139,7 @@ const MarketPage: React.FC = () => {
     }
   };
 
-  const handleSearch = () => {
-    setPage(1);
-    fetchProducts();
-  };
 
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setPage(1);
-    setTimeout(fetchProducts, 0);
-  };
 
   const getPublicUrl = (file_url: string) => {
     const filename = file_url.split('/').pop();
@@ -308,27 +313,13 @@ const MarketPage: React.FC = () => {
           <Box sx={{ mb: 3 }}>
             <Grid container spacing={2} alignItems="center">
               <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                    endAdornment: searchQuery && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={handleClearSearch}>
-                          <ClearIcon fontSize="small" />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
+                <ProductSearchWithTypeahead
+                  token={token!}
+                  onSearch={(query) => {
+                    setSearchQuery(query);
+                    setPage(1);
                   }}
+                  placeholder="Search products..."
                 />
               </Grid>
               
@@ -384,14 +375,6 @@ const MarketPage: React.FC = () => {
                     }}
                   >
                     Featured
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={handleSearch}
-                    startIcon={<SearchIcon />}
-                  >
-                    Search
                   </Button>
                 </Box>
               </Grid>

@@ -12,9 +12,10 @@ import {
   CircularProgress,
   IconButton,
   InputBase,
+  ListItemButton,
 } from "@mui/material";
 import { SearchOutlined as SearchIcon, Close as CloseIcon } from "@mui/icons-material";
-import { searchActiveUsers, type User } from "../services/userService";
+import { getUserSuggestions, type UserSuggestion } from "../services/userService";
 
 interface UserSearchProps {
   token: string;
@@ -22,7 +23,7 @@ interface UserSearchProps {
 
 const UserSearch: React.FC<UserSearchProps> = ({ token }) => {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<User[]>([]);
+  const [results, setResults] = useState<UserSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -46,9 +47,11 @@ const UserSearch: React.FC<UserSearchProps> = ({ token }) => {
     setLoading(true);
     debounceTimer.current = setTimeout(async () => {
       try {
-        const users = await searchActiveUsers(query, token);
-        setResults(users);
-        setShowResults(true);
+        const response = await getUserSuggestions(query, token, 5);
+        if (response.success) {
+          setResults(response.suggestions);
+          setShowResults(response.suggestions.length > 0);
+        }
       } catch (error) {
         console.error("Error searching users:", error);
         setResults([]);
@@ -97,6 +100,14 @@ const UserSearch: React.FC<UserSearchProps> = ({ token }) => {
     setIsExpanded(false);
     setShowResults(false);
     setQuery("");
+    setResults([]);
+  };
+
+  const getDisplayName = (user: UserSuggestion) => {
+    if (user.display_name) return user.display_name;
+    if (user.first_name && user.last_name) return `${user.first_name} ${user.last_name}`;
+    if (user.first_name) return user.first_name;
+    return user.username;
   };
 
   return (
@@ -179,37 +190,34 @@ const UserSearch: React.FC<UserSearchProps> = ({ token }) => {
               {results.map((user) => (
                 <ListItem
                   key={user.id}
-                  component="div"
-                  onClick={() => handleUserClick(user.username)}
-                  sx={{
-                    cursor: "pointer",
-                    "&:hover": {
-                      backgroundColor: "action.hover",
-                    },
-                  }}
+                  disablePadding
                 >
-                  <ListItemAvatar>
-                    <Avatar
-                      src={
-                        user.profile_image ||
-                        "https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
+                  <ListItemButton
+                    onClick={() => handleUserClick(user.username)}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        src={
+                          user.profile_image ||
+                          "https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
+                        }
+                        alt={getDisplayName(user)}
+                        sx={{ width: 32, height: 32 }}
+                      />
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Typography variant="body2" fontWeight="medium">
+                          {getDisplayName(user)}
+                        </Typography>
                       }
-                      alt={user.display_name}
-                      sx={{ width: 32, height: 32 }}
+                      secondary={
+                        <Typography variant="caption" color="text.secondary">
+                          @{user.username}
+                        </Typography>
+                      }
                     />
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Typography variant="body2" fontWeight="medium">
-                        {user.display_name || user.username}
-                      </Typography>
-                    }
-                    secondary={
-                      <Typography variant="caption" color="text.secondary">
-                        @{user.username}
-                      </Typography>
-                    }
-                  />
+                  </ListItemButton>
                 </ListItem>
               ))}
             </List>

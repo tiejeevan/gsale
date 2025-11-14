@@ -164,3 +164,32 @@ export const searchActiveUsers = async (query: string, token: string): Promise<U
   const data = await handleResponse<{ users: User[] }>(res);
   return data.users;
 };
+
+export interface UserSuggestion {
+  id: string;
+  username: string;
+  display_name: string | null;
+  profile_image: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  follower_count: number;
+}
+
+export const getUserSuggestions = async (
+  query: string,
+  token: string,
+  limit: number = 5
+): Promise<{ success: boolean; suggestions: UserSuggestion[]; count: number }> => {
+  if (!query.trim() || query.trim().length < 2) {
+    return { success: true, suggestions: [], count: 0 };
+  }
+  
+  const res = await fetch(
+    `${API_URL}/api/users/search/suggestions?q=${encodeURIComponent(query)}&limit=${limit}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  
+  return handleResponse<{ success: boolean; suggestions: UserSuggestion[]; count: number }>(res);
+};
