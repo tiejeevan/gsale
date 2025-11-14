@@ -9,7 +9,17 @@ import { triggerPostCreated } from "../utils/eventBus";
 import { createPost as createPostService } from "../services/postService";
 import { searchUsersForMentions } from "../services/userService";
 
-const CreatePost: React.FC = () => {
+interface CreatePostProps {
+  sharedProduct?: {
+    id: string;
+    title: string;
+    price: number;
+    image: string;
+    url: string;
+  };
+}
+
+const CreatePost: React.FC<CreatePostProps> = ({ sharedProduct }) => {
   const { token, currentUser: user } = useUserContext();
 
   if (!user) return null;
@@ -23,6 +33,7 @@ const CreatePost: React.FC = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [productPreview, setProductPreview] = useState(sharedProduct || null);
   
   // Mentions state
   const [mentionSearch, setMentionSearch] = useState("");
@@ -31,6 +42,15 @@ const CreatePost: React.FC = () => {
   const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-expand and pre-fill when product is shared
+  useEffect(() => {
+    if (sharedProduct) {
+      setIsExpanded(true);
+      setContent('Check out this product! 🛍️');
+      setProductPreview(sharedProduct);
+    }
+  }, [sharedProduct]);
 
   const openVisibilityMenu = (e: React.MouseEvent<HTMLElement>) => setVisibilityAnchorEl(e.currentTarget);
   const closeVisibilityMenu = () => setVisibilityAnchorEl(null);
@@ -65,7 +85,7 @@ const CreatePost: React.FC = () => {
   };
 
   const createPost = async () => {
-    if (!content.trim() && files.length === 0) {
+    if (!content.trim() && files.length === 0 && !productPreview) {
       setMessage("Write something or attach files to post.");
       return;
     }
@@ -84,6 +104,7 @@ const CreatePost: React.FC = () => {
         files,
         comments_enabled: commentsEnabled,
         mentions: mentions.length > 0 ? mentions : undefined,
+        shared_product_id: productPreview?.id || undefined,
       };
       
       await createPostService(token!, postData);
@@ -92,6 +113,7 @@ const CreatePost: React.FC = () => {
       setContent("");
       setTitle("");
       setFiles([]);
+      setProductPreview(null);
       setShowAdvanced(false);
       setCommentsEnabled(true);
       setIsExpanded(false);
@@ -494,6 +516,61 @@ const CreatePost: React.FC = () => {
               </Box>
             </Box>
           </Box>
+
+          {productPreview && (
+            <Paper
+              elevation={2}
+              sx={{
+                mt: 2,
+                p: 2,
+                borderRadius: 2,
+                border: 1,
+                borderColor: 'primary.main',
+                bgcolor: 'background.default',
+                position: 'relative',
+              }}
+            >
+              <IconButton
+                size="small"
+                onClick={() => setProductPreview(null)}
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  bgcolor: 'background.paper',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
+                <FiX />
+              </IconButton>
+              
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box
+                  component="img"
+                  src={productPreview.image}
+                  alt={productPreview.title}
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    objectFit: 'cover',
+                    borderRadius: 2,
+                    flexShrink: 0,
+                  }}
+                />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="subtitle2" fontWeight={600} noWrap>
+                    {productPreview.title}
+                  </Typography>
+                  <Typography variant="h6" color="primary" sx={{ mt: 0.5 }}>
+                    ${Number(productPreview.price).toFixed(2)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                    🛍️ Product Link
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+          )}
 
           {files.length > 0 && (
             <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 2 }}>

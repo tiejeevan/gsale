@@ -1,5 +1,5 @@
 // context/CartContext.tsx
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import { cartService, type Cart, type CartItem } from '../services/cartService';
 import { useUserContext } from './UserContext';
 
@@ -26,14 +26,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch cart on mount and when token changes
-  useEffect(() => {
-    if (token) {
-      refreshCart();
-    } else {
-      setCart(null);
-    }
-  }, [token]);
+  // Fetch cart on mount and when token changes - DISABLED
+  // useEffect(() => {
+  //   if (token) {
+  //     refreshCart();
+  //   } else {
+  //     setCart(null);
+  //   }
+  // }, [token]);
 
   const refreshCart = async () => {
     if (!token) return;

@@ -19,21 +19,25 @@ import {
   Alert,
   IconButton,
   Pagination,
-  Badge,
   Snackbar,
+  Menu,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Clear as ClearIcon,
-  ShoppingCart as CartIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
-  Add as AddIcon,
-  Remove as RemoveIcon,
+  Visibility as VisibilityIcon,
+  Send as SendIcon,
+  Share as ShareIcon,
+  Person as PersonIcon,
+  Feed as FeedIcon,
+  IosShare as IosShareIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useUserContext } from '../context/UserContext';
-import { useCart } from '../context/CartContext';
 import { productsService, type Product } from '../services/productsService';
 import LeftSidebar from '../components/layout/LeftSidebar';
 import RightSidebar from '../components/layout/RightSidebar';
@@ -44,7 +48,6 @@ const R2_PUBLIC_URL = 'https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev';
 const MarketPage: React.FC = () => {
   const navigate = useNavigate();
   const { token } = useUserContext();
-  const { addToCart, updateQuantity, cartItems } = useCart();
   
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -63,11 +66,13 @@ const MarketPage: React.FC = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const limit = 12;
 
-  // Cart state
-  const [addingToCart, setAddingToCart] = useState<string | null>(null);
+  // Snackbar state
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+
+  // Share menu state
+  const [shareMenuAnchor, setShareMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -143,76 +148,121 @@ const MarketPage: React.FC = () => {
     return 'https://via.placeholder.com/300x200?text=No+Image';
   };
 
-  const getCartItem = (productId: string) => {
-    return cartItems.find(item => item.product_id === productId);
-  };
 
-  const getCartQuantity = (productId: string): number => {
-    const item = getCartItem(productId);
-    return item ? Number(item.quantity) : 0;
-  };
 
-  const getQuantity = (productId: string): number => {
-    // If item is in cart, show cart quantity, otherwise show local quantity (default 1)
-    const cartQty = getCartQuantity(productId);
-    if (cartQty > 0) return cartQty;
-    return quantities[productId] || 1;
-  };
-
-  const handleIncrementQuantity = async (productId: string, maxStock: number) => {
-    const cartItem = getCartItem(productId);
-    const currentQty = getQuantity(productId);
-    
-    if (currentQty >= maxStock) return;
-
-    if (cartItem) {
-      // Update cart item in real-time - ensure we pass a number
-      setAddingToCart(productId);
-      const newQuantity = Number(currentQty) + 1;
-      await updateQuantity(cartItem.id, newQuantity);
-      setAddingToCart(null);
-    } else {
-      // Update local state for items not yet in cart
-      setQuantities(prev => ({ ...prev, [productId]: currentQty + 1 }));
-    }
-  };
-
-  const handleDecrementQuantity = async (productId: string) => {
-    const cartItem = getCartItem(productId);
-    const currentQty = getQuantity(productId);
-    
-    if (currentQty <= 1) return;
-
-    if (cartItem) {
-      // Update cart item in real-time - ensure we pass a number
-      setAddingToCart(productId);
-      const newQuantity = Number(currentQty) - 1;
-      await updateQuantity(cartItem.id, newQuantity);
-      setAddingToCart(null);
-    } else {
-      // Update local state for items not yet in cart
-      setQuantities(prev => ({ ...prev, [productId]: currentQty - 1 }));
-    }
-  };
-
-  const handleAddToCart = async (product: Product) => {
-    if (product.stock_quantity <= 0) {
-      setSnackbarMessage('Product is out of stock');
+  const handleContactSeller = async (product: Product) => {
+    if (!product.user_id) {
+      setSnackbarMessage('Seller information not available');
       setSnackbarOpen(true);
       return;
     }
 
-    const quantity = getQuantity(product.id);
-    setAddingToCart(product.id);
-    const success = await addToCart(product.id, quantity);
-    setAddingToCart(null);
+    try {
+      // Import chatService dynamically
+      const { createDirectChat } = await import('../services/chatService');
+      
+      // Create or get existing chat with seller
+      const response = await createDirectChat(token!, {
+        otherUserId: product.user_id,
+      });
 
-    if (success) {
-      setSnackbarMessage(`${quantity} x ${product.title} added to cart!`);
+      if (response.success && response.chatId) {
+        // Open the chat using custom event
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('openChat', { detail: { chatId: response.chatId } }));
+          navigate(window.location.pathname + '#chat', { replace: false });
+        }, 100);
+      }
+    } catch (error: any) {
+      console.error('Error opening chat:', error);
+      setSnackbarMessage('Failed to open chat with seller');
       setSnackbarOpen(true);
-      // Reset local quantity to 1 after adding
-      setQuantities(prev => ({ ...prev, [product.id]: 1 }));
     }
+  };
+
+  const handleShareClick = (event: React.MouseEvent<HTMLElement>, product: Product) => {
+    setShareMenuAnchor(event.currentTarget);
+    setSelectedProduct(product);
+  };
+
+  const handleShareMenuClose = () => {
+    setShareMenuAnchor(null);
+    setSelectedProduct(null);
+  };
+
+  const handleShareToFeed = () => {
+    if (!selectedProduct) return;
+    
+    // Navigate to dashboard with product to share
+    navigate('/dashboard', { 
+      state: { 
+        shareProduct: {
+          id: selectedProduct.id,
+          title: selectedProduct.title,
+          price: selectedProduct.price,
+          image: getProductImage(selectedProduct),
+          url: `/market/product/${selectedProduct.id}`
+        }
+      } 
+    });
+    handleShareMenuClose();
+  };
+
+  const handleNativeShare = async () => {
+    if (!selectedProduct) return;
+
+    const shareData = {
+      title: selectedProduct.title,
+      text: `Check out ${selectedProduct.title} for $${Number(selectedProduct.price).toFixed(2)}!`,
+      url: `${window.location.origin}/market/product/${selectedProduct.id}`,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setSnackbarMessage('Shared successfully!');
+        setSnackbarOpen(true);
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(shareData.url);
+        setSnackbarMessage('Link copied to clipboard!');
+        setSnackbarOpen(true);
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Error sharing:', error);
+        setSnackbarMessage('Failed to share');
+        setSnackbarOpen(true);
+      }
+    }
+    handleShareMenuClose();
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    if (seconds < 2592000) return `${Math.floor(seconds / 604800)}w ago`;
+    return `${Math.floor(seconds / 2592000)}mo ago`;
+  };
+
+  const getUserDisplayName = (product: Product) => {
+    if (product.user_first_name && product.user_last_name) {
+      return `${product.user_first_name} ${product.user_last_name}`;
+    }
+    return product.user_username || 'Unknown Seller';
+  };
+
+  const getUserAvatar = (product: Product) => {
+    if (product.user_profile_image) {
+      return getPublicUrl(product.user_profile_image);
+    }
+    return null;
   };
 
   return (
@@ -401,39 +451,21 @@ const MarketPage: React.FC = () => {
                         },
                       }}
                     >
-                      {/* Cart Badge on Image */}
-                      {getCartQuantity(product.id) > 0 && (
-                        <Badge
-                          badgeContent={getCartQuantity(product.id)}
-                          color="secondary"
+                      {/* Featured Badge on Image */}
+                      {product.is_featured && (
+                        <Chip
+                          icon={<StarIcon />}
+                          label="Featured"
+                          size="small"
+                          color="warning"
                           sx={{
                             position: 'absolute',
                             top: 12,
                             right: 12,
                             zIndex: 1,
-                            '& .MuiBadge-badge': {
-                              fontSize: '0.75rem',
-                              height: 24,
-                              minWidth: 24,
-                              borderRadius: '12px',
-                              border: '2px solid white',
-                            }
+                            fontWeight: 600,
                           }}
-                        >
-                          <Box
-                            sx={{
-                              bgcolor: 'white',
-                              borderRadius: '50%',
-                              p: 0.5,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              boxShadow: 2,
-                            }}
-                          >
-                            <CartIcon sx={{ fontSize: 20, color: 'primary.main' }} />
-                          </Box>
-                        </Badge>
+                        />
                       )}
                       
                       <CardMedia
@@ -448,137 +480,149 @@ const MarketPage: React.FC = () => {
                         }}
                         onClick={() => navigate(`/market/product/${product.id}`)}
                       />
-                      <CardContent sx={{ flexGrow: 1 }}>
-                        <Box display="flex" justifyContent="space-between" alignItems="start" mb={1}>
-                          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-                            {product.title}
-                          </Typography>
-                          {product.is_featured && (
-                            <Chip
-                              icon={<StarIcon />}
-                              label="Featured"
-                              size="small"
-                              color="warning"
-                              sx={{ ml: 1 }}
-                            />
-                          )}
+                      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                        {/* Posted By Section */}
+                        <Box 
+                          display="flex" 
+                          alignItems="center" 
+                          gap={1} 
+                          mb={1.5}
+                          sx={{ cursor: 'pointer' }}
+                          onClick={() => product.user_id && navigate(`/profile/${product.user_id}`)}
+                        >
+                          <Box
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              bgcolor: 'primary.main',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            {getUserAvatar(product) ? (
+                              <img 
+                                src={getUserAvatar(product)!} 
+                                alt={getUserDisplayName(product)}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <PersonIcon sx={{ color: 'white', fontSize: 20 }} />
+                            )}
+                          </Box>
+                          <Box flex={1} minWidth={0}>
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontWeight: 600,
+                                fontSize: '0.813rem',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {getUserDisplayName(product)}
+                            </Typography>
+                            <Typography 
+                              variant="caption" 
+                              color="text.secondary"
+                              sx={{ fontSize: '0.688rem' }}
+                            >
+                              {getTimeAgo(product.created_at)}
+                            </Typography>
+                          </Box>
                         </Box>
-                        
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            mb: 2,
+
+                        {/* Product Title */}
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
+                            fontWeight: 600, 
+                            fontSize: '1rem',
+                            mb: 1.5,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical',
+                            minHeight: '2.5rem',
                           }}
                         >
-                          {product.short_description || product.description}
+                          {product.title}
                         </Typography>
 
-                        <Box display="flex" gap={1} mb={2} flexWrap="wrap">
+                        {/* Category & Brand Tags */}
+                        <Box display="flex" gap={0.5} mb={1.5} flexWrap="wrap">
                           {product.category_name && (
-                            <Chip label={product.category_name} size="small" variant="outlined" />
+                            <Chip 
+                              label={product.category_name} 
+                              size="small" 
+                              variant="outlined"
+                              sx={{ height: 20, fontSize: '0.688rem' }}
+                            />
                           )}
                           {product.brand && (
-                            <Chip label={product.brand} size="small" variant="outlined" />
+                            <Chip 
+                              label={product.brand} 
+                              size="small" 
+                              variant="outlined"
+                              sx={{ height: 20, fontSize: '0.688rem' }}
+                            />
                           )}
                         </Box>
 
-                        <Box display="flex" justifyContent="space-between" alignItems="center">
-                          <Typography variant="h5" color="primary" sx={{ fontWeight: 700 }}>
+                        {/* Price & Views */}
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                          <Typography variant="h5" color="primary" sx={{ fontWeight: 700, fontSize: '1.5rem' }}>
                             ${Number(product.price).toFixed(2)}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Stock: {product.stock_quantity}
-                          </Typography>
-                        </Box>
-
-                        <Box display="flex" gap={1} mt={1}>
-                          <Typography variant="caption" color="text.secondary">
-                            👁️ {product.views_count}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            ⭐ {Number(product.rating_average).toFixed(1)}
-                          </Typography>
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <VisibilityIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                              {product.views_count}
+                            </Typography>
+                          </Box>
                         </Box>
                       </CardContent>
 
-                      <CardActions sx={{ p: 2, pt: 0, display: 'flex', gap: 0.5, alignItems: 'stretch' }}>
-                        {/* Quantity Controls */}
-                        <Box
+                      {/* Action Buttons */}
+                      <CardActions sx={{ p: 2, pt: 0, display: 'flex', gap: 1 }}>
+                        {/* Contact Seller Icon Button */}
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleContactSeller(product)}
                           sx={{
-                            display: 'flex',
-                            alignItems: 'center',
                             border: '1px solid',
-                            borderColor: 'divider',
-                            borderRadius: 1,
-                            bgcolor: 'background.paper',
-                            minWidth: 'fit-content',
+                            borderColor: 'primary.main',
+                            color: 'primary.main',
+                            '&:hover': {
+                              bgcolor: 'primary.main',
+                              color: 'white',
+                            },
+                            height: 42,
+                            width: 42,
                           }}
                         >
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDecrementQuantity(product.id)}
-                            disabled={getQuantity(product.id) <= 1 || product.stock_quantity <= 0 || addingToCart === product.id}
-                            sx={{ 
-                              borderRadius: 0,
-                              p: 0.5,
-                              minWidth: 28,
-                            }}
-                          >
-                            <RemoveIcon sx={{ fontSize: 16 }} />
-                          </IconButton>
-                          <Typography
-                            sx={{
-                              minWidth: 24,
-                              textAlign: 'center',
-                              fontWeight: 600,
-                              fontSize: '0.813rem',
-                              px: 0.5,
-                            }}
-                          >
-                            {getQuantity(product.id)}
-                          </Typography>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleIncrementQuantity(product.id, product.stock_quantity)}
-                            disabled={getQuantity(product.id) >= product.stock_quantity || product.stock_quantity <= 0 || addingToCart === product.id}
-                            sx={{ 
-                              borderRadius: 0,
-                              p: 0.5,
-                              minWidth: 28,
-                            }}
-                          >
-                            <AddIcon sx={{ fontSize: 16 }} />
-                          </IconButton>
-                        </Box>
+                          <SendIcon sx={{ fontSize: 20 }} />
+                        </IconButton>
 
-                        {/* Add to Cart Button */}
+                        {/* Share Button */}
                         <Button
                           fullWidth
-                          variant="contained"
-                          size="small"
-                          onClick={() => handleAddToCart(product)}
-                          disabled={product.stock_quantity <= 0 || addingToCart === product.id}
+                          variant="outlined"
+                          size="medium"
+                          startIcon={<ShareIcon sx={{ fontSize: 18 }} />}
+                          onClick={(e) => handleShareClick(e, product)}
                           sx={{
-                            minWidth: 0,
-                            px: 1,
-                            fontSize: '0.813rem',
-                            whiteSpace: 'nowrap',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            fontSize: '0.875rem',
+                            height: 42,
                           }}
                         >
-                          <CartIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                          {addingToCart === product.id ? (
-                            'Adding...'
-                          ) : product.stock_quantity <= 0 ? (
-                            'Out of Stock'
-                          ) : (
-                            'Add'
-                          )}
+                          Share
                         </Button>
                       </CardActions>
                     </Card>
@@ -606,6 +650,34 @@ const MarketPage: React.FC = () => {
       </Box>
 
       <BottomNav />
+
+      {/* Share Menu */}
+      <Menu
+        anchorEl={shareMenuAnchor}
+        open={Boolean(shareMenuAnchor)}
+        onClose={handleShareMenuClose}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+      >
+        <MenuItem onClick={handleShareToFeed}>
+          <ListItemIcon>
+            <FeedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Share to Feed</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleNativeShare}>
+          <ListItemIcon>
+            <IosShareIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Share via...</ListItemText>
+        </MenuItem>
+      </Menu>
 
       {/* Success Snackbar */}
       <Snackbar

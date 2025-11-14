@@ -1,44 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Box, Typography, Avatar, List, ListItem, ListItemButton, ListItemAvatar, ListItemText, Paper, CircularProgress } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { useUserContext } from "../../context/UserContext";
-
-interface SuggestedUser {
-  id: number;
-  username: string;
-  first_name: string;
-  last_name?: string;
-  profile_image?: string;
-}
+import React from "react";
+import { Box } from "@mui/material";
 
 const RightSidebar: React.FC = () => {
-  const navigate = useNavigate();
-  const { token } = useUserContext();
-  const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch suggested users (you can implement this API endpoint)
-    const fetchSuggested = async () => {
-      try {
-        // Placeholder - implement your API call here
-        // const response = await fetch(`${API_URL}/api/users/suggested`, {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
-        // const data = await response.json();
-        // setSuggestedUsers(data);
-        
-        // Mock data for now
-        setSuggestedUsers([]);
-      } catch (error) {
-        console.error("Failed to fetch suggested users:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSuggested();
-  }, [token]);
 
   return (
     <Box
@@ -62,58 +25,7 @@ const RightSidebar: React.FC = () => {
         },
       }}
     >
-      <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", borderRadius: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "text.secondary", fontSize: "0.95rem" }}>
-          Suggested for you
-        </Typography>
-
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-            <CircularProgress size={24} />
-          </Box>
-        ) : suggestedUsers.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
-            No suggestions available
-          </Typography>
-        ) : (
-          <List disablePadding>
-            {suggestedUsers.map((user) => (
-              <ListItem key={user.id} disablePadding sx={{ mb: 1 }}>
-                <ListItemButton
-                  onClick={() => navigate(`/profile/${user.id}`)}
-                  sx={{ borderRadius: 2, py: 1 }}
-                >
-                  <ListItemAvatar>
-                    <Avatar
-                      src={user.profile_image || ""}
-                      alt={user.first_name}
-                      sx={{ width: 40, height: 40 }}
-                    />
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={`${user.first_name} ${user.last_name || ""}`}
-                    secondary={`@${user.username}`}
-                    slotProps={{
-                      primary: { style: { fontWeight: 600, fontSize: "0.9rem" } },
-                      secondary: { style: { fontSize: "0.8rem" } }
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        )}
-      </Paper>
-
-      {/* Contacts/Online Friends Section */}
-      <Paper elevation={0} sx={{ p: 2, mt: 2, bgcolor: "background.paper", borderRadius: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "text.secondary", fontSize: "0.95rem" }}>
-          Contacts
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
-          No contacts online
-        </Typography>
-      </Paper>
+      {/* Right sidebar content removed */}
     </Box>
   );
 };

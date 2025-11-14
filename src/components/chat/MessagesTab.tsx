@@ -53,6 +53,19 @@ const MessagesTab = () => {
       setSelectedChatId(null);
     }
   }, [location.hash]);
+
+  // Listen for custom event to open specific chat
+  useEffect(() => {
+    const handleOpenChat = (event: any) => {
+      const { chatId } = event.detail;
+      if (chatId) {
+        setSelectedChatId(chatId);
+      }
+    };
+
+    window.addEventListener('openChat', handleOpenChat);
+    return () => window.removeEventListener('openChat', handleOpenChat);
+  }, []);
  
   const formatLastMessage = (chat: any) => {
     if (!chat.last_message_content) return 'No messages yet';
@@ -81,7 +94,7 @@ const MessagesTab = () => {
   return (
     <>
       {/* Messages Tab */}
-      <Box ref={messagesTabRef} sx={{ position: 'fixed', bottom: 0, right: 24, zIndex: 40 }}>
+      <Box ref={messagesTabRef} sx={{ position: 'fixed', bottom: { xs: 56, lg: 0 }, right: 24, zIndex: 40 }}>
         {/* Expanded Chat List */}
         {isExpanded && (
           <Paper

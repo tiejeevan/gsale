@@ -66,6 +66,16 @@ export interface Post {
   status?: string;
   comments_enabled?: boolean;
   view_count?: number;
+  shared_product?: {
+    id: string;
+    title: string;
+    price: number;
+    images?: any;
+    stock_quantity?: number;
+    in_stock?: boolean;
+    slug?: string;
+    url: string;
+  };
 }
 
 // -------------------- 🟢 FETCH POSTS --------------------
@@ -152,6 +162,7 @@ export interface CreatePostParams {
   scheduled_at?: string;
   comments_enabled?: boolean;
   files?: File[];
+  shared_product_id?: string;
 }
 
 export const createPost = async (
@@ -170,6 +181,7 @@ export const createPost = async (
   if (params.metadata) formData.append("metadata", JSON.stringify(params.metadata));
   if (params.scheduled_at) formData.append("scheduled_at", params.scheduled_at);
   if (params.comments_enabled !== undefined) formData.append("comments_enabled", String(params.comments_enabled));
+  if (params.shared_product_id) formData.append("shared_product_id", params.shared_product_id);
 
   if (params.files) {
     params.files.forEach((file) => formData.append("files", file));

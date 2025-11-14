@@ -18,7 +18,6 @@ import {
 import NotificationsBell from "../components/NotificationsBell";
 import ProductApprovalBell from "../components/ProductApprovalBell";
 import UserSearch from "../components/UserSearch";
-import CartIconButton from "../components/cart/CartIcon";
 import CartDrawer from "../components/cart/CartDrawer";
 import { useUserContext } from "../context/UserContext";
 import { useThemeMode } from "../context/ThemeContext";
@@ -60,21 +59,42 @@ const Navbar: React.FC = () => {
             minHeight: { xs: 56, sm: 64 },
           }}
         >
-          {/* Logo */}
-          <Typography
-            variant="h6"
-            component={Link}
-            to="/dashboard"
-            sx={{
-              textDecoration: 'none',
-              color: 'inherit',
-              fontWeight: 'bold',
-              flexShrink: 0,
-              fontSize: { xs: '1.1rem', sm: '1.25rem' },
-            }}
-          >
-            GSALE
-          </Typography>
+          {/* Logo with Country Code */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flexShrink: 0 }}>
+            <Typography
+              variant="h6"
+              component={Link}
+              to="/dashboard"
+              sx={{
+                textDecoration: 'none',
+                color: 'inherit',
+                fontWeight: 'bold',
+                fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                lineHeight: 1,
+              }}
+            >
+              GSALE
+            </Typography>
+            
+            {/* Country Code - Watermark style */}
+            {user?.location_info?.country && (
+              <Box
+                sx={{
+                  fontSize: '0.625rem',
+                  fontWeight: 500,
+                  color: 'text.disabled',
+                  opacity: 0.6,
+                  letterSpacing: 0.5,
+                  alignSelf: 'flex-end',
+                  mt: -0.25,
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                }}
+              >
+                {user.location_info.country}
+              </Box>
+            )}
+          </Box>
 
           {/* Navigation - Right side */}
           {user && (
@@ -98,9 +118,6 @@ const Navbar: React.FC = () => {
               >
                 {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
               </IconButton>
-              
-              {/* Cart Icon */}
-              <CartIconButton onClick={() => setCartDrawerOpen(true)} />
               
               {/* Product Approval Bell (Admin Only) */}
               <ProductApprovalBell />

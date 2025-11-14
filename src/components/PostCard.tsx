@@ -19,6 +19,7 @@ import { addLike, removeLike } from "../services/likeService";
 import { addBookmark, removeBookmark } from "../services/bookmarkService";
 import CommentsSection, { type Comment } from "./Comments/CommentsSection";
 import { socket } from "../socket";
+import ProductEmbedCard from "./ProductEmbedCard";
 
 interface Attachment {
   id: number;
@@ -48,6 +49,16 @@ export interface Post {
   comments?: Comment[];
   view_count?: number;
   comments_enabled?: boolean;
+  shared_product?: {
+    id: string;
+    title: string;
+    price: number;
+    images?: any;
+    stock_quantity?: number;
+    in_stock?: boolean;
+    slug?: string;
+    url: string;
+  };
 }
 
 interface PostCardProps {
@@ -619,6 +630,11 @@ const PostCard: React.FC<PostCardProps> = ({
               />
             </Box>
           </Link>
+        )}
+
+        {/* Shared Product */}
+        {post.shared_product && (
+          <ProductEmbedCard product={post.shared_product} />
         )}
 
         {/* Attachments */}

@@ -39,6 +39,13 @@ export interface Product {
   deleted_at?: string | null;
   attributes?: ProductAttribute[];
   media?: ProductMedia[];
+  condition?: string;
+  // Seller information (populated from backend)
+  user_id?: number;
+  user_username?: string;
+  user_first_name?: string;
+  user_last_name?: string;
+  user_profile_image?: string;
 }
 
 export interface ProductAttribute {

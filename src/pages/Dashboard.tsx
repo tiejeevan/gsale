@@ -29,9 +29,12 @@ import {
   Clear as ClearIcon,
 } from "@mui/icons-material";
 
+import { useLocation } from "react-router-dom";
+
 const Dashboard: React.FC = () => {
   const { token, currentUser: user } = useUserContext();
   const theme = useTheme();
+  const location = useLocation();
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,7 +212,7 @@ const Dashboard: React.FC = () => {
         >
           <div className="space-y-6">
             {/* Create Post */}
-            <CreatePost />
+            <CreatePost sharedProduct={(location.state as any)?.shareProduct} />
 
             {/* Search Bar */}
             <Box sx={{ mb: 2 }}>
