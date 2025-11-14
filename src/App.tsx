@@ -23,8 +23,14 @@ import { useUserContext } from "./context/UserContext";
 import { NotificationsProvider } from "./NotificationsContext";
 import { ChatProvider } from "./context/ChatContext";
 import { CartProvider } from "./context/CartContext";
+import { GamificationProvider } from "./context/GamificationContext";
 import Navbar from "./pages/Navbar";
 import MessagesTab from "./components/chat/MessagesTab";
+import BadgesPage from "./components/gamification/BadgesPage";
+import LeaderboardPage from "./components/gamification/LeaderboardPage";
+import AdminGamificationDashboard from "./components/gamification/AdminGamificationDashboard";
+import GamificationProfile from "./components/gamification/GamificationProfile";
+import XPNotificationToast from "./components/XPNotificationToast";
 
 function AppContent() {
   const { token, isLoading } = useUserContext();
@@ -194,6 +200,40 @@ function AppContent() {
             }
           />
           <Route
+            path="/gamification/profile"
+            element={
+              <ProtectedRoute>
+                <div className="max-w-4xl mx-auto p-6">
+                  <GamificationProfile />
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gamification/badges"
+            element={
+              <ProtectedRoute>
+                <BadgesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gamification/leaderboard"
+            element={
+              <ProtectedRoute>
+                <LeaderboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/gamification"
+            element={
+              <ProtectedRoute>
+                <AdminGamificationDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/adminin"
             element={
               <ProtectedRoute>
@@ -202,6 +242,7 @@ function AppContent() {
             }
           />
           <Route path="*" element={<Navigate to="/login" />} />
+      
         </Routes>
 
         {/* Messages Tab - Show only when logged in */}
@@ -212,13 +253,16 @@ function AppContent() {
   );
 }
 
-// =================== Full App with Notifications, Chat, and Cart Context ===================
+// =================== Full App with Notifications, Chat, Cart, and Gamification Context ===================
 function App() {
   return (
     <NotificationsProvider>
       <ChatProvider>
         <CartProvider>
-          <AppContent />
+          <GamificationProvider>
+            <AppContent />
+            <XPNotificationToast />
+          </GamificationProvider>
         </CartProvider>
       </ChatProvider>
     </NotificationsProvider>

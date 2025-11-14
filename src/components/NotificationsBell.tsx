@@ -20,6 +20,9 @@ import {
   Favorite as FavoriteIcon,
   PersonAdd as PersonAddIcon,
   Circle as CircleIcon,
+  EmojiEvents as TrophyIcon,
+  Star as StarIcon,
+  TrendingUp as LevelUpIcon,
 } from "@mui/icons-material";
 import { useNotifications } from "../NotificationsContext";
 import { useUserContext } from "../context/UserContext";
@@ -108,6 +111,12 @@ const NotificationsBell = () => {
         return <PersonAddIcon sx={{ fontSize: 16, color: 'success.main' }} />;
       case 'mention':
         return <CommentIcon sx={{ fontSize: 16, color: '#667eea' }} />;
+      case 'xp_earned':
+        return <StarIcon sx={{ fontSize: 16, color: '#FFD700' }} />;
+      case 'level_up':
+        return <LevelUpIcon sx={{ fontSize: 16, color: '#4CAF50' }} />;
+      case 'badge_earned':
+        return <TrophyIcon sx={{ fontSize: 16, color: '#FF6B35' }} />;
       default:
         return <CircleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />;
     }
@@ -323,6 +332,9 @@ const NotificationsBell = () => {
                           {n.type === "comment" && "commented on your post"}
                           {n.type === "follow" && "started following you"}
                           {n.type === "mention" && "mentioned you in a comment"}
+                          {n.type === "xp_earned" && `You earned ${n.payload?.xpAmount || 0} XP!`}
+                          {n.type === "level_up" && `Level up! You're now level ${n.payload?.newLevel || 0}`}
+                          {n.type === "badge_earned" && `You earned the "${n.payload?.badgeName || 'badge'}" badge!`}
                         </Typography>
                         
                         {/* Comment/Mention preview */}

@@ -45,6 +45,7 @@ import PostCard, { type Post } from "../components/PostCard";
 import FloatingChatPopup from "../components/chat/FloatingChatPopup";
 import FollowButton from "../components/FollowButton";
 import FollowersModal from "../components/FollowersModal";
+import GamificationProfile from "../components/gamification/GamificationProfile";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -701,6 +702,11 @@ const Profile: React.FC = () => {
               <Tab icon={<FeedIcon />} iconPosition="start" label="Feed" />
               <Tab icon={<StorefrontIcon />} iconPosition="start" label={isOwnProfile ? "My Listings" : "Listings"} />
             </Tabs>
+          </Box>
+
+          {/* Gamification Profile Section - Above Tabs Content */}
+          <Box sx={{ mb: 3 }}>
+            <GamificationProfile />
           </Box>
 
           {/* About Tab Content - Inside Paper */}

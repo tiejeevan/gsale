@@ -17,6 +17,7 @@ import NotificationsBell from "../components/NotificationsBell";
 import ProductApprovalBell from "../components/ProductApprovalBell";
 import UserSearch from "../components/UserSearch";
 import CartDrawer from "../components/cart/CartDrawer";
+import XPWidget from "../components/gamification/XPWidget";
 import { useUserContext } from "../context/UserContext";
 
 const Navbar: React.FC = () => {
@@ -105,6 +106,9 @@ const Navbar: React.FC = () => {
             >
               {/* Search Icon - Expands left */}
               <UserSearch token={localStorage.getItem('token') || ''} />
+              
+              {/* XP Widget */}
+              <XPWidget />
               
               {/* Product Approval Bell (Admin Only) */}
               <ProductApprovalBell />

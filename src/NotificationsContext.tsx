@@ -258,6 +258,12 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       case "product_rejected":
         const reason = notif.payload?.reason ? ` - ${notif.payload.reason}` : "";
         return `Your product "${notif.payload?.productTitle}" was rejected${reason}`;
+      case "xp_earned":
+        return `🎉 You earned ${notif.payload?.xpAmount || 0} XP!`;
+      case "level_up":
+        return `🎊 Level up! You're now level ${notif.payload?.newLevel || 0}`;
+      case "badge_earned":
+        return `🏆 You earned the "${notif.payload?.badgeName || 'badge'}" badge!`;
       default:
         return `New notification from ${notif.actor_name}`;
     }
