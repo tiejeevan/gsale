@@ -133,14 +133,37 @@ const ProductDetailPage: React.FC = () => {
     }
   };
 
-  const handleToggleWatchlist = () => {
-    // TODO: Implement watchlist API
-    setIsWatchlisted(!isWatchlisted);
-    setSnackbar({ 
-      open: true, 
-      message: isWatchlisted ? 'Removed from watchlist' : 'Added to watchlist', 
-      severity: 'success' 
-    });
+  const handleToggleWatchlist = async () => {
+    if (!token || !product) return;
+
+    try {
+      if (isWatchlisted) {
+        const { removeBookmark } = await import('../services/bookmarkService');
+        await removeBookmark(token, product.id, 'product');
+        setIsWatchlisted(false);
+        setSnackbar({ 
+          open: true, 
+          message: 'Removed from bookmarks', 
+          severity: 'success' 
+        });
+      } else {
+        const { addBookmark } = await import('../services/bookmarkService');
+        await addBookmark(token, product.id, 'product');
+        setIsWatchlisted(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Added to bookmarks', 
+          severity: 'success' 
+        });
+      }
+    } catch (error: any) {
+      console.error('Error toggling bookmark:', error);
+      setSnackbar({ 
+        open: true, 
+        message: error.message || 'Failed to update bookmark', 
+        severity: 'error' 
+      });
+    }
   };
 
   const handleShareClick = (event: React.MouseEvent<HTMLElement>) => {

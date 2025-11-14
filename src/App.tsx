@@ -18,6 +18,7 @@ import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import OrderTrackingPage from "./pages/OrderTrackingPage";
+import BookmarksPage from "./pages/BookmarksPage";
 import { useUserContext } from "./context/UserContext";
 import { NotificationsProvider } from "./NotificationsContext";
 import { ChatProvider } from "./context/ChatContext";
@@ -181,6 +182,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <OrderTrackingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bookmarks"
+            element={
+              <ProtectedRoute>
+                <BookmarksPage />
               </ProtectedRoute>
             }
           />

@@ -32,11 +32,13 @@ import {
   Info as InfoIcon,
   Feed as FeedIcon,
   Chat as ChatIcon,
+  Storefront as StorefrontIcon,
 } from "@mui/icons-material";
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { useUserContext } from "../context/UserContext";
 import { userService, type User } from "../services/userService";
 import { getUserPosts } from "../services/postService";
+import { productsService } from "../services/productsService";
 import EditProfileModal from "../components/EditProfileModal.tsx";
 import DeactivateAccountModal from "../components/DeactivateAccountModal.tsx";
 import PostCard, { type Post } from "../components/PostCard";
@@ -63,6 +65,11 @@ const Profile: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
+  
+  // Listings state
+  const [listings, setListings] = useState<any[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const [listingsError, setListingsError] = useState<string | null>(null);
   
   // Inline editing state
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
@@ -155,6 +162,40 @@ const Profile: React.FC = () => {
       fetchPosts(profileUser.id);
     }
   }, [activeTab, profileUser]);
+
+  // Fetch listings when My Listings tab is selected
+  useEffect(() => {
+    if (activeTab === 2 && profileUser && listings.length === 0 && !listingsLoading) {
+      fetchListings(profileUser.id);
+    }
+  }, [activeTab, profileUser]);
+
+  // Fetch listings function
+  const fetchListings = async (targetUserId: number) => {
+    if (!token) return;
+    
+    setListingsLoading(true);
+    setListingsError(null);
+    
+    try {
+      const response = await productsService.getProducts(token, {
+        created_by: targetUserId.toString(),
+        sort_by: 'created_at',
+        sort_order: 'DESC',
+      });
+      
+      if (response.success) {
+        setListings(response.products || []);
+      } else {
+        setListingsError(response.error || 'Failed to fetch listings');
+      }
+    } catch (err: any) {
+      console.error('Error fetching listings:', err);
+      setListingsError(err.message || 'Failed to fetch listings');
+    } finally {
+      setListingsLoading(false);
+    }
+  };
 
   const handleProfileUpdate = (updatedUser: User) => setProfileUser(updatedUser);
 
@@ -658,6 +699,7 @@ const Profile: React.FC = () => {
             >
               <Tab icon={<InfoIcon />} iconPosition="start" label="About" />
               <Tab icon={<FeedIcon />} iconPosition="start" label="Feed" />
+              <Tab icon={<StorefrontIcon />} iconPosition="start" label={isOwnProfile ? "My Listings" : "Listings"} />
             </Tabs>
           </Box>
 
@@ -1033,6 +1075,116 @@ const Profile: React.FC = () => {
                     showEditDeleteOnHover={isOwnProfile}
                     onBookmarkChange={() => fetchPosts(profileUser?.id ?? 0)}
                   />
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* Listings Tab Content */}
+        {activeTab === 2 && (
+          <Box 
+            sx={{ 
+              mt: 3,
+              maxWidth: '1200px',
+              mx: 'auto',
+              width: '100%',
+            }}
+          >
+            {listingsLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : listingsError ? (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {listingsError}
+              </Alert>
+            ) : listings.length === 0 ? (
+              <Paper 
+                elevation={1}
+                sx={{ 
+                  textAlign: 'center', 
+                  py: 8,
+                  borderRadius: 2,
+                  bgcolor: 'background.paper',
+                }}
+              >
+                <StorefrontIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No listings yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  {isOwnProfile 
+                    ? "Start selling by creating your first product listing" 
+                    : "This user hasn't listed any products yet"}
+                </Typography>
+                {isOwnProfile && (
+                  <Button 
+                    variant="contained" 
+                    onClick={() => window.location.href = '/sell'}
+                    startIcon={<Add />}
+                  >
+                    Create Listing
+                  </Button>
+                )}
+              </Paper>
+            ) : (
+              <Box 
+                sx={{ 
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: 'repeat(1, 1fr)',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(3, 1fr)',
+                    lg: 'repeat(4, 1fr)',
+                  },
+                  gap: 3,
+                }}
+              >
+                {listings.map((product) => (
+                  <Paper
+                    key={product.id}
+                    elevation={2}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: 4,
+                      },
+                    }}
+                    onClick={() => window.location.href = `/market/product/${product.id}`}
+                  >
+                    <Box
+                      component="img"
+                      src={product.images?.[0] ? `${R2_PUBLIC_URL}/${product.images[0].split('/').pop()}` : 'https://via.placeholder.com/300x200?text=No+Image'}
+                      alt={product.title}
+                      sx={{
+                        width: '100%',
+                        height: 200,
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <Box sx={{ p: 2 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: '1rem' }}>
+                        {product.title}
+                      </Typography>
+                      <Typography variant="h5" color="primary" sx={{ fontWeight: 700, mb: 1 }}>
+                        ${Number(product.price).toFixed(2)}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Chip 
+                          label={product.status} 
+                          size="small" 
+                          color={product.status === 'active' ? 'success' : 'default'}
+                        />
+                        {product.is_featured && (
+                          <Chip label="Featured" size="small" color="warning" />
+                        )}
+                        <Chip label={`${product.views_count} views`} size="small" variant="outlined" />
+                      </Box>
+                    </Box>
+                  </Paper>
                 ))}
               </Box>
             )}

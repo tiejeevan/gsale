@@ -2,6 +2,7 @@ import React from "react";
 import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Divider } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUserContext } from "../../context/UserContext";
+import { useThemeMode } from "../../context/ThemeContext";
 import {
   Home as HomeIcon,
   Person as PersonIcon,
@@ -11,12 +12,15 @@ import {
   ShoppingBag as MarketIcon,
   Storefront as SellIcon,
   Receipt as OrdersIcon,
+  LightMode as LightModeIcon,
+  DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
 
 const LeftSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser: user, token } = useUserContext();
+  const { mode, toggleTheme } = useThemeMode();
 
   if (!user || !token) return null;
 
@@ -29,7 +33,7 @@ const LeftSidebar: React.FC = () => {
     { icon: <MarketIcon />, label: "Market", path: "/market" },
     { icon: <SellIcon />, label: "Sell Product", path: "/sell" },
     { icon: <OrdersIcon />, label: "My Orders", path: "/orders" },
-    { icon: <BookmarkIcon />, label: "Watch List", path: "/saved" },
+    { icon: <BookmarkIcon />, label: "Bookmarks", path: "/bookmarks" },
   ];
 
   return (
@@ -125,6 +129,40 @@ const LeftSidebar: React.FC = () => {
         ))}
 
         <Divider sx={{ my: 1 }} />
+
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
+          <ListItemButton
+            onClick={toggleTheme}
+            sx={{ 
+              borderRadius: 2, 
+              py: 1.5,
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                transform: 'translateX(4px)',
+                bgcolor: 'action.hover',
+              }
+            }}
+          >
+            <ListItemIcon sx={{ 
+              minWidth: 48, 
+              color: "text.secondary",
+              transition: 'color 0.2s ease-in-out'
+            }}>
+              {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+            </ListItemIcon>
+            <ListItemText
+              primary={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              slotProps={{
+                primary: { 
+                  style: { 
+                    fontWeight: 500, 
+                    fontSize: "0.95rem",
+                  } 
+                }
+              }}
+            />
+          </ListItemButton>
+        </ListItem>
 
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton

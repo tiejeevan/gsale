@@ -12,19 +12,15 @@ import {
 } from "@mui/material";
 import {
   Logout as LogoutIcon,
-  LightMode as LightModeIcon,
-  DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
 import NotificationsBell from "../components/NotificationsBell";
 import ProductApprovalBell from "../components/ProductApprovalBell";
 import UserSearch from "../components/UserSearch";
 import CartDrawer from "../components/cart/CartDrawer";
 import { useUserContext } from "../context/UserContext";
-import { useThemeMode } from "../context/ThemeContext";
 
 const Navbar: React.FC = () => {
   const { currentUser: user, logout } = useUserContext();
-  const { mode, toggleTheme } = useThemeMode();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const navigate = useNavigate();
@@ -110,15 +106,6 @@ const Navbar: React.FC = () => {
               {/* Search Icon - Expands left */}
               <UserSearch token={localStorage.getItem('token') || ''} />
               
-              {/* Theme Toggle */}
-              <IconButton
-                onClick={toggleTheme}
-                color="inherit"
-                title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-              </IconButton>
-              
               {/* Product Approval Bell (Admin Only) */}
               <ProductApprovalBell />
               
@@ -198,8 +185,8 @@ const Navbar: React.FC = () => {
             gap: 1,
           }}
         >
-          <Typography variant="body2">Logout</Typography>
           <LogoutIcon fontSize="small" />
+          <Typography variant="body2">Logout</Typography>
         </MenuItem>
       </Menu>
 

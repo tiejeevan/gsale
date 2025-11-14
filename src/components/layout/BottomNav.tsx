@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUserContext } from "../../context/UserContext";
+import { useThemeMode } from "../../context/ThemeContext";
 import {
   Home as HomeIcon,
   Menu as MenuIcon,
@@ -27,12 +28,15 @@ import {
   Logout as LogoutIcon,
   ShoppingBag as MarketIcon,
   Storefront as SellIcon,
+  LightMode as LightModeIcon,
+  DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
 
 const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser: user, logout } = useUserContext();
+  const { mode, toggleTheme } = useThemeMode();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   if (!user) return null;
@@ -176,6 +180,15 @@ const BottomNav: React.FC = () => {
             </ListItem>
 
             <Divider sx={{ my: 1 }} />
+
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { toggleTheme(); setDrawerOpen(false); }}>
+                <ListItemIcon>
+                  {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                </ListItemIcon>
+                <ListItemText primary={mode === 'dark' ? 'Light Mode' : 'Dark Mode'} />
+              </ListItemButton>
+            </ListItem>
 
             <ListItem disablePadding>
               <ListItemButton onClick={() => { navigate('/settings'); setDrawerOpen(false); }}>
