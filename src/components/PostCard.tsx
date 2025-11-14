@@ -453,44 +453,41 @@ const PostCard: React.FC<PostCardProps> = ({
                 gap: 1.5,
               }}
             >
-              <Link 
-                to={`/profile/${post.user_id}`}
-                style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex' }}
+              <Avatar
+                src={post.profile_image}
+                onClick={() => navigate(`/profile/${post.user_id}`)}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  bgcolor: 'primary.main',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  '&:hover': { opacity: 0.8 },
+                  transition: 'opacity 0.2s',
+                }}
               >
-                <Avatar
-                  src={post.profile_image}
+                {post.username.charAt(0).toUpperCase()}
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  variant="subtitle1"
+                  component="div"
+                  onClick={() => navigate(`/profile/${post.user_id}`)}
                   sx={{
-                    width: 40,
-                    height: 40,
-                    bgcolor: 'primary.main',
-                    fontSize: '1rem',
                     fontWeight: 600,
+                    color: 'text.primary',
+                    mb: 0,
+                    fontSize: '0.95rem',
+                    lineHeight: 1.2,
+                    cursor: 'pointer',
+                    display: 'inline-block',
+                    '&:hover': { opacity: 0.8 },
+                    transition: 'opacity 0.2s',
                   }}
                 >
-                  {post.username.charAt(0).toUpperCase()}
-                </Avatar>
-              </Link>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Link 
-                  to={`/profile/${post.user_id}`}
-                  style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-                >
-                  <Typography
-                    variant="subtitle1"
-                    component="div"
-                    sx={{
-                      fontWeight: 600,
-                      color: 'text.primary',
-                      mb: 0,
-                      fontSize: '0.95rem',
-                      lineHeight: 1.2,
-                      '&:hover': { opacity: 0.8 },
-                      transition: 'opacity 0.2s',
-                    }}
-                  >
-                    {post.username}
-                  </Typography>
-                </Link>
+                  {post.username}
+                </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                   <Typography
                     variant="caption"

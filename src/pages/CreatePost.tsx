@@ -107,7 +107,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ sharedProduct }) => {
         shared_product_id: productPreview?.id || undefined,
       };
       
-      await createPostService(token!, postData);
+      const newPost = await createPostService(token!, postData);
 
       setMessage("✅ Post created successfully!");
       setContent("");
@@ -117,7 +117,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ sharedProduct }) => {
       setShowAdvanced(false);
       setCommentsEnabled(true);
       setIsExpanded(false);
-      triggerPostCreated();
+      triggerPostCreated(newPost);
       
       setTimeout(() => {
         setMessage("");

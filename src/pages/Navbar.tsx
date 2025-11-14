@@ -112,11 +112,21 @@ const Navbar: React.FC = () => {
               {/* Notification Bell */}
               <NotificationsBell />
               
-              {/* Profile Avatar */}
-              <IconButton
+              {/* Profile Avatar & Name - Clickable together */}
+              <Box
                 onClick={handleProfileMenuOpen}
                 sx={{
-                  paddingRight:0
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  cursor: 'pointer',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 2,
+                  transition: 'background-color 0.2s',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  },
                 }}
               >
                 <Avatar
@@ -124,19 +134,18 @@ const Navbar: React.FC = () => {
                   alt="User avatar"
                   sx={{ width: 32, height: 32 }}
                 />
-              </IconButton>
-
-              {/* User Name - Desktop only */}
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  fontWeight: 'medium',
-                  display: { xs: 'none', md: 'block' },
-                  ml: -0.5,
-                }}
-              >
-                {user.first_name}
-              </Typography>
+                
+                {/* User Name - Desktop only */}
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    fontWeight: 'medium',
+                    display: { xs: 'none', md: 'block' },
+                  }}
+                >
+                  {user.first_name}
+                </Typography>
+              </Box>
 
               {/* Logout Icon - Desktop only */}
               <IconButton

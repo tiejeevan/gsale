@@ -40,6 +40,7 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
+import BottomNav from '../components/layout/BottomNav';
 
 const steps = ['Shipping Address', 'Shipping Method', 'Payment', 'Review'];
 
@@ -705,6 +706,9 @@ const CheckoutPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav />
     </Box>
   );
 };

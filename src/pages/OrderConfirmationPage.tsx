@@ -21,6 +21,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { orderService, type Order } from '../services/orderService';
 import { useUserContext } from '../context/UserContext';
 import { useCart } from '../context/CartContext';
+import BottomNav from '../components/layout/BottomNav';
 
 const OrderConfirmationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -217,6 +218,9 @@ const OrderConfirmationPage: React.FC = () => {
           </Button>
         </Box>
       </Box>
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav />
     </Box>
   );
 };

@@ -45,6 +45,7 @@ import PostCard, { type Post } from "../components/PostCard";
 import FloatingChatPopup from "../components/chat/FloatingChatPopup";
 import FollowButton from "../components/FollowButton";
 import FollowersModal from "../components/FollowersModal";
+import BottomNav from "../components/layout/BottomNav";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -1226,6 +1227,9 @@ const Profile: React.FC = () => {
           onClose={() => setShowFollowersModal(false)}
         />
       )}
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav />
     </Box>
   );
 };

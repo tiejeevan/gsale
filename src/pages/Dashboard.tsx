@@ -106,9 +106,11 @@ const Dashboard: React.FC = () => {
     fetchPosts();
   }, []);
 
-  // Listen for new posts
+  // Listen for new posts - optimistically add to state
   useEffect(() => {
-    const unsubscribe = onPostCreated(() => fetchPosts());
+    const unsubscribe = onPostCreated((newPost) => {
+      setPosts(prev => [newPost, ...prev]);
+    });
     return unsubscribe;
   }, []);
 

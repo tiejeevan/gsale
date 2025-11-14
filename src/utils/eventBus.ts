@@ -1,5 +1,7 @@
 // eventBus.ts
-type Callback = () => void;
+import type { Post } from "../services/postService";
+
+type Callback = (post: Post) => void;
 
 const listeners: Callback[] = [];
 
@@ -12,7 +14,7 @@ export const onPostCreated = (cb: Callback) => {
   };
 };
 
-export const triggerPostCreated = () => {
+export const triggerPostCreated = (post: Post) => {
   console.log(`🔔 triggerPostCreated called, notifying ${listeners.length} listeners`);
-  listeners.forEach((cb) => cb());
+  listeners.forEach((cb) => cb(post));
 };
