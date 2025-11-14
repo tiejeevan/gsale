@@ -33,10 +33,14 @@ const MessagesTab = () => {
   }, [isExpanded]);
  
   const handleChatClick = (chatId: number) => {
+    console.log('[MessagesTab] Chat clicked:', chatId);
     setSelectedChatId(chatId);
     setIsExpanded(false);
-    // Add hash to URL for back button support on mobile
-    navigate(location.pathname + location.search + '#chat', { replace: false });
+    // Add hash to URL for back button support on mobile (only if not already there)
+    if (location.hash !== '#chat') {
+      console.log('[MessagesTab] Adding #chat to URL');
+      navigate(location.pathname + location.search + '#chat', { replace: false });
+    }
   };
  
   const handleClosePopup = () => {
@@ -50,11 +54,12 @@ const MessagesTab = () => {
   // Close popup when hash changes (back button pressed)
   useEffect(() => {
     console.log('[MessagesTab] Hash changed:', location.hash, 'selectedChatId:', selectedChatId);
+    // Only close if hash is removed (back button) and we have a selected chat
     if (location.hash !== '#chat' && selectedChatId !== null) {
       console.log('[MessagesTab] Closing chat due to hash change');
       setSelectedChatId(null);
     }
-  }, [location.hash, selectedChatId]);
+  }, [location.hash]); // Removed selectedChatId from dependencies to prevent race condition
 
   // Listen for custom event to open specific chat
   useEffect(() => {
@@ -65,6 +70,11 @@ const MessagesTab = () => {
         console.log('[MessagesTab] Setting selected chat ID:', chatId);
         setSelectedChatId(chatId);
         setIsExpanded(false);
+        // Add hash to URL for back button support
+        if (location.hash !== '#chat') {
+          console.log('[MessagesTab] Adding #chat to URL from event');
+          navigate(location.pathname + location.search + '#chat', { replace: false });
+        }
       }
     };
 
@@ -74,7 +84,7 @@ const MessagesTab = () => {
       console.log('[MessagesTab] Removing openChat event listener');
       window.removeEventListener('openChat', handleOpenChat);
     };
-  }, []);
+  }, [location.hash, location.pathname, location.search, navigate]);
  
   const formatLastMessage = (chat: any) => {
     if (!chat.last_message_content) return 'No messages yet';

@@ -408,28 +408,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
     
     // Clear input immediately for better UX
     setInputValue('');
-    
-    // Optimistically add message to UI immediately
-    const tempMessage: Message = {
-      id: Date.now() + Math.random(), // Temporary unique ID
-      chat_id: chatId,
-      sender_id: currentUser?.id || 0,
-      content: messageContent,
-      type: 'text',
-      reply_to: replyTo?.id,
-      is_edited: false,
-      is_deleted: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      username: currentUser?.username || '',
-      avatar_url: currentUser?.profile_image,
-      attachments: [],
-      reactions: [],
-    };
-    
-    // Add temp message using context's addMessage (which handles duplicates and sorting)
-    addMessage(chatId, tempMessage);
-    setReplyTo(null); // Clear reply after sending
+    setReplyTo(null);
     
     try {
       const response = await sendMessage(token, chatId, {
@@ -438,21 +417,22 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
         replyTo: replyTo?.id,
       });
       
-      // Replace temp message with real message from server
+      // Socket will deliver the message automatically via ChatContext
+      // Add fallback in case socket is slow (200ms timeout)
       if (response.message) {
-        // Remove temp message and add real one
-        const currentMessages = contextMessages[chatId] || [];
-        const withoutTemp = currentMessages.filter(msg => msg.id !== tempMessage.id);
-        const withReal = [...withoutTemp, response.message].sort((a, b) => 
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
-        setMessages(chatId, withReal);
+        setTimeout(() => {
+          const currentMessages = contextMessages[chatId] || [];
+          const hasMessage = currentMessages.some(msg => msg.id === response.message.id);
+          
+          if (!hasMessage) {
+            // Socket didn't deliver, add manually
+            addMessage(chatId, response.message);
+          }
+        }, 200);
       }
     } catch (error) {
-      // Remove temp message on error
-      const currentMessages = contextMessages[chatId] || [];
-      setMessages(chatId, currentMessages.filter(msg => msg.id !== tempMessage.id));
-      setInputValue(messageContent); // Restore input
+      // Restore input on error
+      setInputValue(messageContent);
       alert('Failed to send message');
     } finally {
       setSending(false);
