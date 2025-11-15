@@ -37,12 +37,11 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUserContext } from '../context/UserContext';
 import { productsService, type Product } from '../services/productsService';
-import { useChat } from '../hooks/useChat';
-import { sendMessage } from '../services/chatService';
 import LeftSidebar from '../components/layout/LeftSidebar';
 import RightSidebar from '../components/layout/RightSidebar';
 import BottomNav from '../components/layout/BottomNav';
 import ProductImageGallery from '../components/ProductImageGallery';
+import FloatingChatPopup from '../components/chat/FloatingChatPopup';
 
 const R2_PUBLIC_URL = 'https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev';
 
@@ -50,15 +49,18 @@ const ProductDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { productId } = useParams<{ productId: string }>();
   const { token, currentUser } = useUserContext();
-  const { startDirectChat, loading: chatLoading } = useChat();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'info' });
-  const [sendingInterest, setSendingInterest] = useState(false);
   const [shareMenuAnchor, setShareMenuAnchor] = useState<null | HTMLElement>(null);
+
+  // Chat popup state
+  const [chatPopupOpen, setChatPopupOpen] = useState(false);
+  const [chatUser, setChatUser] = useState<{ userId: number; username: string; avatarUrl?: string } | null>(null);
+  const [chatPrefillMessage, setChatPrefillMessage] = useState<string>('');
 
   useEffect(() => {
     if (productId && token) {
@@ -83,71 +85,34 @@ const ProductDetailPage: React.FC = () => {
     }
   };
 
-  const handleMessageSeller = async () => {
-    if (!product?.user_id || !token) return;
-    
-    console.log('[ProductDetailPage] Message seller clicked, user_id:', product.user_id);
-    
-    try {
-      const chatId = await startDirectChat(product.user_id);
-      console.log('[ProductDetailPage] Chat created/retrieved, chatId:', chatId);
-      
-      if (chatId) {
-        setSnackbar({ open: true, message: 'Opening chat with seller...', severity: 'success' });
-        
-        // Navigate first to ensure the chat component is mounted
-        navigate(window.location.pathname + '#chat', { replace: false });
-        
-        // Then dispatch the event after a short delay
-        setTimeout(() => {
-          console.log('[ProductDetailPage] Dispatching openChat event');
-          window.dispatchEvent(new CustomEvent('openChat', { detail: { chatId } }));
-        }, 200);
-      }
-    } catch (err) {
-      console.error('[ProductDetailPage] Error starting chat:', err);
-      setSnackbar({ open: true, message: 'Failed to start chat', severity: 'error' });
+  const handleMessageSeller = () => {
+    if (!product?.user_id) {
+      setSnackbar({ open: true, message: 'Seller information not available', severity: 'error' });
+      return;
     }
+
+    // Get public URL helper
+    const getPublicUrl = (file_url: string) => {
+      const filename = file_url.split('/').pop();
+      return `${R2_PUBLIC_URL}/${filename}`;
+    };
+
+    // Set chat user info
+    setChatUser({
+      userId: product.user_id,
+      username: product.user_username || 'Seller',
+      avatarUrl: product.user_profile_image ? getPublicUrl(product.user_profile_image) : undefined,
+    });
+
+    // Prefill message with product info
+    const prefillMsg = `Hi! I'm interested in your product: ${product.title} ($${Number(product.price).toFixed(2)})`;
+    setChatPrefillMessage(prefillMsg);
+
+    // Open chat popup
+    setChatPopupOpen(true);
   };
 
-  const handleImInterested = async () => {
-    if (!product?.user_id || !token || !product?.title) return;
-    
-    console.log('[ProductDetailPage] Im Interested clicked');
-    setSendingInterest(true);
-    
-    try {
-      // Start a direct chat first
-      const chatId = await startDirectChat(product.user_id);
-      console.log('[ProductDetailPage] Chat created for interest, chatId:', chatId);
-      
-      if (chatId) {
-        // Send the interest message
-        const message = `Hi! I'm interested in "${product.title}". Is it still available?`;
-        await sendMessage(token, chatId, { content: message, type: 'text' });
-        
-        setSnackbar({ 
-          open: true, 
-          message: 'Interest sent to seller! Check your messages.', 
-          severity: 'success' 
-        });
-        
-        // Navigate first to ensure the chat component is mounted
-        navigate(window.location.pathname + '#chat', { replace: false });
-        
-        // Then trigger the chat to open
-        setTimeout(() => {
-          console.log('[ProductDetailPage] Dispatching openChat event for interest');
-          window.dispatchEvent(new CustomEvent('openChat', { detail: { chatId } }));
-        }, 200);
-      }
-    } catch (err) {
-      console.error('[ProductDetailPage] Error sending interest:', err);
-      setSnackbar({ open: true, message: 'Failed to send interest', severity: 'error' });
-    } finally {
-      setSendingInterest(false);
-    }
-  };
+
 
   const handleToggleWatchlist = async () => {
     if (!token || !product) return;
@@ -409,7 +374,6 @@ const ProductDetailPage: React.FC = () => {
                         variant="outlined"
                         startIcon={<SendIcon />}
                         onClick={handleMessageSeller}
-                        disabled={chatLoading}
                         sx={{ mb: 1 }}
                       >
                         Message Seller
@@ -447,18 +411,6 @@ const ProductDetailPage: React.FC = () => {
                 {/* Action Buttons */}
                 {currentUser?.id !== product.user_id && (
                   <Box sx={{ mb: 3 }}>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      size="large"
-                      startIcon={<SendIcon />}
-                      onClick={handleImInterested}
-                      disabled={!inStock || sendingInterest}
-                      sx={{ mb: 2, py: 1.5 }}
-                    >
-                      {sendingInterest ? 'Sending...' : "I'm Interested"}
-                    </Button>
-                    
                     <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                       <Button
                         fullWidth
@@ -631,6 +583,21 @@ const ProductDetailPage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Floating Chat Popup */}
+      {chatPopupOpen && chatUser && (
+        <FloatingChatPopup
+          userId={chatUser.userId}
+          username={chatUser.username}
+          avatarUrl={chatUser.avatarUrl}
+          prefillMessage={chatPrefillMessage}
+          onClose={() => {
+            setChatPopupOpen(false);
+            setChatUser(null);
+            setChatPrefillMessage('');
+          }}
+        />
+      )}
     </>
   );
 };
