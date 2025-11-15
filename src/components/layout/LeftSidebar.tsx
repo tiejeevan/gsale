@@ -5,13 +5,11 @@ import { useUserContext } from "../../context/UserContext";
 import { useThemeMode } from "../../context/ThemeContext";
 import {
   Home as HomeIcon,
-  Person as PersonIcon,
   Group as GroupIcon,
   Bookmark as BookmarkIcon,
   Settings as SettingsIcon,
   ShoppingBag as MarketIcon,
   Storefront as SellIcon,
-  Receipt as OrdersIcon,
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
@@ -28,11 +26,9 @@ const LeftSidebar: React.FC = () => {
 
   const menuItems = [
     { icon: <HomeIcon />, label: "Home", path: "/dashboard" },
-    { icon: <PersonIcon />, label: "Profile", path: `/profile/${user.id}` },
     { icon: <GroupIcon />, label: "Friends", path: "/friends" },
     { icon: <MarketIcon />, label: "Market", path: "/market" },
     { icon: <SellIcon />, label: "Sell Product", path: "/sell" },
-    { icon: <OrdersIcon />, label: "My Orders", path: "/orders" },
     { icon: <BookmarkIcon />, label: "Bookmarks", path: "/bookmarks" },
   ];
 

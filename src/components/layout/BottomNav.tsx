@@ -21,8 +21,6 @@ import {
   Home as HomeIcon,
   Menu as MenuIcon,
   Person as PersonIcon,
-  Notifications as NotificationsIcon,
-  Chat as ChatIcon,
   Bookmark as BookmarkIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
@@ -149,24 +147,6 @@ const BottomNav: React.FC = () => {
                   <PersonIcon />
                 </ListItemIcon>
                 <ListItemText primary="My Profile" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => { navigate('/notifications'); setDrawerOpen(false); }}>
-                <ListItemIcon>
-                  <NotificationsIcon />
-                </ListItemIcon>
-                <ListItemText primary="Notifications" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => { navigate('/messages'); setDrawerOpen(false); }}>
-                <ListItemIcon>
-                  <ChatIcon />
-                </ListItemIcon>
-                <ListItemText primary="Messages" />
               </ListItemButton>
             </ListItem>
 

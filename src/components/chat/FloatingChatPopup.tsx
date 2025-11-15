@@ -42,7 +42,7 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime, repli
   const swipeDistanceRef = useRef(0);
   
   const bind = useDrag(
-    ({ down, movement: [mx], direction: [xDir], last, cancel }) => {
+    ({ down, movement: [mx], direction: [xDir], last }) => {
       // Swipe to reply - reduced threshold for better UX
       const threshold = 20;
       const swipeDirection = isOwn ? -1 : 1;
@@ -224,8 +224,6 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, prefillMessage, onClos
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [isInputFocused, setIsInputFocused] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -440,24 +438,22 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, prefillMessage, onClos
     setReplyTo(message);
   }, []);
 
-  // Pull to refresh handler
-  const handleRefresh = async () => {
-    if (!chatId || !token || refreshing) return;
-    
-    setRefreshing(true);
-    try {
-      const fetchedMessages = await getChatMessages(token, chatId);
-      const sortedMessages = [...fetchedMessages].sort((a, b) => 
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-      setMessages(chatId, sortedMessages);
-    } catch (error) {
-      // Failed to refresh messages
-    } finally {
-      setRefreshing(false);
-      // pullY.set(0); // Disabled
-    }
-  };
+  // Pull to refresh handler - DISABLED
+  // const handleRefresh = async () => {
+  //   if (!chatId || !token || refreshing) return;
+  //   setRefreshing(true);
+  //   try {
+  //     const fetchedMessages = await getChatMessages(token, chatId);
+  //     const sortedMessages = [...fetchedMessages].sort((a, b) => 
+  //       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  //     );
+  //     setMessages(chatId, sortedMessages);
+  //   } catch (error) {
+  //     // Failed to refresh messages
+  //   } finally {
+  //     setRefreshing(false);
+  //   }
+  // };
 
   // Pull to refresh gesture - DISABLED to allow normal scrolling
   // The gesture was interfering with scroll on mobile devices
@@ -794,8 +790,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, prefillMessage, onClos
               value={inputValue}
               onChange={(e: any) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              onFocus={() => setIsInputFocused(true)}
-              onBlur={() => setIsInputFocused(false)}
+
               placeholder="Type a message"
               disabled={loading || sending}
               sx={{

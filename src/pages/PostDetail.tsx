@@ -20,6 +20,7 @@ import { useUserContext } from "../context/UserContext";
 import PostCard from "../components/PostCard";
 import EditPostModal from "./EditPostModal";
 import { socket, joinPostRoom } from "../socket";
+import BottomNav from "../components/layout/BottomNav";
 
 const PostDetail: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -301,7 +302,7 @@ const PostDetail: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: 4, pb: { xs: 10, lg: 4 } }}>
       {/* Header Card */}
       <Card
         sx={{
@@ -683,6 +684,9 @@ const PostDetail: React.FC = () => {
         onChangeContent={handleChangeContent}
         onChangeImage={handleChangeImage}
       />
+      
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav />
     </Container>
   );
 };
