@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { Box, IconButton, Typography, Avatar, Paper, useTheme, useMediaQuery, CircularProgress } from '@mui/material';
+import { Box, IconButton, Typography, Avatar, Paper, useTheme, useMediaQuery } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon,
   MoreVert as MoreVertIcon,
@@ -42,7 +42,7 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime, repli
   const swipeDistanceRef = useRef(0);
   
   const bind = useDrag(
-    ({ down, movement: [mx], direction: [xDir], last }) => {
+    ({ down, movement: [mx], direction: [xDir], last, cancel }) => {
       // Swipe to reply - reduced threshold for better UX
       const threshold = 20;
       const swipeDirection = isOwn ? -1 : 1;
@@ -70,6 +70,8 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime, repli
       bounds: { left: isOwn ? -100 : 0, right: isOwn ? 0 : 100 },
       rubberband: true,
       filterTaps: true,
+      // Key: Allow vertical scrolling by not preventing default on vertical movement
+      pointer: { touch: true },
     }
   );
 
@@ -79,7 +81,7 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime, repli
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ duration: 0.2 }}
-      style={{ x: x as any, touchAction: 'none' }}
+      style={{ x: x as any }}
       {...(bind() as any)}
     >
       <Box
@@ -230,8 +232,8 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, prefillMessage, onClos
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const initialLocationRef = useRef(location.pathname + location.search);
   
-  // Spring animation for pull to refresh (disabled when typing)
-  const pullY = useSpring(0, { stiffness: 300, damping: 30 });
+  // Spring animation for pull to refresh - DISABLED
+  // const pullY = useSpring(0, { stiffness: 300, damping: 30 });
   
   // Get only this chat's messages from context - memoized to prevent re-sorting on every render
   // Only depends on the specific chat's messages, not the entire contextMessages object
@@ -453,42 +455,40 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, prefillMessage, onClos
       // Failed to refresh messages
     } finally {
       setRefreshing(false);
-      pullY.set(0);
+      // pullY.set(0); // Disabled
     }
   };
 
-  // Pull to refresh gesture (disabled when typing)
-  const bindPull = useDrag(
-    ({ down, movement: [, my], cancel }) => {
-      // Disable pull-to-refresh when input is focused (typing)
-      if (isInputFocused) {
-        cancel();
-        return;
-      }
-
-      if (messagesContainerRef.current) {
-        const scrollTop = messagesContainerRef.current.scrollTop;
-        
-        // Only allow pull when scrolled to top
-        if (scrollTop === 0 && my > 0) {
-          pullY.set(down ? Math.min(my, 100) : 0);
-          
-          // Trigger refresh if pulled enough
-          if (!down && my > 80) {
-            handleRefresh();
-          }
-        } else if (scrollTop > 0) {
-          cancel();
-        }
-      }
-    },
-    {
-      axis: 'y',
-      filterTaps: true,
-      pointer: { touch: true },
-      enabled: !isInputFocused, // Disable when typing
-    }
-  );
+  // Pull to refresh gesture - DISABLED to allow normal scrolling
+  // The gesture was interfering with scroll on mobile devices
+  // TODO: Re-implement pull-to-refresh without blocking scroll
+  // const bindPull = useDrag(
+  //   ({ down, movement: [, my], cancel, event }) => {
+  //     if (isInputFocused) {
+  //       cancel();
+  //       return;
+  //     }
+  //     if (messagesContainerRef.current) {
+  //       const scrollTop = messagesContainerRef.current.scrollTop;
+  //       if (scrollTop === 0 && my > 0) {
+  //         event?.preventDefault();
+  //         pullY.set(down ? Math.min(my, 100) : 0);
+  //         if (!down && my > 80) {
+  //           handleRefresh();
+  //         }
+  //       } else {
+  //         cancel();
+  //       }
+  //     }
+  //   },
+  //   {
+  //     axis: 'y',
+  //     filterTaps: true,
+  //     pointer: { touch: true },
+  //     enabled: !isInputFocused,
+  //     eventOptions: { passive: false },
+  //   }
+  // );
 
 
 
@@ -615,18 +615,16 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, prefillMessage, onClos
         {/* Messages Area */}
         <Box
           ref={messagesContainerRef}
-          {...(!isInputFocused ? (bindPull() as any) : {})}
           sx={{
             flex: 1,
             overflowY: 'auto',
+            overscrollBehavior: 'contain',
             p: { xs: 1, sm: 2 },
             bgcolor: 'background.default',
             display: 'flex',
             flexDirection: 'column',
             gap: 0.5,
             position: 'relative',
-            touchAction: isInputFocused ? 'auto' : 'pan-y',
-            willChange: isInputFocused ? 'auto' : 'transform',
             backgroundImage: theme.palette.mode === 'dark' 
               ? 'none'
               : 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%23f0f0f0\' fill-opacity=\'0.05\'/%3E%3C/svg%3E")',
@@ -646,8 +644,8 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, prefillMessage, onClos
             },
           }}
         >
-          {/* Pull to Refresh Indicator */}
-          <motion.div
+          {/* Pull to Refresh Indicator - DISABLED */}
+          {/* <motion.div
             style={{
               y: pullY as any,
               position: 'absolute',
@@ -660,7 +658,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, prefillMessage, onClos
             {refreshing && (
               <CircularProgress size={24} sx={{ color: 'primary.main' }} />
             )}
-          </motion.div>
+          </motion.div> */}
           {loading ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', gap: 1 }}>
               <Box sx={{ 
