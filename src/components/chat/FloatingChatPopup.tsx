@@ -24,6 +24,7 @@ interface FloatingChatPopupProps {
   userId: number;
   username: string;
   avatarUrl?: string;
+  prefillMessage?: string;
   onClose: () => void;
 }
 
@@ -207,7 +208,7 @@ const MessageBubble = memo(({ message, currentUserId, onReply, formatTime, repli
   );
 });
 
-const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingChatPopupProps) => {
+const FloatingChatPopup = ({ userId, username, avatarUrl, prefillMessage, onClose }: FloatingChatPopupProps) => {
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -218,7 +219,7 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, onClose }: FloatingCha
   const { startDirectChat } = useChat();
   
   const [chatId, setChatId] = useState<number | null>(null);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState(prefillMessage || '');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);

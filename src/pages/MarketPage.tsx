@@ -40,6 +40,7 @@ import ProductSearchWithTypeahead from '../components/ProductSearchWithTypeahead
 import LeftSidebar from '../components/layout/LeftSidebar';
 import RightSidebar from '../components/layout/RightSidebar';
 import BottomNav from '../components/layout/BottomNav';
+import FloatingChatPopup from '../components/chat/FloatingChatPopup';
 
 const R2_PUBLIC_URL = 'https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev';
 
@@ -71,6 +72,11 @@ const MarketPage: React.FC = () => {
   // Share menu state
   const [shareMenuAnchor, setShareMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Chat popup state
+  const [chatPopupOpen, setChatPopupOpen] = useState(false);
+  const [chatUser, setChatUser] = useState<{ userId: number; username: string; avatarUrl?: string } | null>(null);
+  const [chatPrefillMessage, setChatPrefillMessage] = useState<string>('');
 
   useEffect(() => {
     fetchCategories();
@@ -155,51 +161,26 @@ const MarketPage: React.FC = () => {
 
 
 
-  const handleContactSeller = async (product: Product) => {
+  const handleContactSeller = (product: Product) => {
     if (!product.user_id) {
       setSnackbarMessage('Seller information not available');
       setSnackbarOpen(true);
       return;
     }
 
-    console.log('[MarketPage] Contact seller clicked for product:', product.id, 'seller:', product.user_id);
+    // Set chat user info
+    setChatUser({
+      userId: product.user_id,
+      username: product.user_username || getUserDisplayName(product),
+      avatarUrl: product.user_profile_image ? getPublicUrl(product.user_profile_image) : undefined,
+    });
 
-    try {
-      // Import chatService dynamically
-      const { createDirectChat } = await import('../services/chatService');
-      
-      // Create or get existing chat with seller
-      console.log('[MarketPage] Creating direct chat...');
-      const response = await createDirectChat(token!, {
-        otherUserId: product.user_id,
-      });
+    // Prefill message with product info
+    const prefillMsg = `Hi! I'm interested in your product: ${product.title} ($${Number(product.price).toFixed(2)})`;
+    setChatPrefillMessage(prefillMsg);
 
-      console.log('[MarketPage] Chat response:', response);
-
-      if (response.success && response.chatId) {
-        console.log('[MarketPage] Opening chat with ID:', response.chatId);
-        
-        // Navigate first to ensure the chat component is mounted
-        navigate(window.location.pathname + '#chat', { replace: false });
-        
-        // Then dispatch the event after a short delay to ensure component is ready
-        setTimeout(() => {
-          console.log('[MarketPage] Dispatching openChat event');
-          window.dispatchEvent(new CustomEvent('openChat', { detail: { chatId: response.chatId } }));
-        }, 200);
-        
-        setSnackbarMessage('Opening chat...');
-        setSnackbarOpen(true);
-      } else {
-        console.error('[MarketPage] Failed to create chat:', response);
-        setSnackbarMessage('Failed to create chat');
-        setSnackbarOpen(true);
-      }
-    } catch (error: any) {
-      console.error('[MarketPage] Error opening chat:', error);
-      setSnackbarMessage('Failed to open chat with seller');
-      setSnackbarOpen(true);
-    }
+    // Open chat popup
+    setChatPopupOpen(true);
   };
 
   const handleShareClick = (event: React.MouseEvent<HTMLElement>, product: Product) => {
@@ -690,6 +671,21 @@ const MarketPage: React.FC = () => {
         message={snackbarMessage}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
+
+      {/* Floating Chat Popup */}
+      {chatPopupOpen && chatUser && (
+        <FloatingChatPopup
+          userId={chatUser.userId}
+          username={chatUser.username}
+          avatarUrl={chatUser.avatarUrl}
+          prefillMessage={chatPrefillMessage}
+          onClose={() => {
+            setChatPopupOpen(false);
+            setChatUser(null);
+            setChatPrefillMessage('');
+          }}
+        />
+      )}
     </>
   );
 };

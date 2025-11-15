@@ -42,6 +42,7 @@ import { sendMessage } from '../services/chatService';
 import LeftSidebar from '../components/layout/LeftSidebar';
 import RightSidebar from '../components/layout/RightSidebar';
 import BottomNav from '../components/layout/BottomNav';
+import ProductImageGallery from '../components/ProductImageGallery';
 
 const R2_PUBLIC_URL = 'https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev';
 
@@ -54,7 +55,6 @@ const ProductDetailPage: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedImage, setSelectedImage] = useState(0);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'info' });
   const [sendingInterest, setSendingInterest] = useState(false);
@@ -316,45 +316,7 @@ const ProductDetailPage: React.FC = () => {
           <Grid container spacing={3}>
             {/* Product Images */}
             <Grid size={{ xs: 12, md: 7 }}>
-              <Paper sx={{ p: 2 }}>
-                <Box
-                  component="img"
-                  src={images[selectedImage]}
-                  alt={product.title}
-                  sx={{
-                    width: '100%',
-                    height: { xs: 300, sm: 400, md: 500 },
-                    objectFit: 'contain',
-                    bgcolor: 'grey.100',
-                    borderRadius: 1,
-                    mb: 2,
-                  }}
-                />
-                {images.length > 1 && (
-                  <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 1 }}>
-                    {images.map((img, index) => (
-                      <Box
-                        key={index}
-                        component="img"
-                        src={img}
-                        alt={`${product.title} ${index + 1}`}
-                        onClick={() => setSelectedImage(index)}
-                        sx={{
-                          width: 80,
-                          height: 80,
-                          objectFit: 'cover',
-                          borderRadius: 1,
-                          cursor: 'pointer',
-                          border: selectedImage === index ? 2 : 1,
-                          borderColor: selectedImage === index ? 'primary.main' : 'divider',
-                          '&:hover': { borderColor: 'primary.main' },
-                          flexShrink: 0,
-                        }}
-                      />
-                    ))}
-                  </Box>
-                )}
-              </Paper>
+              <ProductImageGallery images={images} productTitle={product.title} />
             </Grid>
 
             {/* Product Details & Seller Info */}
