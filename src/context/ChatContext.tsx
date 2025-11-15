@@ -64,12 +64,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
       
       setChats(validChats);
       
-      // Join all chat rooms to receive real-time messages
-      if (socket.connected && currentUser) {
-        validChats.forEach(chat => {
-          socket.emit('join_chat', { chatId: chat.id, userId: currentUser.id });
-        });
-      }
+      // Note: Chat room joining is handled by separate useEffect
     } catch (error) {
       console.error('Failed to fetch chats:', error);
     }
@@ -79,7 +74,30 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     refreshChats();
   }, [token]);
 
-  // Socket event handlers
+  // Join all chat rooms when chats are loaded (needed for real-time messages)
+  useEffect(() => {
+    if (!currentUser || chats.length === 0) return;
+
+    const handleConnect = () => {
+      chats.forEach(chat => {
+        socket.emit('join_chat', { chatId: chat.id, userId: currentUser.id });
+      });
+    };
+
+    // Join rooms if already connected
+    if (socket.connected) {
+      handleConnect();
+    }
+
+    // Listen for reconnections
+    socket.on('connect', handleConnect);
+
+    return () => {
+      socket.off('connect', handleConnect);
+    };
+  }, [chats, currentUser]); // Re-join when chats list changes
+
+  // Socket event handlers - register once
   useEffect(() => {
     if (!currentUser) return;
 
@@ -87,23 +105,6 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     if (!socket.connected) {
       socket.connect();
     }
-
-    // Join all chat rooms when socket connects
-    const handleConnect = () => {
-      if (chats.length > 0) {
-        chats.forEach(chat => {
-          socket.emit('join_chat', { chatId: chat.id, userId: currentUser.id });
-        });
-      }
-    };
-
-    // Only join if we have chats and socket is connected
-    if (socket.connected && chats.length > 0) {
-      handleConnect();
-    }
-    
-    // Listen for future connections
-    socket.on('connect', handleConnect);
 
     // New message received
     const handleNewMessage = (message: Message) => {
@@ -126,9 +127,18 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
         chat.last_message_type = message.type;
         chat.last_message_sender = message.username;
         
-        // Increment unread if not from current user and not active chat
-        if (message.sender_id !== currentUser.id && activeChat?.id !== message.chat_id) {
-          chat.unread_count = (chat.unread_count || 0) + 1;
+        // Handle unread count
+        if (message.sender_id !== currentUser.id) {
+          if (activeChat?.id === message.chat_id) {
+            // If this is the active chat, mark as read (0 unread)
+            chat.unread_count = 0;
+          } else {
+            // If not active chat, increment unread
+            chat.unread_count = (chat.unread_count || 0) + 1;
+          }
+        } else {
+          // Own message, don't increment unread
+          // Keep existing unread count
         }
         
         updatedChats[chatIndex] = chat;
@@ -252,7 +262,6 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     socket.on('chat:new_message', handleChatNewMessage);
 
     return () => {
-      socket.off('connect', handleConnect);
       socket.off('message:new', handleNewMessage);
       socket.off('message:edited', handleMessageEdited);
       socket.off('message:deleted', handleMessageDeleted);
@@ -263,29 +272,10 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
       socket.off('reaction:removed', handleReactionRemoved);
       socket.off('chat:new_message', handleChatNewMessage);
     };
-  }, [currentUser, activeChat, chats]);
+  }, [currentUser, activeChat]); // Removed 'chats' from dependencies to prevent re-registration
 
-  // Join/leave chat rooms when active chat changes
-  useEffect(() => {
-    if (!activeChat || !currentUser) return;
-
-    const joinChat = () => {
-      socket.emit('join_chat', { chatId: activeChat.id, userId: currentUser.id });
-    };
-
-    if (socket.connected) {
-      joinChat();
-    } else {
-      socket.once('connect', joinChat);
-    }
-
-    return () => {
-      if (socket.connected) {
-        socket.emit('leave_chat', { chatId: activeChat.id });
-      }
-      socket.off('connect', joinChat);
-    };
-  }, [activeChat, currentUser]);
+  // Note: Chat room joining is handled by the chats useEffect above
+  // Active chat doesn't need separate join/leave since we join all chats
 
   const addMessage = (chatId: number, message: Message) => {
     setMessagesState(prev => {

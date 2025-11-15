@@ -17,7 +17,6 @@ import { useUserContext } from '../../context/UserContext';
 import { useChatContext } from '../../context/ChatContext';
 import { useChat } from '../../hooks/useChat';
 import { getChatMessages, sendMessage, markMessagesAsRead } from '../../services/chatService';
-import { socket } from '../../socket';
 import type { Message } from '../../types/chat';
 
 interface FloatingChatPopupProps {
@@ -314,49 +313,32 @@ const FloatingChatPopup = ({ userId, username, avatarUrl, prefillMessage, onClos
             lastMessageId: fetchedMessages[fetchedMessages.length - 1].id 
           });
         }
-
-        // Join chat room (socket connection is handled by ChatContext)
-        if (socket.connected) {
-          socket.emit('join_chat', { chatId: activeChatId, userId: currentUser?.id });
-        } else {
-          // Wait for connection
-          socket.once('connect', () => {
-            socket.emit('join_chat', { chatId: activeChatId, userId: currentUser?.id });
-          });
-        }
       } catch (error) {
-        // Failed to initialize chat
+        console.error(`Failed to initialize chat:`, error);
       } finally {
         setLoading(false);
       }
     };
 
     initChat();
-
-    return () => {
-      if (chatId) {
-        socket.emit('leave_chat', { chatId });
-      }
-    };
   }, [userId, token]);
 
-  // Mark messages as read when new messages arrive
-  // Note: We don't listen to socket here - ChatContext already handles message:new events
-  // and adds them to the context. We just need to mark them as read.
+  // Mark messages as read when new messages arrive or chat opens
   useEffect(() => {
-    if (!chatId || !token || !currentUser) return;
+    if (!chatId || !token || !currentUser || messages.length === 0) return;
 
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.sender_id !== currentUser.id) {
-      // Clear unread count immediately in UI
-      updateChatInList({ id: chatId, unread_count: 0 });
-      
-      // Mark as read on server
+    
+    // Always clear unread count when viewing this chat
+    updateChatInList({ id: chatId, unread_count: 0 });
+    
+    // Mark as read on server if there are messages
+    if (lastMessage) {
       markMessagesAsRead(token, chatId, { lastMessageId: lastMessage.id }).catch(() => {
         // Failed to mark as read
       });
     }
-  }, [messages.length, chatId, currentUser?.id, token]);
+  }, [messages, chatId, currentUser?.id, token]); // Trigger on any message change, not just length
 
   // Scroll to bottom when messages load or change
   useEffect(() => {
