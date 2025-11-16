@@ -11,9 +11,19 @@ const MessagesTab = () => {
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
   const { chats, totalUnreadCount } = useChatContext();
   const { currentUser } = useUserContext();
   const messagesTabRef = useRef<HTMLDivElement>(null);
+
+  // Delay rendering to allow dashboard and bottom nav to appear first
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 800); // 800ms delay to ensure main content loads first
+
+    return () => clearTimeout(timer);
+  }, []);
  
   // Close expanded tab when clicking outside
   useEffect(() => {
@@ -109,11 +119,30 @@ const MessagesTab = () => {
   };
  
   const selectedChat = chats.find(c => c.id === selectedChatId);
+
+  // Don't render until visible
+  if (!isVisible) {
+    return null;
+  }
  
   return (
     <>
       {/* Messages Tab */}
-      <Box ref={messagesTabRef} sx={{ position: 'fixed', bottom: { xs: 56, lg: 0 }, right: 24, zIndex: 40 }}>
+      <Box 
+        ref={messagesTabRef} 
+        sx={{ 
+          position: 'fixed', 
+          bottom: { xs: 56, lg: 0 }, 
+          right: 24, 
+          zIndex: 40,
+          opacity: 0,
+          animation: 'fadeIn 0.3s ease-in forwards',
+          '@keyframes fadeIn': {
+            from: { opacity: 0, transform: 'translateY(10px)' },
+            to: { opacity: 1, transform: 'translateY(0)' },
+          },
+        }}
+      >
         {/* Expanded Chat List */}
         {isExpanded && (
           <Paper
