@@ -9,8 +9,6 @@ import Navbar from "./pages/Navbar";
 import MessagesTab from "./components/chat/MessagesTab";
 
 // Lazy load all page components
-const Signup = lazy(() => import("./pages/Signup"));
-const Signin = lazy(() => import("./pages/Signin"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminTestDashboard = lazy(() => import("./pages/AdminTestDashboard"));
@@ -55,15 +53,15 @@ function AppContent() {
             <Routes>
           <Route
             path="/"
-            element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
+            element={<Navigate to="/market" replace />}
           />
           <Route
             path="/login"
-            element={token ? <Navigate to="/dashboard" /> : <Signin />}
+            element={token ? <Navigate to="/dashboard" /> : <Navigate to="/market" replace />}
           />
           <Route
             path="/signup"
-            element={token ? <Navigate to="/dashboard" /> : <Signup />}
+            element={token ? <Navigate to="/dashboard" /> : <Navigate to="/market" replace />}
           />
           <Route
             path="/dashboard"
@@ -124,19 +122,11 @@ function AppContent() {
           />
           <Route
             path="/market"
-            element={
-              <ProtectedRoute>
-                <MarketPage />
-              </ProtectedRoute>
-            }
+            element={<MarketPage />}
           />
           <Route
             path="/market/product/:productId"
-            element={
-              <ProtectedRoute>
-                <ProductDetailPage />
-              </ProtectedRoute>
-            }
+            element={<ProductDetailPage />}
           />
           <Route
             path="/sell"

@@ -42,6 +42,7 @@ import RightSidebar from '../components/layout/RightSidebar';
 import BottomNav from '../components/layout/BottomNav';
 import ProductImageGallery from '../components/ProductImageGallery';
 import FloatingChatPopup from '../components/chat/FloatingChatPopup';
+import AuthModal from '../components/auth/AuthModal';
 
 const R2_PUBLIC_URL = 'https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev';
 
@@ -62,17 +63,20 @@ const ProductDetailPage: React.FC = () => {
   const [chatUser, setChatUser] = useState<{ userId: number; username: string; avatarUrl?: string } | null>(null);
   const [chatPrefillMessage, setChatPrefillMessage] = useState<string>('');
 
+  // Auth modal state
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
   useEffect(() => {
-    if (productId && token) {
+    if (productId) {
       fetchProduct();
     }
-  }, [productId, token]);
+  }, [productId]);
 
   const fetchProduct = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await productsService.getProductById(token!, productId!);
+      const response = await productsService.getProductById(token || '', productId!);
       if (response.success && response.product) {
         setProduct(response.product);
       } else {
@@ -86,6 +90,12 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const handleMessageSeller = () => {
+    // Show login modal if not authenticated
+    if (!token) {
+      setAuthModalOpen(true);
+      return;
+    }
+
     if (!product?.user_id) {
       setSnackbar({ open: true, message: 'Seller information not available', severity: 'error' });
       return;
@@ -115,7 +125,13 @@ const ProductDetailPage: React.FC = () => {
 
 
   const handleToggleWatchlist = async () => {
-    if (!token || !product) return;
+    if (!product) return;
+    
+    // Show login modal if not authenticated
+    if (!token) {
+      setAuthModalOpen(true);
+      return;
+    }
 
     try {
       if (isWatchlisted) {
@@ -255,7 +271,7 @@ const ProductDetailPage: React.FC = () => {
 
   return (
     <>
-      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', justifyContent: 'center' }}>
         <LeftSidebar />
 
         <Box
@@ -263,8 +279,14 @@ const ProductDetailPage: React.FC = () => {
           sx={{
             flex: 1,
             width: '100%',
-            maxWidth: { lg: '1200px', xl: '1400px' },
-            px: { xs: 2, sm: 3, md: 4 },
+            maxWidth: { 
+              xs: '100%',
+              sm: '600px',
+              md: '680px',
+              lg: '600px',
+              xl: '680px'
+            },
+            px: { xs: 1, sm: 2, md: 3 },
             py: { xs: 2, sm: 3 },
             pb: { xs: 10, lg: 3 },
           }}
@@ -273,20 +295,27 @@ const ProductDetailPage: React.FC = () => {
           <Button
             startIcon={<BackIcon />}
             onClick={() => navigate('/market')}
-            sx={{ mb: 3 }}
+            sx={{ 
+              mb: 3,
+              ml: { xs: 1, sm: 0 },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
           >
             Back to Market
           </Button>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {/* Product Images */}
             <Grid size={{ xs: 12, md: 7 }}>
-              <ProductImageGallery images={images} productTitle={product.title} />
+              <Box sx={{ px: { xs: 1, sm: 0 } }}>
+                <ProductImageGallery images={images} productTitle={product.title} />
+              </Box>
             </Grid>
 
             {/* Product Details & Seller Info */}
             <Grid size={{ xs: 12, md: 5 }}>
-              <Box>
+              <Box sx={{ px: { xs: 1, sm: 0 } }}>
                 {/* Title and Featured Badge */}
                 <Box sx={{ display: 'flex', alignItems: 'start', gap: 2, mb: 2 }}>
                   <Typography variant="h4" sx={{ fontWeight: 700, flex: 1, fontSize: { xs: '1.5rem', sm: '2rem' } }}>
@@ -498,11 +527,11 @@ const ProductDetailPage: React.FC = () => {
 
             {/* Description */}
             <Grid size={{ xs: 12 }}>
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+              <Paper sx={{ p: { xs: 2, sm: 3 }, mx: { xs: 1, sm: 0 }, borderRadius: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '1.125rem', sm: '1.25rem' } }}>
                   Description
                 </Typography>
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', fontSize: { xs: '0.938rem', sm: '1rem' } }}>
                   {product.description || product.short_description || 'No description available.'}
                 </Typography>
               </Paper>
@@ -511,18 +540,18 @@ const ProductDetailPage: React.FC = () => {
             {/* Attributes */}
             {product.attributes && product.attributes.length > 0 && (
               <Grid size={{ xs: 12 }}>
-                <Paper sx={{ p: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                <Paper sx={{ p: { xs: 2, sm: 3 }, mx: { xs: 1, sm: 0 }, borderRadius: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '1.125rem', sm: '1.25rem' } }}>
                     Specifications
                   </Typography>
                   <Grid container spacing={2}>
                     {product.attributes.map((attr, index) => (
                       <Grid size={{ xs: 12, sm: 6 }} key={index}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography variant="body2" color="text.secondary">
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '0.938rem' } }}>
                             {attr.key}:
                           </Typography>
-                          <Typography variant="body2" fontWeight={600}>
+                          <Typography variant="body2" fontWeight={600} sx={{ fontSize: { xs: '0.875rem', sm: '0.938rem' } }}>
                             {attr.value}
                           </Typography>
                         </Box>
@@ -598,6 +627,13 @@ const ProductDetailPage: React.FC = () => {
           }}
         />
       )}
+
+      {/* Auth Modal */}
+      <AuthModal 
+        open={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)}
+        defaultTab="login"
+      />
     </>
   );
 };

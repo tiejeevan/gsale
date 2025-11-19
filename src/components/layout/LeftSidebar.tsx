@@ -20,17 +20,23 @@ const LeftSidebar: React.FC = () => {
   const { currentUser: user, token } = useUserContext();
   const { mode, toggleTheme } = useThemeMode();
 
-  if (!user || !token) return null;
-
   const isActive = (path: string) => location.pathname === path;
 
-  const menuItems = [
+  // Guest users see limited menu
+  const guestMenuItems = [
+    { icon: <MarketIcon />, label: "Market", path: "/market" },
+  ];
+
+  // Authenticated users see full menu
+  const authenticatedMenuItems = [
     { icon: <HomeIcon />, label: "Home", path: "/dashboard" },
     { icon: <GroupIcon />, label: "Friends", path: "/friends" },
     { icon: <MarketIcon />, label: "Market", path: "/market" },
     { icon: <SellIcon />, label: "Sell Product", path: "/sell" },
     { icon: <BookmarkIcon />, label: "Bookmarks", path: "/bookmarks" },
   ];
+
+  const menuItems = user && token ? authenticatedMenuItems : guestMenuItems;
 
   return (
     <Box
@@ -55,36 +61,41 @@ const LeftSidebar: React.FC = () => {
       }}
     >
       <List>
-        <ListItem disablePadding sx={{ mb: 1 }}>
-          <ListItemButton
-            onClick={() => navigate(`/profile/${user.id}`)}
-            sx={{ 
-              borderRadius: 2, 
-              py: 1.5,
-              transition: 'all 0.2s ease-in-out',
-              '&:hover': {
-                transform: 'translateX(4px)',
-                bgcolor: 'action.hover',
-              }
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 48 }}>
-              <Avatar
-                src={user.profile_image || ""}
-                alt={user.first_name}
-                sx={{ width: 36, height: 36 }}
-              />
-            </ListItemIcon>
-            <ListItemText
-              primary={`${user.first_name} ${user.last_name || ""}`}
-              slotProps={{
-                primary: { style: { fontWeight: 600, fontSize: "0.95rem" } }
-              }}
-            />
-          </ListItemButton>
-        </ListItem>
+        {/* Profile section - only for authenticated users */}
+        {user && token && (
+          <>
+            <ListItem disablePadding sx={{ mb: 1 }}>
+              <ListItemButton
+                onClick={() => navigate(`/profile/${user.id}`)}
+                sx={{ 
+                  borderRadius: 2, 
+                  py: 1.5,
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateX(4px)',
+                    bgcolor: 'action.hover',
+                  }
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 48 }}>
+                  <Avatar
+                    src={user.profile_image || ""}
+                    alt={user.first_name}
+                    sx={{ width: 36, height: 36 }}
+                  />
+                </ListItemIcon>
+                <ListItemText
+                  primary={`${user.first_name} ${user.last_name || ""}`}
+                  slotProps={{
+                    primary: { style: { fontWeight: 600, fontSize: "0.95rem" } }
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
 
-        <Divider sx={{ my: 1 }} />
+            <Divider sx={{ my: 1 }} />
+          </>
+        )}
 
         {menuItems.map((item) => (
           <ListItem key={item.label} disablePadding sx={{ mb: 0.5 }}>

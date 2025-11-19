@@ -9,20 +9,26 @@ import {
   Box,
   Menu,
   MenuItem,
+  Button,
 } from "@mui/material";
 import {
   Logout as LogoutIcon,
+  Login as LoginIcon,
+  PersonAdd as PersonAddIcon,
 } from "@mui/icons-material";
 import NotificationsBell from "../components/NotificationsBell";
 import ProductApprovalBell from "../components/ProductApprovalBell";
 import UserSearch from "../components/UserSearch";
 import CartDrawer from "../components/cart/CartDrawer";
+import AuthModal from "../components/auth/AuthModal";
 import { useUserContext } from "../context/UserContext";
 
 const Navbar: React.FC = () => {
   const { currentUser: user, logout } = useUserContext();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<'login' | 'signup'>('login');
   const navigate = useNavigate();
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -60,7 +66,7 @@ const Navbar: React.FC = () => {
             <Typography
               variant="h6"
               component={Link}
-              to="/dashboard"
+              to={user ? "/dashboard" : "/market"}
               sx={{
                 textDecoration: 'none',
                 color: 'inherit',
@@ -93,74 +99,109 @@ const Navbar: React.FC = () => {
           </Box>
 
           {/* Navigation - Right side */}
-          {user && (
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                gap: 1,
-                flexShrink: 0,
-                ml: 'auto',
-              }}
-            >
-              {/* Search Icon - Expands left */}
-              <UserSearch token={localStorage.getItem('token') || ''} />
-              
-              {/* Product Approval Bell (Admin Only) */}
-              <ProductApprovalBell />
-              
-              {/* Notification Bell */}
-              <NotificationsBell />
-              
-              {/* Profile Avatar & Name - Clickable together */}
-              <Box
-                onClick={handleProfileMenuOpen}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  cursor: 'pointer',
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 2,
-                  transition: 'background-color 0.2s',
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                  },
-                }}
-              >
-                <Avatar
-                  src={user.profile_image || "https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
-                  alt="User avatar"
-                  sx={{ width: 32, height: 32 }}
-                />
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              gap: 1,
+              flexShrink: 0,
+              ml: 'auto',
+            }}
+          >
+            {user ? (
+              <>
+                {/* Search Icon - Expands left */}
+                <UserSearch token={localStorage.getItem('token') || ''} />
                 
-                {/* User Name - Desktop only */}
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontWeight: 'medium',
-                    display: { xs: 'none', md: 'block' },
+                {/* Product Approval Bell (Admin Only) */}
+                <ProductApprovalBell />
+                
+                {/* Notification Bell */}
+                <NotificationsBell />
+                
+                {/* Profile Avatar & Name - Clickable together */}
+                <Box
+                  onClick={handleProfileMenuOpen}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    cursor: 'pointer',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 2,
+                    transition: 'background-color 0.2s',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
                   }}
                 >
-                  {user.first_name}
-                </Typography>
-              </Box>
+                  <Avatar
+                    src={user.profile_image || "https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
+                    alt="User avatar"
+                    sx={{ width: 32, height: 32 }}
+                  />
+                  
+                  {/* User Name - Desktop only */}
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: 'medium',
+                      display: { xs: 'none', md: 'block' },
+                    }}
+                  >
+                    {user.first_name}
+                  </Typography>
+                </Box>
 
-              {/* Logout Icon - Desktop only */}
-              <IconButton
-                onClick={handleLogout}
-                color="error"
-                title="Logout"
-                sx={{ 
-                  display: { xs: 'none', sm: 'inline-flex' },
-                  p: 0,
-                }}
-              >
-                <LogoutIcon sx={{ fontSize: 32 }} />
-              </IconButton>
-            </Box>
-          )}
+                {/* Logout Icon - Desktop only */}
+                <IconButton
+                  onClick={handleLogout}
+                  color="error"
+                  title="Logout"
+                  sx={{ 
+                    display: { xs: 'none', sm: 'inline-flex' },
+                    p: 0,
+                  }}
+                >
+                  <LogoutIcon sx={{ fontSize: 32 }} />
+                </IconButton>
+              </>
+            ) : (
+              <>
+                {/* Guest User - Show Login & Sign Up */}
+                <Button
+                  onClick={() => {
+                    setAuthModalTab('login');
+                    setAuthModalOpen(true);
+                  }}
+                  variant="outlined"
+                  startIcon={<LoginIcon />}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    display: { xs: 'none', sm: 'flex' },
+                  }}
+                >
+                  Login
+                </Button>
+                <Button
+                  onClick={() => {
+                    setAuthModalTab('signup');
+                    setAuthModalOpen(true);
+                  }}
+                  variant="contained"
+                  startIcon={<PersonAddIcon />}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 600,
+                  }}
+                >
+                  Sign Up
+                </Button>
+              </>
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -201,6 +242,13 @@ const Navbar: React.FC = () => {
 
       {/* Cart Drawer */}
       <CartDrawer open={cartDrawerOpen} onClose={() => setCartDrawerOpen(false)} />
+
+      {/* Auth Modal */}
+      <AuthModal 
+        open={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)}
+        defaultTab={authModalTab}
+      />
     </>
   );
 };
