@@ -43,6 +43,8 @@ import BottomNav from '../components/layout/BottomNav';
 import ProductImageGallery from '../components/ProductImageGallery';
 import FloatingChatPopup from '../components/chat/FloatingChatPopup';
 import AuthModal from '../components/auth/AuthModal';
+import MarkAsSoldModal from '../components/reviews/MarkAsSoldModal';
+import ReviewStatsBadge from '../components/reviews/ReviewStatsBadge';
 
 const R2_PUBLIC_URL = 'https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev';
 
@@ -65,6 +67,9 @@ const ProductDetailPage: React.FC = () => {
 
   // Auth modal state
   const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  // Mark as sold modal state
+  const [showMarkAsSold, setShowMarkAsSold] = useState(false);
 
   useEffect(() => {
     if (productId) {
@@ -394,6 +399,15 @@ const ProductDetailPage: React.FC = () => {
                         <Typography variant="body2" color="text.secondary">
                           @{product.user_username || 'seller'}
                         </Typography>
+                        {product.user_id && (
+                          <Box sx={{ mt: 1 }}>
+                            <ReviewStatsBadge 
+                              userId={product.user_id} 
+                              type="seller" 
+                              compact 
+                            />
+                          </Box>
+                        )}
                       </Box>
                     </Box>
                     
@@ -438,7 +452,39 @@ const ProductDetailPage: React.FC = () => {
                 </Box>
 
                 {/* Action Buttons */}
-                {currentUser?.id !== product.user_id && (
+                {currentUser?.id === product.user_id ? (
+                  // Owner actions
+                  <Box sx={{ mb: 3 }}>
+                    {product.status === 'active' && (
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        color="success"
+                        onClick={() => setShowMarkAsSold(true)}
+                        sx={{ mb: 2 }}
+                      >
+                        Mark as Sold
+                      </Button>
+                    )}
+                    {product.status === 'sold' && (
+                      <Alert severity="success" sx={{ mb: 2 }}>
+                        This product has been marked as sold
+                      </Alert>
+                    )}
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <Button
+                        variant="outlined"
+                        size="medium"
+                        startIcon={<ShareIcon />}
+                        onClick={handleShareClick}
+                        sx={{ flex: 1 }}
+                      >
+                        Share
+                      </Button>
+                    </Box>
+                  </Box>
+                ) : (
+                  // Buyer actions
                   <Box sx={{ mb: 3 }}>
                     <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                       <Button
@@ -634,6 +680,26 @@ const ProductDetailPage: React.FC = () => {
         onClose={() => setAuthModalOpen(false)}
         defaultTab="login"
       />
+
+      {/* Mark as Sold Modal */}
+      {product && (
+        <MarkAsSoldModal
+          isOpen={showMarkAsSold}
+          onClose={() => setShowMarkAsSold(false)}
+          productId={product.id}
+          productTitle={product.title}
+          onSuccess={() => {
+            setSnackbar({ 
+              open: true, 
+              message: 'Transaction created! Buyer will be notified to confirm.', 
+              severity: 'success' 
+            });
+            setShowMarkAsSold(false);
+            // Refresh product to update status
+            fetchProduct();
+          }}
+        />
+      )}
     </>
   );
 };
