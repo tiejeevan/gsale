@@ -1,9 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import WebAuthnLogin from '../components/auth/WebAuthnLogin';
 import WebAuthnSetup from '../components/auth/WebAuthnSetup';
 
+interface User {
+    id: number;
+    first_name: string;
+    last_name: string;
+    username: string;
+    email: string;
+    role: string;
+}
+
 const WebAuthnDemo = () => {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState<User | null>(null);
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState(''); // 'success' or 'error'
     const [activeTab, setActiveTab] = useState('login');
@@ -17,7 +26,7 @@ const WebAuthnDemo = () => {
         }
     }, []);
 
-    const showMessage = (msg, type = 'success') => {
+    const showMessage = (msg: string, type: 'success' | 'error' = 'success') => {
         setMessage(msg);
         setMessageType(type);
         setTimeout(() => {
@@ -26,7 +35,7 @@ const WebAuthnDemo = () => {
         }, 5000);
     };
 
-    const handleLoginSuccess = (result) => {
+    const handleLoginSuccess = (result: any) => {
         const { token, user: userData } = result;
         
         // Store authentication data
@@ -37,15 +46,15 @@ const WebAuthnDemo = () => {
         showMessage(`Welcome back, ${userData.first_name}! Logged in with WebAuthn.`, 'success');
     };
 
-    const handleLoginError = (error) => {
+    const handleLoginError = (error: string) => {
         showMessage(error, 'error');
     };
 
-    const handleSetupSuccess = (msg) => {
+    const handleSetupSuccess = (msg: string) => {
         showMessage(msg, 'success');
     };
 
-    const handleSetupError = (error) => {
+    const handleSetupError = (error: string) => {
         showMessage(error, 'error');
     };
 
@@ -58,7 +67,7 @@ const WebAuthnDemo = () => {
 
     const handleTraditionalLogin = () => {
         // Mock traditional login for demo
-        const mockUser = {
+        const mockUser: User = {
             id: 1,
             first_name: 'Demo',
             last_name: 'User',

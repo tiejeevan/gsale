@@ -2,7 +2,6 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import fs from 'fs'
-import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -14,6 +13,6 @@ export default defineConfig({
     https: process.env.HTTPS === 'true' ? {
       key: fs.existsSync('./certs/key.pem') ? fs.readFileSync('./certs/key.pem') : undefined,
       cert: fs.existsSync('./certs/cert.pem') ? fs.readFileSync('./certs/cert.pem') : undefined,
-    } : false
+    } : undefined
   }
 })

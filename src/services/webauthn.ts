@@ -21,7 +21,7 @@ class WebAuthnService {
     }
 
     // Register a new WebAuthn credential
-    static async register(userId) {
+    static async register(userId: number | string) {
         try {
             // Step 1: Get registration options from server
             const optionsResponse = await fetch(`${API_BASE}/api/webauthn/register/begin`, {
@@ -115,7 +115,7 @@ class WebAuthnService {
     }
 
     // Get user's WebAuthn credentials
-    static async getCredentials(userId) {
+    static async getCredentials(userId: number | string) {
         try {
             const response = await fetch(`${API_BASE}/api/webauthn/credentials/${userId}`);
             
@@ -132,7 +132,7 @@ class WebAuthnService {
     }
 
     // Delete a WebAuthn credential
-    static async deleteCredential(userId, credentialId) {
+    static async deleteCredential(userId: number | string, credentialId: string) {
         try {
             const response = await fetch(`${API_BASE}/api/webauthn/credentials/${userId}/${credentialId}`, {
                 method: 'DELETE',
@@ -162,7 +162,7 @@ class WebAuthnService {
     }
 
     // Get user-friendly error messages
-    static getErrorMessage(error) {
+    static getErrorMessage(error: any) {
         const message = error.message || error.toString();
         
         if (message.includes('NotAllowedError')) {

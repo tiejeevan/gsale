@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import WebAuthnService from '../../services/webauthn';
 
-const WebAuthnLogin = ({ onSuccess, onError, username = null, showUsernameInput = true }) => {
+interface WebAuthnLoginProps {
+    onSuccess?: (result: any) => void;
+    onError?: (error: string) => void;
+    username?: string | null;
+    showUsernameInput?: boolean;
+}
+
+const WebAuthnLogin = ({ onSuccess, onError, username = null, showUsernameInput = true }: WebAuthnLoginProps) => {
     const [isSupported, setIsSupported] = useState(false);
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     const [inputUsername, setInputUsername] = useState(username || '');
@@ -17,7 +24,7 @@ const WebAuthnLogin = ({ onSuccess, onError, username = null, showUsernameInput 
         setLoading(false);
     };
 
-    const handleAuthenticate = async (useUsername = null) => {
+    const handleAuthenticate = async (useUsername: string | null = null) => {
         setIsAuthenticating(true);
         try {
             const result = await WebAuthnService.authenticate(useUsername);
@@ -30,7 +37,7 @@ const WebAuthnLogin = ({ onSuccess, onError, username = null, showUsernameInput 
         }
     };
 
-    const handleUsernameLogin = async (e) => {
+    const handleUsernameLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!inputUsername.trim()) {
             onError?.('Please enter your username');

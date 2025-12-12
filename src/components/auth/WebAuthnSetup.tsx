@@ -1,11 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import WebAuthnService from '../../services/webauthn';
 
-const WebAuthnSetup = ({ userId, onSuccess, onError }) => {
+interface Credential {
+    id: string;
+    name: string;
+    deviceType: string;
+    createdAt: string;
+    lastUsed?: string;
+    transports: string[];
+}
+
+interface WebAuthnSetupProps {
+    userId: number | string;
+    onSuccess?: (message: string) => void;
+    onError?: (error: string) => void;
+}
+
+const WebAuthnSetup = ({ userId, onSuccess, onError }: WebAuthnSetupProps) => {
     const [isSupported, setIsSupported] = useState(false);
     const [isPlatformAvailable, setIsPlatformAvailable] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
-    const [credentials, setCredentials] = useState([]);
+    const [credentials, setCredentials] = useState<Credential[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -52,7 +67,7 @@ const WebAuthnSetup = ({ userId, onSuccess, onError }) => {
         }
     };
 
-    const handleDeleteCredential = async (credentialId) => {
+    const handleDeleteCredential = async (credentialId: string) => {
         if (!confirm('Are you sure you want to remove this authenticator?')) {
             return;
         }
@@ -67,7 +82,7 @@ const WebAuthnSetup = ({ userId, onSuccess, onError }) => {
         }
     };
 
-    const formatDate = (dateString) => {
+    const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
