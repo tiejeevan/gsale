@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,9 +14,17 @@ import {
   CircularProgress,
   useTheme,
   useMediaQuery,
+  Divider,
+  Chip,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import { 
+  Close as CloseIcon, 
+  Fingerprint as FingerprintIcon,
+  Security as SecurityIcon 
+} from '@mui/icons-material';
 import { useUserContext } from '../../context/UserContext';
+import WebAuthnService from '../../services/webauthn';
+import WebAuthnSetupPrompt from './WebAuthnSetupPrompt';
 
 interface AuthModalProps {
   open: boolean;
@@ -33,6 +41,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // WebAuthn state
+  const [webAuthnSupported, setWebAuthnSupported] = useState(false);
+  const [webAuthnLoading, setWebAuthnLoading] = useState(false);
+  const [isPlatformAvailable, setIsPlatformAvailable] = useState(false);
+  const [showWebAuthnSetup, setShowWebAuthnSetup] = useState(false);
+  const [newUser, setNewUser] = useState<any>(null);
 
   // Login form state
   const [loginUsername, setLoginUsername] = useState('');
@@ -44,6 +59,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
   const [signupFirstName, setSignupFirstName] = useState('');
   const [signupLastName, setSignupLastName] = useState('');
   const [signupUsername, setSignupUsername] = useState('');
+
+  // Check WebAuthn support on mount
+  useEffect(() => {
+    const checkWebAuthnSupport = async () => {
+      const supported = WebAuthnService.isSupported();
+      const platformAvailable = await WebAuthnService.isPlatformAuthenticatorAvailable();
+      setWebAuthnSupported(supported);
+      setIsPlatformAvailable(platformAvailable);
+    };
+    
+    if (open) {
+      checkWebAuthnSupport();
+    }
+  }, [open]);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: 'login' | 'signup') => {
     setActiveTab(newValue);
@@ -70,6 +99,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
         throw new Error(data.msg || data.error || 'Login failed');
       }
 
+      // Store login time and session info
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('sessionId', data.sessionId);
+      localStorage.setItem('loginTime', new Date().toISOString());
+
       setToken(data.token);
       onClose();
       window.location.reload(); // Refresh to update user context
@@ -77,6 +112,35 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
       setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleWebAuthnLogin = async (withUsername: boolean = false) => {
+    setWebAuthnLoading(true);
+    setError('');
+
+    try {
+      const username = withUsername && loginUsername ? loginUsername : undefined;
+      const result = await WebAuthnService.authenticate(username);
+      
+      // Store authentication data
+      localStorage.setItem('token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
+      localStorage.setItem('sessionId', result.sessionId);
+      localStorage.setItem('loginTime', new Date().toISOString());
+
+      setToken(result.token);
+      setSuccess(`Welcome back, ${result.user.first_name}! Logged in with WebAuthn.`);
+      
+      setTimeout(() => {
+        onClose();
+        window.location.reload();
+      }, 1500);
+    } catch (err: any) {
+      const errorMessage = WebAuthnService.getErrorMessage(err);
+      setError(errorMessage);
+    } finally {
+      setWebAuthnLoading(false);
     }
   };
 
@@ -106,16 +170,27 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
         throw new Error(data.msg || data.error || 'Signup failed');
       }
 
-      setSuccess('Account created successfully! Please login.');
-      setActiveTab('login');
-      setLoginUsername(signupUsername);
+      // Auto-login after successful signup
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('loginTime', new Date().toISOString());
+
+      setToken(data.token);
+      setNewUser(data.user);
+      setSuccess('Account created successfully! You are now logged in.');
       
-      // Clear signup form
-      setSignupEmail('');
-      setSignupPassword('');
-      setSignupFirstName('');
-      setSignupLastName('');
-      setSignupUsername('');
+      // Show WebAuthn setup if supported
+      if (webAuthnSupported) {
+        setTimeout(() => {
+          onClose();
+          setShowWebAuthnSetup(true);
+        }, 1500);
+      } else {
+        setTimeout(() => {
+          onClose();
+          window.location.reload();
+        }, 1500);
+      }
     } catch (err: any) {
       setError(err.message || 'Signup failed. Please try again.');
     } finally {
@@ -124,19 +199,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      fullScreen={isMobile}
-      PaperProps={{
-        sx: {
-          borderRadius: isMobile ? 0 : 2,
-          maxHeight: isMobile ? '100vh' : '90vh',
-        },
-      }}
-    >
+    <>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 2,
+            maxHeight: isMobile ? '100vh' : '90vh',
+          },
+        }}
+      >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           Welcome to GSALE
@@ -170,36 +246,91 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
         )}
 
         {activeTab === 'login' ? (
-          <Box component="form" onSubmit={handleLogin}>
-            <TextField
-              fullWidth
-              label="Username"
-              type="text"
-              value={loginUsername}
-              onChange={(e) => setLoginUsername(e.target.value)}
-              required
-              sx={{ mb: 2 }}
-              autoFocus
-            />
-            <TextField
-              fullWidth
-              label="Password"
-              type="password"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              required
-              sx={{ mb: 3 }}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              disabled={loading}
-              sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Login'}
-            </Button>
+          <Box>
+            {/* WebAuthn Login Options */}
+            {webAuthnSupported && (
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <SecurityIcon sx={{ mr: 1, color: 'primary.main' }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Secure Authentication
+                  </Typography>
+                  {isPlatformAvailable && (
+                    <Chip 
+                      label="Biometrics Available" 
+                      size="small" 
+                      color="success" 
+                      sx={{ ml: 1 }} 
+                    />
+                  )}
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<FingerprintIcon />}
+                    onClick={() => handleWebAuthnLogin(false)}
+                    disabled={webAuthnLoading || loading}
+                    sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
+                  >
+                    {webAuthnLoading ? <CircularProgress size={20} /> : 'Quick Login'}
+                  </Button>
+                  
+                  {loginUsername && (
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<SecurityIcon />}
+                      onClick={() => handleWebAuthnLogin(true)}
+                      disabled={webAuthnLoading || loading}
+                      sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
+                    >
+                      Login as {loginUsername}
+                    </Button>
+                  )}
+                </Box>
+
+                <Divider sx={{ my: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    or use password
+                  </Typography>
+                </Divider>
+              </Box>
+            )}
+
+            {/* Traditional Login Form */}
+            <Box component="form" onSubmit={handleLogin}>
+              <TextField
+                fullWidth
+                label="Username"
+                type="text"
+                value={loginUsername}
+                onChange={(e) => setLoginUsername(e.target.value)}
+                required
+                sx={{ mb: 2 }}
+                autoFocus={!webAuthnSupported}
+              />
+              <TextField
+                fullWidth
+                label="Password"
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+                sx={{ mb: 3 }}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={loading || webAuthnLoading}
+                sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
+              >
+                {loading ? <CircularProgress size={24} /> : 'Login with Password'}
+              </Button>
+            </Box>
           </Box>
         ) : (
           <Box component="form" onSubmit={handleSignup}>
@@ -260,7 +391,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
           </Box>
         )}
       </DialogContent>
-    </Dialog>
+      </Dialog>
+
+      {/* WebAuthn Setup Prompt */}
+      {showWebAuthnSetup && newUser && (
+        <WebAuthnSetupPrompt
+          open={showWebAuthnSetup}
+          onClose={() => {
+            setShowWebAuthnSetup(false);
+            window.location.reload();
+          }}
+          userId={newUser.id}
+          userName={newUser.first_name}
+        />
+      )}
+    </>
   );
 };
 

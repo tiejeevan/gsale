@@ -33,6 +33,7 @@ import {
   Feed as FeedIcon,
   Chat as ChatIcon,
   Storefront as StorefrontIcon,
+  Security as SecurityIcon,
 } from "@mui/icons-material";
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { useUserContext } from "../context/UserContext";
@@ -46,6 +47,7 @@ import FloatingChatPopup from "../components/chat/FloatingChatPopup";
 import FollowButton from "../components/FollowButton";
 import FollowersModal from "../components/FollowersModal";
 import BottomNav from "../components/layout/BottomNav";
+import WebAuthnSetup from "../components/auth/WebAuthnSetup";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -76,6 +78,10 @@ const Profile: React.FC = () => {
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
+  
+  // WebAuthn state
+  const [webAuthnMessage, setWebAuthnMessage] = useState('');
+  const [webAuthnMessageType, setWebAuthnMessageType] = useState<'success' | 'error'>('success');
 
   // Check if viewing own profile
   const isOwnProfile = !userId || (!!currentUser && (userId === currentUser.id.toString() || userId === currentUser.username));
@@ -253,6 +259,19 @@ const Profile: React.FC = () => {
 
   const isFieldEmpty = (value: any) => {
     return !value || (typeof value === 'string' && value.trim() === '');
+  };
+
+  // WebAuthn handlers
+  const handleWebAuthnSuccess = (message: string) => {
+    setWebAuthnMessage(message);
+    setWebAuthnMessageType('success');
+    setTimeout(() => setWebAuthnMessage(''), 5000);
+  };
+
+  const handleWebAuthnError = (error: string) => {
+    setWebAuthnMessage(error);
+    setWebAuthnMessageType('error');
+    setTimeout(() => setWebAuthnMessage(''), 5000);
   };
 
   // Inline edit component
@@ -1022,6 +1041,31 @@ const Profile: React.FC = () => {
                 </Box>
               </Box>
 
+              {/* Security Section - Only for own profile */}
+              {isOwnProfile && (
+                <Box sx={{ mt: 4, pt: 4, borderTop: 1, borderColor: 'divider' }}>
+                  <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <SecurityIcon sx={{ color: 'primary.main' }} />
+                    Account Security
+                  </Typography>
+                  
+                  {webAuthnMessage && (
+                    <Alert 
+                      severity={webAuthnMessageType} 
+                      sx={{ mb: 3 }}
+                      onClose={() => setWebAuthnMessage('')}
+                    >
+                      {webAuthnMessage}
+                    </Alert>
+                  )}
+                  
+                  <WebAuthnSetup
+                    userId={profileUser.id}
+                    onSuccess={handleWebAuthnSuccess}
+                    onError={handleWebAuthnError}
+                  />
+                </Box>
+              )}
 
             </Box>
           )}
