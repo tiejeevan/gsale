@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -111,7 +112,7 @@ const NotificationsPage: React.FC = () => {
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(n => 
+      filtered = filtered.filter(n =>
         n.actor_name?.toLowerCase().includes(query) ||
         n.payload?.text?.toLowerCase().includes(query) ||
         n.payload?.productTitle?.toLowerCase().includes(query)
@@ -229,7 +230,7 @@ const NotificationsPage: React.FC = () => {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         if (response.ok) {
           // Only update UI after successful backend update
           markAsRead(notification.id);
@@ -246,12 +247,12 @@ const NotificationsPage: React.FC = () => {
       const postId = notification.payload?.postId || notification.payload?.post_id;
       const commentId = notification.payload?.commentId || notification.payload?.comment_id;
       if (postId) {
-        navigate(`/post/${postId}`, { 
-          state: { 
+        navigate(`/post/${postId}`, {
+          state: {
             fromNotification: true,
             showComments: notification.type === 'comment' || notification.type === 'mention' || notification.type === 'comment_like',
             highlightCommentId: commentId
-          } 
+          }
         });
       }
     } else if (notification.type === 'follow') {
@@ -268,15 +269,15 @@ const NotificationsPage: React.FC = () => {
 
   const markAllAsRead = async () => {
     const unreadNotifications = notifications.filter(n => !n.read);
-    
+
     if (unreadNotifications.length === 0) return;
-    
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/read-all`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (response.ok) {
         // Only update UI after successful backend update
         unreadNotifications.forEach(n => markAsRead(n.id));
@@ -455,120 +456,139 @@ const NotificationsPage: React.FC = () => {
           </Box>
         ) : (
           <List sx={{ p: 0 }}>
-            {paginatedNotifications.map((notification, index) => (
-              <React.Fragment key={notification.id}>
-                <ListItemButton
-                  onClick={() => handleNotificationClick(notification)}
-                  sx={{
-                    py: 2,
-                    px: 3,
-                    backgroundColor: !notification.read ? 'action.hover' : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'action.selected',
-                    },
-                  }}
+            <AnimatePresence mode="popLayout">
+              {paginatedNotifications.map((notification, index) => (
+                <motion.div
+                  key={notification.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  layout
                 >
-                  <ListItemAvatar>
-                    <Badge
-                      overlap="circular"
-                      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                      badgeContent={
-                        !notification.read ? (
-                          <UnreadIcon sx={{ fontSize: 12, color: 'primary.main' }} />
-                        ) : null
-                      }
+                  <React.Fragment>
+                    <ListItemButton
+                      onClick={() => handleNotificationClick(notification)}
+                      sx={{
+                        py: 2,
+                        px: 3,
+                        mb: 1, // Add spacing between items
+                        borderRadius: 2, // Rounded corners for card-like feel
+                        backgroundColor: !notification.read ? 'rgba(102, 126, 234, 0.08)' : 'transparent', // Subtle color for unread
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        '&:hover': {
+                          backgroundColor: 'action.hover',
+                          borderColor: 'primary.main',
+                          transform: 'translateY(-2px)',
+                          boxShadow: 2
+                        },
+                        transition: 'all 0.2s ease'
+                      }}
                     >
-                      <Avatar
-                        sx={{
-                          width: 48,
-                          height: 48,
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        }}
-                      >
-                        {notification.actor_name?.charAt(0)?.toUpperCase() || '?'}
-                      </Avatar>
-                    </Badge>
-                  </ListItemAvatar>
-                  
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <Typography
-                          variant="body1"
-                          sx={{ fontWeight: !notification.read ? 600 : 400 }}
+                      <ListItemAvatar>
+                        <Badge
+                          overlap="circular"
+                          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                          badgeContent={
+                            !notification.read ? (
+                              <UnreadIcon sx={{ fontSize: 12, color: 'primary.main' }} />
+                            ) : null
+                          }
                         >
-                          <Box component="span" sx={{ fontWeight: 600 }}>
-                            {notification.actor_name}
-                          </Box>
-                          {' '}
-                          {getNotificationMessage(notification)}
-                        </Typography>
-                        {getNotificationIcon(notification.type, 'small')}
-                      </Box>
-                    }
-                    secondary={
-                      <Box>
-                        {/* Content preview */}
-                        {(notification.type === "comment" || notification.type === "mention" || notification.type === "comment_like") && notification.payload?.text && (
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
-                              color: 'text.secondary',
-                              fontStyle: 'italic',
-                              mb: 0.5,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
+                          <Avatar
+                            src={notification.actor_avatar}
+                            sx={{
+                              width: 48,
+                              height: 48,
+                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                             }}
                           >
-                            "{notification.payload.text}"
-                          </Typography>
-                        )}
-                        
-                        {/* Product rejection reason */}
-                        {notification.type === "product_rejected" && notification.payload?.reason && (
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
-                              color: 'error.main',
-                              mb: 0.5,
-                            }}
-                          >
-                            Reason: {notification.payload.reason}
-                          </Typography>
-                        )}
-                        
-                        {/* Timestamp and status */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Tooltip title={formatDetailedDate(notification.created_at)} arrow>
-                            <Typography variant="caption" color="text.secondary" sx={{ cursor: 'help' }}>
-                              {formatTimeAgo(notification.created_at)}
+                            {notification.actor_name?.charAt(0)?.toUpperCase() || '?'}
+                          </Avatar>
+                        </Badge>
+                      </ListItemAvatar>
+
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Typography
+                              variant="body1"
+                              sx={{ fontWeight: !notification.read ? 600 : 400 }}
+                            >
+                              <Box component="span" sx={{ fontWeight: 600 }}>
+                                {notification.actor_name}
+                              </Box>
+                              {' '}
+                              {getNotificationMessage(notification)}
                             </Typography>
-                          </Tooltip>
-                          <Chip
-                            label={getNotificationTypeLabel(notification.type)}
-                            size="small"
-                            variant="outlined"
-                            sx={{ height: 20, fontSize: '0.7rem' }}
-                          />
-                          {!notification.read && (
-                            <Chip
-                              label="New"
-                              size="small"
-                              color="primary"
-                              sx={{ height: 20, fontSize: '0.7rem' }}
-                            />
-                          )}
-                        </Box>
-                      </Box>
-                    }
-                  />
-                </ListItemButton>
-                {index < paginatedNotifications.length - 1 && <Divider />}
-              </React.Fragment>
-            ))}
+                            {getNotificationIcon(notification.type, 'small')}
+                          </Box>
+                        }
+                        secondary={
+                          <Box>
+                            {/* Content preview */}
+                            {(notification.type === "comment" || notification.type === "mention" || notification.type === "comment_like") && notification.payload?.text && (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: 'text.secondary',
+                                  fontStyle: 'italic',
+                                  mb: 0.5,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                }}
+                              >
+                                "{notification.payload.text}"
+                              </Typography>
+                            )}
+
+                            {/* Product rejection reason */}
+                            {notification.type === "product_rejected" && notification.payload?.reason && (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: 'error.main',
+                                  mb: 0.5,
+                                }}
+                              >
+                                Reason: {notification.payload.reason}
+                              </Typography>
+                            )}
+                            {/* Timestamp and status */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Tooltip title={formatDetailedDate(notification.created_at)} arrow>
+                                <Typography variant="caption" color="text.secondary" sx={{ cursor: 'help' }}>
+                                  {formatTimeAgo(notification.created_at)}
+                                </Typography>
+                              </Tooltip>
+                              <Chip
+                                label={getNotificationTypeLabel(notification.type)}
+                                size="small"
+                                variant="outlined"
+                                sx={{ height: 20, fontSize: '0.7rem' }}
+                              />
+                              {!notification.read && (
+                                <Chip
+                                  label="New"
+                                  size="small"
+                                  color="primary"
+                                  sx={{ height: 20, fontSize: '0.7rem' }}
+                                />
+                              )}
+                            </Box>
+                          </Box>
+                        }
+                      />
+                    </ListItemButton>
+                    {index < paginatedNotifications.length - 1 && <Divider />}
+                  </React.Fragment>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </List>
         )}
       </Paper>

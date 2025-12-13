@@ -5,7 +5,8 @@ import React, {
   useEffect,
   type ReactNode,
 } from "react";
-import { Snackbar, Alert, AlertTitle } from "@mui/material";
+import { toast } from "react-hot-toast";
+import NotificationToast from "./components/NotificationToast";
 import { useNavigate } from "react-router-dom";
 import { socket, joinUserRoom } from "./socket";
 import { useUserContext } from "./context/UserContext";
@@ -20,6 +21,8 @@ export interface Notification {
   created_at: string;
   read: boolean;
   actor_name: string;
+  actor_avatar?: string;
+  actor_display_name?: string;
 }
 
 interface NotificationsContextProps {
@@ -43,8 +46,6 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const { currentUser: user, token } = useUserContext();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [toastOpen, setToastOpen] = useState(false);
-  const [toastNotification, setToastNotification] = useState<Notification | null>(null);
 
   // ================== Fetch notifications from API ==================
   const refreshNotifications = async () => {
@@ -66,63 +67,100 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     if (user?.id) refreshNotifications();
   }, [user, token]);
 
+  // ================== Context Actions ==================
+  const addNotification = (notif: Notification) =>
+    setNotifications(prev => [notif, ...prev]);
+
+  const markAsRead = (id: number) => {
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
+  };
+
+  const handleNotificationClick = async (notif: Notification) => {
+    // Close toast if open (optional, handled by component usually)
+
+    // Mark as read on backend first, then update UI
+    if (!notif.read) {
+      try {
+        const response = await fetch(`${API_URL}/api/notifications/${notif.id}/read`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          markAsRead(notif.id);
+        }
+      } catch (err) {
+        console.error("Failed to mark notification as read:", err);
+      }
+    }
+
+    // Navigate based on notification type
+    if (notif.type === 'comment' || notif.type === 'like' || notif.type === 'mention' || notif.type === 'comment_like') {
+      const postId = notif.payload?.postId || notif.payload?.post_id;
+      const commentId = notif.payload?.commentId || notif.payload?.comment_id;
+      if (postId) {
+        navigate(`/post/${postId}`, {
+          state: {
+            fromNotification: true,
+            showComments: notif.type === 'comment' || notif.type === 'mention' || notif.type === 'comment_like',
+            highlightCommentId: commentId
+          }
+        });
+      }
+    } else if (notif.type === 'follow') {
+      navigate(`/profile/${notif.actor_user_id}`);
+    } else if (notif.type === 'product_approval') {
+      navigate('/admin', { state: { tab: 'products', highlightProductId: notif.payload?.productId } });
+    } else if (notif.type === 'product_approved') {
+      const productId = notif.payload?.productId;
+      if (productId) {
+        navigate(`/market/product/${productId}`);
+      }
+    } else if (notif.type === 'product_rejected') {
+      const productId = notif.payload?.productId;
+      if (productId) {
+        navigate(`/market/product/${productId}`);
+      }
+    }
+  };
+
   // ================== Real-time Socket Setup ==================
   useEffect(() => {
     if (!user?.id) return;
 
-    // Connect socket if not already connected
+    // Connect socket logic (kept same as befeore)
     if (!socket.connected) {
-      console.log(`🔄 NotificationsContext: Connecting socket for user ${user.id}`);
       socket.connect();
       socket.once("connect", () => {
-        console.log(`✅ NotificationsContext: Socket connected for user ${user.id}`);
-        // Add a small delay to ensure backend is ready
-        setTimeout(() => {
-          console.log(`🔌 NotificationsContext: Joining user room for user ${user.id}`);
-          joinUserRoom(user.id);
-        }, 100);
+        setTimeout(() => joinUserRoom(user.id), 100);
       });
     } else {
-      console.log(`✅ NotificationsContext: Socket already connected for user ${user.id}`);
-      console.log(`🔌 NotificationsContext: Joining user room for user ${user.id}`);
       joinUserRoom(user.id);
     }
-
-    // Add connection error handling with exponential backoff awareness
-    const handleConnectError = (error: any) => {
-      console.warn("Socket connection error (will retry):", error.message);
-    };
-
-    const handleDisconnect = (reason: string) => {
-      console.log("Socket disconnected:", reason);
-      // Only log, don't try to reconnect manually - socket.io handles it
-    };
-
-    const handleReconnectFailed = () => {
-      console.error("Socket reconnection failed after max attempts. Please refresh the page.");
-    };
-
-    socket.on("connect_error", handleConnectError);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("reconnect_failed", handleReconnectFailed);
 
     // Listen for all new notifications
     const handleNewNotification = async (notif: any) => {
       console.log(`🔔 NotificationsContext: Received notification for user ${user.id}:`, notif);
-      
-      // Fetch actor name since backend doesn't include it
-      let actorName = "Someone";
+
+      // Fetch actor info if missing (though backend now provides it)
+      let actorName = notif.actor_name || "Someone";
+      let actorAvatar = notif.actor_avatar || null;
+      let actorDisplayName = notif.actor_display_name || actorName;
+
+      // Fallback if backend update hasn't propagated or for old notifications
       const actorId = notif.actor || notif.actor_user_id;
-      if (actorId) {
+
+      if (!notif.actor_name && actorId) {
         try {
           const actorUser = await userService.getPublicProfile(actorId);
-          actorName = actorUser.display_name || actorUser.username || "Someone";
+          actorName = actorUser.username || "Someone";
+          actorDisplayName = actorUser.display_name || actorName;
+          actorAvatar = actorUser.profile_image;
         } catch (error) {
           console.error("Failed to fetch actor name:", error);
         }
       }
-      
-      // Transform backend notification format to frontend format
+
       const transformedNotif: Notification = {
         id: parseInt(notif.id) || parseInt(notif.notificationId) || notif.id,
         actor_user_id: notif.actor_user_id || notif.actor,
@@ -131,171 +169,51 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         payload: typeof notif.payload === 'string' ? JSON.parse(notif.payload) : (notif.payload || {}),
         created_at: notif.created_at || new Date().toISOString(),
         read: notif.read || false,
-        actor_name: actorName
+        actor_name: actorName,
+        // Add extra fields if Notification interface allows, or map to existing
+        // For now Notification interface is strict, so we rely on NotificationToast accepting 'any' 
+        // to read actor_avatar from the object we pass to it, even if not in 'Notification' type strictly yet.
+        // We'll cast to any for the toast.
+        ...{ actor_avatar: actorAvatar, actor_display_name: actorDisplayName }
       };
-      
+
       setNotifications(prev => [transformedNotif, ...prev]);
-      
-      // Show toast notification
-      setToastNotification(transformedNotif);
-      setToastOpen(true);
+
+      // Show Premium Toast
+      toast.custom((t) => (
+        <NotificationToast
+          t={t}
+          notification={transformedNotif}
+          onClose={() => toast.dismiss(t.id)}
+          onClick={() => {
+            toast.dismiss(t.id);
+            handleNotificationClick(transformedNotif);
+          }}
+        />
+      ), { duration: 5000 });
     };
+
     socket.on("notification:new", handleNewNotification);
 
-    // Listen for notification deletions (kept for backward compatibility)
     const handleNotificationDeleted = (data: { notificationId: number }) => {
       setNotifications(prev => prev.filter(n => n.id !== data.notificationId));
     };
     socket.on("notification:deleted", handleNotificationDeleted);
 
-
-
-    // Cleanup on unmount
     return () => {
       socket.off("notification:new", handleNewNotification);
       socket.off("notification:deleted", handleNotificationDeleted);
-      socket.off("connect_error", handleConnectError);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("reconnect_failed", handleReconnectFailed);
       if (socket.connected) {
         socket.emit("leave", `user_${user.id}`);
       }
     };
-  }, [user]);
-
-  // ================== Context Actions ==================
-  const addNotification = (notif: Notification) =>
-    setNotifications(prev => [notif, ...prev]);
-
-  const markAsRead = (id: number) => {
-    // Just mark as read for all notification types (no more soft delete)
-    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
-  };
-
-  const handleToastClose = () => {
-    setToastOpen(false);
-    setToastNotification(null);
-  };
-
-  const handleToastClick = async () => {
-    if (!toastNotification) return;
-    
-    // Close toast
-    handleToastClose();
-    
-    // Mark as read on backend first, then update UI
-    try {
-      const response = await fetch(`${API_URL}/api/notifications/${toastNotification.id}/read`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (response.ok) {
-        // Only update UI after successful backend update
-        markAsRead(toastNotification.id);
-      } else {
-        console.error("Failed to mark notification as read - server error");
-      }
-    } catch (err) {
-      console.error("Failed to mark notification as read:", err);
-    }
-
-    // Navigate based on notification type
-    if (toastNotification.type === 'comment' || toastNotification.type === 'like' || toastNotification.type === 'mention' || toastNotification.type === 'comment_like') {
-      const postId = toastNotification.payload?.postId || toastNotification.payload?.post_id;
-      const commentId = toastNotification.payload?.commentId || toastNotification.payload?.comment_id;
-      if (postId) {
-        // Pass state to show comments immediately for comment/mention/comment_like notifications
-        navigate(`/post/${postId}`, { 
-          state: { 
-            fromNotification: true,
-            showComments: toastNotification.type === 'comment' || toastNotification.type === 'mention' || toastNotification.type === 'comment_like',
-            highlightCommentId: commentId // Pass the comment ID to highlight
-          } 
-        });
-      }
-    } else if (toastNotification.type === 'follow') {
-      navigate(`/profile/${toastNotification.actor_user_id}`);
-    } else if (toastNotification.type === 'product_approval') {
-      navigate('/admin', { state: { tab: 'products', highlightProductId: toastNotification.payload?.productId } });
-    } else if (toastNotification.type === 'product_approved') {
-      const productId = toastNotification.payload?.productId;
-      if (productId) {
-        navigate(`/market/product/${productId}`);
-      }
-    } else if (toastNotification.type === 'product_rejected') {
-      const productId = toastNotification.payload?.productId;
-      if (productId) {
-        navigate(`/market/product/${productId}`);
-      }
-    }
-  };
-
-  const getNotificationMessage = (notif: Notification) => {
-    switch (notif.type) {
-      case "comment":
-        const commentText = notif.payload?.text ? `: "${notif.payload.text}"` : "";
-        return `${notif.actor_name} commented on your post${commentText}`;
-      case "like":
-        return `${notif.actor_name} liked your post`;
-      case "comment_like":
-        const commentLikeText = notif.payload?.text ? `: "${notif.payload.text}"` : "";
-        return `${notif.actor_name} liked your comment${commentLikeText}`;
-      case "follow":
-        return `${notif.actor_name} started following you`;
-      case "mention":
-        const mentionText = notif.payload?.text ? `: "${notif.payload.text}"` : "";
-        return `${notif.actor_name} mentioned you in a comment${mentionText}`;
-      case "product_approval":
-        return `New product "${notif.payload?.productTitle}" needs approval`;
-      case "product_approved":
-        return `Your product "${notif.payload?.productTitle}" is now listed!`;
-      case "product_rejected":
-        const reason = notif.payload?.reason ? ` - ${notif.payload.reason}` : "";
-        return `Your product "${notif.payload?.productTitle}" was rejected${reason}`;
-      default:
-        return `New notification from ${notif.actor_name}`;
-    }
-  };
+  }, [user, navigate, token]); // Added navigate and token to deps
 
   return (
     <NotificationsContext.Provider
       value={{ notifications, addNotification, markAsRead, refreshNotifications }}
     >
       {children}
-      
-      {/* Toast Notification - Clickable */}
-      <Snackbar
-        open={toastOpen}
-        autoHideDuration={4000}
-        onClose={handleToastClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert 
-          onClose={handleToastClose} 
-          severity="info" 
-          variant="filled"
-          onClick={handleToastClick}
-          sx={{ 
-            minWidth: 300,
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            '&:hover': {
-              transform: 'translateY(-2px)',
-              boxShadow: 6,
-            },
-            '& .MuiAlert-message': { 
-              width: '100%',
-              cursor: 'pointer',
-            }
-          }}
-        >
-          <AlertTitle sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
-            New Notification
-          </AlertTitle>
-          {toastNotification && getNotificationMessage(toastNotification)}
-        </Alert>
-      </Snackbar>
     </NotificationsContext.Provider>
   );
 };

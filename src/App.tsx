@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import { useUserContext } from "./context/UserContext";
 import { NotificationsProvider } from "./NotificationsContext";
 import { ChatProvider } from "./context/ChatContext";
@@ -53,173 +54,173 @@ function AppContent() {
         <>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
-          <Route
-            path="/"
-            element={<Navigate to="/market" replace />}
-          />
-          <Route
-            path="/login"
-            element={token ? <Navigate to="/dashboard" /> : <Navigate to="/market" replace />}
-          />
-          <Route
-            path="/signup"
-            element={token ? <Navigate to="/dashboard" /> : <Navigate to="/market" replace />}
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/:userId?"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/post/:postId"
-            element={
-              <ProtectedRoute>
-                <PostDetail />
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/"
+                element={<Navigate to="/market" replace />}
+              />
+              <Route
+                path="/login"
+                element={token ? <Navigate to="/dashboard" /> : <Navigate to="/market" replace />}
+              />
+              <Route
+                path="/signup"
+                element={token ? <Navigate to="/dashboard" /> : <Navigate to="/market" replace />}
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile/:userId?"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/post/:postId"
+                element={
+                  <ProtectedRoute>
+                    <PostDetail />
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/tests"
-            element={
-              <ProtectedRoute>
-                <AdminTestDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/database"
-            element={
-              <ProtectedRoute>
-                <DatabaseGUI />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/products-test"
-            element={
-              <ProtectedRoute>
-                <ProductsTestPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/market"
-            element={<MarketPage />}
-          />
-          <Route
-            path="/market/product/:productId"
-            element={<ProductDetailPage />}
-          />
-          <Route
-            path="/sell"
-            element={
-              <ProtectedRoute>
-                <SellProductPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/cart"
-            element={
-              <ProtectedRoute>
-                <CartPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/checkout"
-            element={
-              <ProtectedRoute>
-                <CheckoutPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/order-confirmation/:orderId"
-            element={
-              <ProtectedRoute>
-                <OrderConfirmationPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/orders"
-            element={
-              <ProtectedRoute>
-                <OrdersPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/orders/:orderId"
-            element={
-              <ProtectedRoute>
-                <OrderDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/orders/:orderId/track"
-            element={
-              <ProtectedRoute>
-                <OrderTrackingPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/bookmarks"
-            element={
-              <ProtectedRoute>
-                <BookmarksPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <NotificationsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/webauthn-demo"
-            element={<WebAuthnDemo />}
-          />
-          <Route
-            path="/adminin"
-            element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/login" />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/tests"
+                element={
+                  <ProtectedRoute>
+                    <AdminTestDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/database"
+                element={
+                  <ProtectedRoute>
+                    <DatabaseGUI />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/products-test"
+                element={
+                  <ProtectedRoute>
+                    <ProductsTestPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/market"
+                element={<MarketPage />}
+              />
+              <Route
+                path="/market/product/:productId"
+                element={<ProductDetailPage />}
+              />
+              <Route
+                path="/sell"
+                element={
+                  <ProtectedRoute>
+                    <SellProductPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cart"
+                element={
+                  <ProtectedRoute>
+                    <CartPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <CheckoutPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/order-confirmation/:orderId"
+                element={
+                  <ProtectedRoute>
+                    <OrderConfirmationPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <OrdersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders/:orderId"
+                element={
+                  <ProtectedRoute>
+                    <OrderDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders/:orderId/track"
+                element={
+                  <ProtectedRoute>
+                    <OrderTrackingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bookmarks"
+                element={
+                  <ProtectedRoute>
+                    <BookmarksPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <NotificationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/webauthn-demo"
+                element={<WebAuthnDemo />}
+              />
+              <Route
+                path="/adminin"
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
           </Suspense>
 
-        {/* Messages Tab - Show only when logged in */}
-        {token && <MessagesTab />}
+          {/* Messages Tab - Show only when logged in */}
+          {token && <MessagesTab />}
         </>
       )}
     </>
@@ -233,6 +234,17 @@ function App() {
       <ChatProvider>
         <CartProvider>
           <AppContent />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 5000,
+              style: {
+                background: 'transparent',
+                boxShadow: 'none',
+                padding: 0,
+              },
+            }}
+          />
         </CartProvider>
       </ChatProvider>
     </NotificationsProvider>

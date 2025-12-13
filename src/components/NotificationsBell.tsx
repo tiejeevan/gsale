@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   IconButton,
   Badge,
@@ -14,7 +15,7 @@ import {
   useMediaQuery,
   Chip,
 } from "@mui/material";
-import { 
+import {
   Notifications as NotificationsIcon,
   Comment as CommentIcon,
   Favorite as FavoriteIcon,
@@ -49,7 +50,7 @@ const NotificationsBell = () => {
   const handleNotificationClick = async (notification: any) => {
     // Close the menu
     handleClose();
-    
+
     // Mark as read only if not already read
     if (!notification.read) {
       try {
@@ -57,7 +58,7 @@ const NotificationsBell = () => {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         if (response.ok) {
           // Only update UI after successful backend update
           markAsRead(notification.id);
@@ -76,12 +77,12 @@ const NotificationsBell = () => {
       const commentId = notification.payload?.commentId || notification.payload?.comment_id;
       if (postId) {
         // Pass state to show comments immediately for comment/mention/comment_like notifications
-        navigate(`/post/${postId}`, { 
-          state: { 
+        navigate(`/post/${postId}`, {
+          state: {
             fromNotification: true,
             showComments: notification.type === 'comment' || notification.type === 'mention' || notification.type === 'comment_like',
             highlightCommentId: commentId // Pass the comment ID to highlight
-          } 
+          }
         });
       }
     } else if (notification.type === 'follow') {
@@ -89,11 +90,11 @@ const NotificationsBell = () => {
       navigate(`/profile/${notification.actor_user_id}`);
     } else if (notification.type === 'product_approval') {
       // For product approvals, navigate to admin panel
-      navigate('/admin', { 
-        state: { 
-          tab: 'products', 
-          highlightProductId: notification.payload?.productId 
-        } 
+      navigate('/admin', {
+        state: {
+          tab: 'products',
+          highlightProductId: notification.payload?.productId
+        }
       });
     } else if (notification.type === 'product_approved' || notification.type === 'product_rejected') {
       // For product status updates, navigate to the product page
@@ -107,15 +108,15 @@ const NotificationsBell = () => {
   const markAllAsRead = async () => {
     if (markingAll) return;
     setMarkingAll(true);
-    
+
     const unreadNotifications = notifications.filter(n => !n.read);
-    
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/read-all`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (response.ok) {
         // Only update UI after successful backend update
         unreadNotifications.forEach(n => markAsRead(n.id));
@@ -200,13 +201,13 @@ const NotificationsBell = () => {
         }}
       >
         {/* Header */}
-        <Box 
-          sx={{ 
-            px: isMobile ? 2 : 2.5, 
-            py: isMobile ? 1.5 : 2, 
-            borderBottom: 1, 
+        <Box
+          sx={{
+            px: isMobile ? 2 : 2.5,
+            py: isMobile ? 1.5 : 2,
+            borderBottom: 1,
             borderColor: 'divider',
-            background: theme.palette.mode === 'dark' 
+            background: theme.palette.mode === 'dark'
               ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.95) 100%)'
               : 'linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.95) 100%)',
           }}
@@ -216,9 +217,9 @@ const NotificationsBell = () => {
               Notifications
             </Typography>
             {unreadCount > 0 && (
-              <Chip 
-                label={`${unreadCount} new`} 
-                size="small" 
+              <Chip
+                label={`${unreadCount} new`}
+                size="small"
                 color="primary"
                 sx={{ fontSize: '0.7rem', height: isMobile ? 18 : 20 }}
               />
@@ -229,7 +230,7 @@ const NotificationsBell = () => {
               size="small"
               onClick={markAllAsRead}
               disabled={markingAll || unreadCount === 0}
-              sx={{ 
+              sx={{
                 textTransform: 'none',
                 fontSize: '0.8rem',
                 minWidth: 'auto',
@@ -242,8 +243,8 @@ const NotificationsBell = () => {
         </Box>
 
         {/* Notifications List */}
-        <Box sx={{ 
-          maxHeight: isMobile ? 'calc(50vh - 80px)' : 400, 
+        <Box sx={{
+          maxHeight: isMobile ? 'calc(50vh - 80px)' : 400,
           overflow: 'auto',
           backgroundColor: theme.palette.background.paper,
         }}>
@@ -259,44 +260,40 @@ const NotificationsBell = () => {
             </Box>
           ) : (
             recentNotifications.map((n, index) => (
-              <Box key={n.id}>
+              <motion.div
+                key={n.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
+              >
                 <ListItemButton
                   onClick={() => handleNotificationClick(n)}
                   sx={{
                     px: isMobile ? 2 : 2.5,
                     py: isMobile ? 1 : 1.5,
-                    backgroundColor: !n.read ? 'action.hover' : 'transparent',
+                    backgroundColor: !n.read ? 'rgba(102, 126, 234, 0.08)' : 'transparent',
                     '&:hover': {
-                      backgroundColor: 'action.selected',
+                      backgroundColor: 'action.hover',
                     },
                     position: 'relative',
+                    borderLeft: !n.read ? '3px solid' : '3px solid transparent',
+                    borderLeftColor: 'primary.main',
+                    transition: 'all 0.2s ease',
                   }}
                 >
-                  {/* Unread indicator */}
-                  {!n.read && (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        left: 8,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        backgroundColor: 'primary.main',
-                      }}
-                    />
-                  )}
-                  
+
                   {/* Avatar */}
                   <Avatar
+                    src={n.actor_avatar}
                     sx={{
-                      width: isMobile ? 28 : 32,
-                      height: isMobile ? 28 : 32,
-                      mr: isMobile ? 1 : 1.5,
-                      ml: !n.read ? (isMobile ? 0.5 : 1) : 0,
+                      width: isMobile ? 32 : 40,
+                      height: isMobile ? 32 : 40,
+                      mr: isMobile ? 1.5 : 2,
                       fontSize: isMobile ? '0.8rem' : '0.9rem',
                       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      border: '2px solid',
+                      borderColor: 'background.paper',
+                      boxShadow: 1
                     }}
                   >
                     {n.actor_name?.charAt(0)?.toUpperCase() || '?'}
@@ -305,9 +302,9 @@ const NotificationsBell = () => {
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
+                        <Typography
+                          variant="body2"
+                          sx={{
                             fontWeight: !n.read ? 600 : 400,
                             fontSize: isMobile ? '0.8rem' : '0.875rem',
                             lineHeight: 1.4,
@@ -315,7 +312,7 @@ const NotificationsBell = () => {
                           }}
                         >
                           <Box component="span" sx={{ fontWeight: 600 }}>
-                            {n.actor_name}
+                            {n.actor_display_name || n.actor_name}
                           </Box>
                           {' '}
                           {n.type === "like" && "liked your post"}
@@ -327,12 +324,12 @@ const NotificationsBell = () => {
                           {n.type === "product_approved" && `approved your product "${n.payload?.productTitle}"`}
                           {n.type === "product_rejected" && `rejected your product "${n.payload?.productTitle}"`}
                         </Typography>
-                        
+
                         {/* Comment/Mention/Comment Like preview */}
                         {(n.type === "comment" || n.type === "mention" || n.type === "comment_like") && n.payload?.text && (
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
+                          <Typography
+                            variant="body2"
+                            sx={{
                               color: 'text.secondary',
                               fontSize: isMobile ? '0.75rem' : '0.8rem',
                               fontStyle: 'italic',
@@ -347,11 +344,11 @@ const NotificationsBell = () => {
                             "{n.payload.text}"
                           </Typography>
                         )}
-                        
+
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                           {getNotificationIcon(n.type)}
-                          <Typography 
-                            variant="caption" 
+                          <Typography
+                            variant="caption"
                             color="text.secondary"
                             sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}
                           >
@@ -365,10 +362,10 @@ const NotificationsBell = () => {
                 {index < recentNotifications.length - 1 && (
                   <Divider sx={{ ml: isMobile ? 5 : 7, opacity: 0.5 }} />
                 )}
-              </Box>
+              </motion.div>
             ))
           )}
-          
+
           {/* View All Button */}
           {notifications.length > 0 && (
             <Box sx={{ p: 2, textAlign: 'center', borderTop: 1, borderColor: 'divider' }}>
@@ -379,7 +376,7 @@ const NotificationsBell = () => {
                   handleClose();
                   navigate('/notifications');
                 }}
-                sx={{ 
+                sx={{
                   textTransform: 'none',
                   fontSize: '0.875rem',
                   fontWeight: 500,
