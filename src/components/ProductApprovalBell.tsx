@@ -28,7 +28,7 @@ interface ProductApprovalNotification {
     productImage?: string;
   };
   created_at: string;
-  is_read: boolean;
+  read: boolean;
   actor_name?: string;
 }
 
@@ -55,7 +55,7 @@ const ProductApprovalBell: React.FC = () => {
       
       // Filter only product approval notifications
       const productNotifications = data.filter(
-        (n: any) => n.type === 'product_approval' && !n.is_read
+        (n: any) => n.type === 'product_approval' && !n.read
       );
       
       setNotifications(productNotifications);
@@ -98,7 +98,7 @@ const ProductApprovalBell: React.FC = () => {
           type: notif.type,
           payload: typeof notif.payload === 'string' ? JSON.parse(notif.payload) : notif.payload,
           created_at: notif.created_at || new Date().toISOString(),
-          is_read: notif.is_read || false,
+          read: notif.read || false,
           actor_name: notif.actor_name
         };
         

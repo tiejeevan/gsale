@@ -93,7 +93,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const token = localStorage.getItem("token");
   const isOwner = currentUserId === Number(comment.user_id);
 
-  // --- START: CORRECTED handleLike FUNCTION ---
+  // --- START: IMPROVED handleLike FUNCTION ---
   const handleLike = async () => {
     const isCurrentlyLiked = comment.liked_by_user;
     const endpoint = isCurrentlyLiked
@@ -102,7 +102,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
     const optimisticComment: Comment = {
       ...comment,
-      like_count: isCurrentlyLiked ? comment.like_count - 1 : comment.like_count + 1,
+      like_count: Math.max(0, isCurrentlyLiked ? comment.like_count - 1 : comment.like_count + 1),
       liked_by_user: !isCurrentlyLiked,
     };
     
@@ -110,24 +110,34 @@ const CommentItem: React.FC<CommentItemProps> = ({
     onCommentUpdated(optimisticComment);
 
     try {
-      // 2. Send the actual request to the server in the background
-      const res = await fetch(endpoint, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      // 2. Send the actual request to the server
+      const res = await fetch(endpoint, { 
+        method: "POST", 
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        } 
+      });
       
       if (!res.ok) {
-        // If the API call fails, throw an error to be caught below
-        throw new Error("Failed to like/unlike");
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${res.status}`);
       }
       
-      // 3. ON SUCCESS, DO NOTHING. The UI is already correct.
-      // We removed the code that processed the successful response `res.json()`.
+      // 3. On success, the optimistic update should be correct
+      // The socket will handle real-time updates for other users
+      console.log(`✅ Comment ${isCurrentlyLiked ? 'unliked' : 'liked'} successfully`);
 
     } catch (err) {
-      console.error(err);
+      console.error('❌ Failed to like/unlike comment:', err);
       // 4. If anything goes wrong, revert the UI back to the original state
       onCommentUpdated(comment);
+      
+      // Show user-friendly error message
+      alert(`Failed to ${isCurrentlyLiked ? 'unlike' : 'like'} comment. Please try again.`);
     }
   };
-  // --- END: CORRECTED handleLike FUNCTION ---
+  // --- END: IMPROVED handleLike FUNCTION ---
 
 
   const handleDelete = async () => {

@@ -26,6 +26,7 @@ const OrdersPage = lazy(() => import("./pages/OrdersPage"));
 const OrderDetailPage = lazy(() => import("./pages/OrderDetailPage"));
 const OrderTrackingPage = lazy(() => import("./pages/OrderTrackingPage"));
 const BookmarksPage = lazy(() => import("./pages/BookmarksPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const WebAuthnDemo = lazy(() => import("./pages/WebAuthnDemo"));
 
 // Loading fallback component
@@ -190,6 +191,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <BookmarksPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />

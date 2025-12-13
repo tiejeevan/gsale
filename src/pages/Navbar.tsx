@@ -222,6 +222,9 @@ const Navbar: React.FC = () => {
         <MenuItem onClick={handleProfileClick}>
           <Typography variant="body2">Profile</Typography>
         </MenuItem>
+        <MenuItem onClick={() => { navigate('/notifications'); handleProfileMenuClose(); }}>
+          <Typography variant="body2">All Notifications</Typography>
+        </MenuItem>
         {user?.role === 'admin' && (
           <MenuItem onClick={() => { navigate('/admin'); handleProfileMenuClose(); }}>
             <Typography variant="body2">Admin Dashboard</Typography>

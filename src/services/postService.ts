@@ -111,8 +111,8 @@ export const getAllPosts = async (
 
 // Utility function to transform post data for PostCard compatibility
 const transformPostData = (post: Post, currentUserId?: number): Post => {
-  // Calculate like_count from likes array
-  const like_count = post.likes ? post.likes.length : 0;
+  // Use backend-provided like_count if available, otherwise calculate from likes array
+  const like_count = post.like_count !== undefined ? post.like_count : (post.likes ? post.likes.length : 0);
   
   // Check if current user liked the post
   const liked_by_user = post.likes ? 

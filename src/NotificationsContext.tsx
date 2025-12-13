@@ -20,7 +20,6 @@ export interface Notification {
   created_at: string;
   read: boolean;
   actor_name: string;
-  is_read?: boolean;
 }
 
 interface NotificationsContextProps {
@@ -56,7 +55,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       });
       if (!res.ok) throw new Error("Failed to fetch notifications");
       const data = await res.json();
-      setNotifications(data.map((n: any) => ({ ...n, read: n.is_read })));
+      setNotifications(data);
     } catch (err) {
       console.error("Failed to load notifications:", err);
     }
@@ -131,7 +130,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         type: notif.type,
         payload: typeof notif.payload === 'string' ? JSON.parse(notif.payload) : (notif.payload || {}),
         created_at: notif.created_at || new Date().toISOString(),
-        read: notif.read || notif.is_read || false,
+        read: notif.read || false,
         actor_name: actorName
       };
       
@@ -143,7 +142,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     };
     socket.on("notification:new", handleNewNotification);
 
-    // Listen for notification deletions (for mention soft deletes)
+    // Listen for notification deletions (kept for backward compatibility)
     const handleNotificationDeleted = (data: { notificationId: number }) => {
       setNotifications(prev => prev.filter(n => n.id !== data.notificationId));
     };
@@ -169,16 +168,8 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     setNotifications(prev => [notif, ...prev]);
 
   const markAsRead = (id: number) => {
-    // Find the notification to check if it's a mention
-    const notification = notifications.find(n => n.id === id);
-    
-    if (notification?.type === 'mention') {
-      // Remove mention notifications from the list
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    } else {
-      // Just mark as read for other notification types
-      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
-    }
+    // Just mark as read for all notification types (no more soft delete)
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
   };
 
   const handleToastClose = () => {
@@ -189,18 +180,22 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const handleToastClick = async () => {
     if (!toastNotification) return;
     
-    // Mark as read
-    markAsRead(toastNotification.id);
-    
     // Close toast
     handleToastClose();
     
+    // Mark as read on backend first, then update UI
     try {
-      // Mark as read on backend
-      await fetch(`${API_URL}/api/notifications/${toastNotification.id}/read`, {
+      const response = await fetch(`${API_URL}/api/notifications/${toastNotification.id}/read`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      if (response.ok) {
+        // Only update UI after successful backend update
+        markAsRead(toastNotification.id);
+      } else {
+        console.error("Failed to mark notification as read - server error");
+      }
     } catch (err) {
       console.error("Failed to mark notification as read:", err);
     }

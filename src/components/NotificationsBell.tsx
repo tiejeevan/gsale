@@ -23,6 +23,7 @@ import {
 } from "@mui/icons-material";
 import { useNotifications } from "../NotificationsContext";
 import { useUserContext } from "../context/UserContext";
+import { formatTimeAgo } from "../utils/timeUtils";
 
 const NotificationsBell = () => {
   const { notifications, markAsRead } = useNotifications();
@@ -46,32 +47,39 @@ const NotificationsBell = () => {
   };
 
   const handleNotificationClick = async (notification: any) => {
-    // Mark as read
-    markAsRead(notification.id);
-    
     // Close the menu
     handleClose();
     
-    try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/${notification.id}/read`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } catch (err) {
-      console.error("Failed to mark notification as read:", err);
+    // Mark as read only if not already read
+    if (!notification.read) {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/${notification.id}/read`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (response.ok) {
+          // Only update UI after successful backend update
+          markAsRead(notification.id);
+        } else {
+          console.error("Failed to mark notification as read - server error");
+        }
+      } catch (err) {
+        console.error("Failed to mark notification as read:", err);
+      }
     }
 
     // Navigate to the appropriate page based on notification type
-    if (notification.type === 'comment' || notification.type === 'like' || notification.type === 'mention') {
-      // For comments, likes, and mentions, navigate to the post
-      const postId = notification.payload?.postId;
-      const commentId = notification.payload?.commentId;
+    if (notification.type === 'comment' || notification.type === 'like' || notification.type === 'mention' || notification.type === 'comment_like') {
+      // For comments, likes, mentions, and comment likes, navigate to the post
+      const postId = notification.payload?.postId || notification.payload?.post_id;
+      const commentId = notification.payload?.commentId || notification.payload?.comment_id;
       if (postId) {
-        // Pass state to show comments immediately for comment/mention notifications
+        // Pass state to show comments immediately for comment/mention/comment_like notifications
         navigate(`/post/${postId}`, { 
           state: { 
             fromNotification: true,
-            showComments: notification.type === 'comment' || notification.type === 'mention',
+            showComments: notification.type === 'comment' || notification.type === 'mention' || notification.type === 'comment_like',
             highlightCommentId: commentId // Pass the comment ID to highlight
           } 
         });
@@ -79,18 +87,41 @@ const NotificationsBell = () => {
     } else if (notification.type === 'follow') {
       // For follows, navigate to the actor's profile
       navigate(`/profile/${notification.actor_user_id}`);
+    } else if (notification.type === 'product_approval') {
+      // For product approvals, navigate to admin panel
+      navigate('/admin', { 
+        state: { 
+          tab: 'products', 
+          highlightProductId: notification.payload?.productId 
+        } 
+      });
+    } else if (notification.type === 'product_approved' || notification.type === 'product_rejected') {
+      // For product status updates, navigate to the product page
+      const productId = notification.payload?.productId;
+      if (productId) {
+        navigate(`/market/product/${productId}`);
+      }
     }
   };
 
   const markAllAsRead = async () => {
     if (markingAll) return;
     setMarkingAll(true);
-    notifications.forEach(n => markAsRead(n.id));
+    
+    const unreadNotifications = notifications.filter(n => !n.read);
+    
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/read-all`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/read-all`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      if (response.ok) {
+        // Only update UI after successful backend update
+        unreadNotifications.forEach(n => markAsRead(n.id));
+      } else {
+        console.error("Failed to mark all as read - server error");
+      }
     } catch (err) {
       console.error("Failed to mark all as read:", err);
     } finally {
@@ -104,56 +135,24 @@ const NotificationsBell = () => {
         return <CommentIcon sx={{ fontSize: 16, color: 'primary.main' }} />;
       case 'like':
         return <FavoriteIcon sx={{ fontSize: 16, color: 'error.main' }} />;
+      case 'comment_like':
+        return <FavoriteIcon sx={{ fontSize: 16, color: 'warning.main' }} />;
       case 'follow':
         return <PersonAddIcon sx={{ fontSize: 16, color: 'success.main' }} />;
       case 'mention':
         return <CommentIcon sx={{ fontSize: 16, color: '#667eea' }} />;
+      case 'product_approval':
+        return <CircleIcon sx={{ fontSize: 16, color: 'info.main' }} />;
+      case 'product_approved':
+        return <CircleIcon sx={{ fontSize: 16, color: 'success.main' }} />;
+      case 'product_rejected':
+        return <CircleIcon sx={{ fontSize: 16, color: 'error.main' }} />;
       default:
         return <CircleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />;
     }
   };
 
-  const formatTimeAgo = (dateString: string) => {
-    // Parse the date string properly, handling timezone
-    let date: Date;
-    
-    // If the date string doesn't have timezone info, treat it as UTC
-    if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-      date = new Date(dateString + 'Z');
-    } else {
-      date = new Date(dateString);
-    }
-    
-    // Validate the date
-    if (isNaN(date.getTime())) {
-      console.error('Invalid date:', dateString);
-      return 'Recently';
-    }
-    
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    
-    // If the difference is negative or very small, it's just now
-    if (diffInMs < 0 || diffInMs < 60000) return 'Just now';
-    
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-    if (diffInMinutes === 1) return '1 min ago';
-    if (diffInMinutes < 60) return `${diffInMinutes} mins ago`;
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours === 1) return '1 hour ago';
-    if (diffInHours < 24) return `${diffInHours} hours ago`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays === 1) return 'Yesterday';
-    if (diffInDays < 7) return `${diffInDays} days ago`;
-    
-    const diffInWeeks = Math.floor(diffInDays / 7);
-    if (diffInWeeks === 1) return '1 week ago';
-    if (diffInWeeks < 4) return `${diffInWeeks} weeks ago`;
-    
-    return date.toLocaleDateString();
-  };
+
 
   return (
     <>
@@ -321,12 +320,16 @@ const NotificationsBell = () => {
                           {' '}
                           {n.type === "like" && "liked your post"}
                           {n.type === "comment" && "commented on your post"}
+                          {n.type === "comment_like" && "liked your comment"}
                           {n.type === "follow" && "started following you"}
                           {n.type === "mention" && "mentioned you in a comment"}
+                          {n.type === "product_approval" && `submitted "${n.payload?.productTitle}" for approval`}
+                          {n.type === "product_approved" && `approved your product "${n.payload?.productTitle}"`}
+                          {n.type === "product_rejected" && `rejected your product "${n.payload?.productTitle}"`}
                         </Typography>
                         
-                        {/* Comment/Mention preview */}
-                        {(n.type === "comment" || n.type === "mention") && n.payload?.text && (
+                        {/* Comment/Mention/Comment Like preview */}
+                        {(n.type === "comment" || n.type === "mention" || n.type === "comment_like") && n.payload?.text && (
                           <Typography 
                             variant="body2" 
                             sx={{ 
@@ -366,12 +369,25 @@ const NotificationsBell = () => {
             ))
           )}
           
-          {/* Show more indicator */}
-          {notifications.length > 10 && (
+          {/* View All Button */}
+          {notifications.length > 0 && (
             <Box sx={{ p: 2, textAlign: 'center', borderTop: 1, borderColor: 'divider' }}>
-              <Typography variant="caption" color="text.secondary">
-                Showing {recentNotifications.length} of {notifications.length} notifications
-              </Typography>
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => {
+                  handleClose();
+                  navigate('/notifications');
+                }}
+                sx={{ 
+                  textTransform: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                }}
+              >
+                View All Notifications
+                {notifications.length > 10 && ` (${notifications.length})`}
+              </Button>
             </Box>
           )}
         </Box>

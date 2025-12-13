@@ -170,6 +170,14 @@ const PostCard: React.FC<PostCardProps> = ({
     };
   }, [post.id, currentUserId]);
 
+  // Sync local state with prop changes (important for refresh scenarios)
+  useEffect(() => {
+    setLiked(post.liked_by_user || false);
+    setLikeCount(post.like_count || 0);
+    setCommentCount(post.comments?.length || 0);
+    setBookmarked(post.bookmarked_by_user || false);
+  }, [post.like_count, post.liked_by_user, post.comments?.length, post.bookmarked_by_user]);
+
   // Parse content and make mentions clickable
   const renderContentWithMentions = (content: string) => {
     const parts = content.split(/(@\w+)/g);
