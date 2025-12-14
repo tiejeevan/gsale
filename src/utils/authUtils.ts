@@ -12,7 +12,7 @@ export const handleTokenExpiration = () => {
   console.log('Token expired - logging out...');
   localStorage.removeItem('token');
   localStorage.removeItem('user');
-  window.location.href = '/login';
+  window.location.href = '/market';
 };
 
 // Global fetch wrapper that handles 401 errors
@@ -20,7 +20,7 @@ export const authFetch = async (url: string, options: RequestInit = {}): Promise
   const response = await fetch(url, options);
   
   if (response.status === 401) {
-    console.log('401 Unauthorized - redirecting to login...');
+    console.log('401 Unauthorized - redirecting to market...');
     handleTokenExpiration();
     throw new Error('Unauthorized');
   }

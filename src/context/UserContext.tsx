@@ -64,7 +64,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setToken(null);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        navigate('/login', { replace: true });
+        navigate('/market', { replace: true });
       } else {
         console.log("Non-401 error, clearing user but not redirecting");
         setCurrentUser(null);
@@ -116,7 +116,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     
     setCurrentUser(null);
     setToken(null);
-    navigate('/login');
+    navigate('/market');
   };
 
   // On mount, fetch user if token exists
@@ -125,9 +125,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       fetchMe();
     } else {
       setIsLoading(false);
-      // If no token and not on login/signup page, redirect to login
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
-        navigate('/login');
+      // If no token and not on public pages, redirect to market
+      const publicPaths = ['/market', '/login', '/signup', '/webauthn-demo'];
+      const currentPath = window.location.pathname;
+      const isOnPublicPath = publicPaths.some(path => currentPath.startsWith(path));
+      
+      if (!isOnPublicPath) {
+        navigate('/market');
       }
     }
   }, [token]);

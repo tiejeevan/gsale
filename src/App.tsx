@@ -56,7 +56,7 @@ function AppContent() {
             <Routes>
               <Route
                 path="/"
-                element={<Navigate to="/market" replace />}
+                element={token ? <Navigate to="/dashboard" replace /> : <Navigate to="/market" replace />}
               />
               <Route
                 path="/login"
@@ -215,7 +215,7 @@ function AppContent() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="*" element={<Navigate to="/login" />} />
+              <Route path="*" element={<Navigate to="/market" />} />
             </Routes>
           </Suspense>
 

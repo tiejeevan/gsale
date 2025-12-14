@@ -5,7 +5,7 @@ import { useUserContext } from "../context/UserContext";
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { token } = useUserContext();
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/market" replace />;
   }
   return children;
 };

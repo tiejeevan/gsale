@@ -44,7 +44,7 @@ const DeactivateAccountModal: React.FC<DeactivateAccountModalProps> = ({ onClose
     try {
       await deactivateUser();
       // User will be logged out automatically by deactivateUser
-      navigate("/login");
+      navigate("/market");
     } catch (err: any) {
       setError(err.message || "Failed to deactivate account");
     } finally {

@@ -47,8 +47,7 @@ const BottomNav: React.FC = () => {
   };
 
   const handleLogout = () => {
-    logout();
-    navigate("/login");
+    logout(); // This will handle the navigation to /market
   };
 
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {

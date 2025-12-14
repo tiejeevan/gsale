@@ -15,13 +15,13 @@ import {
   useTheme,
   useMediaQuery,
   Divider,
-  Chip,
 } from '@mui/material';
 import { 
   Close as CloseIcon, 
   Fingerprint as FingerprintIcon,
   Security as SecurityIcon 
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useUserContext } from '../../context/UserContext';
 import WebAuthnService from '../../services/webauthn';
 import WebAuthnSetupPrompt from './WebAuthnSetupPrompt';
@@ -35,6 +35,7 @@ interface AuthModalProps {
 const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'login' }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
   const { setToken } = useUserContext();
   
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
@@ -107,7 +108,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
 
       setToken(data.token);
       onClose();
-      window.location.reload(); // Refresh to update user context
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -134,7 +135,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
       
       setTimeout(() => {
         onClose();
-        window.location.reload();
+        navigate('/dashboard');
       }, 1500);
     } catch (err: any) {
       const errorMessage = WebAuthnService.getErrorMessage(err);
@@ -188,7 +189,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
       } else {
         setTimeout(() => {
           onClose();
-          window.location.reload();
+          navigate('/dashboard');
         }, 1500);
       }
     } catch (err: any) {
@@ -208,29 +209,54 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
         fullScreen={isMobile}
         PaperProps={{
           sx: {
-            borderRadius: isMobile ? 0 : 2,
+            borderRadius: isMobile ? 0 : 3,
             maxHeight: isMobile ? '100vh' : '90vh',
+            m: isMobile ? 0 : 2,
           },
         }}
       >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        pb: 1,
+        px: isMobile ? 2 : 3,
+        pt: isMobile ? 2 : 3
+      }}>
+        <Typography variant={isMobile ? "h6" : "h5"} sx={{ fontWeight: 700, color: 'primary.main' }}>
           Welcome to GSALE
         </Typography>
-        <IconButton onClick={onClose} size="small">
+        <IconButton 
+          onClick={onClose} 
+          size="small"
+          sx={{ 
+            color: 'text.secondary',
+            '&:hover': { backgroundColor: 'action.hover' }
+          }}
+        >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent>
+      <DialogContent sx={{ px: isMobile ? 2 : 3, pb: isMobile ? 2 : 3 }}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
           variant="fullWidth"
-          sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+          sx={{ 
+            mb: 3, 
+            borderBottom: 1, 
+            borderColor: 'divider',
+            '& .MuiTab-root': {
+              minHeight: 48,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: isMobile ? '0.9rem' : '1rem'
+            }
+          }}
         >
-          <Tab label="Login" value="login" sx={{ textTransform: 'none', fontWeight: 600 }} />
-          <Tab label="Sign Up" value="signup" sx={{ textTransform: 'none', fontWeight: 600 }} />
+          <Tab label="Login" value="login" />
+          <Tab label="Sign Up" value="signup" />
         </Tabs>
 
         {error && (
@@ -250,49 +276,67 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
             {/* WebAuthn Login Options */}
             {webAuthnSupported && (
               <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <SecurityIcon sx={{ mr: 1, color: 'primary.main' }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Secure Authentication
-                  </Typography>
-                  {isPlatformAvailable && (
-                    <Chip 
-                      label="Biometrics Available" 
-                      size="small" 
-                      color="success" 
-                      sx={{ ml: 1 }} 
-                    />
-                  )}
-                </Box>
+                {/* Primary WebAuthn Button */}
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={() => handleWebAuthnLogin(false)}
+                  disabled={webAuthnLoading || loading}
+                  sx={{ 
+                    py: 2, 
+                    mb: 2,
+                    textTransform: 'none', 
+                    fontWeight: 600,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                    },
+                    borderRadius: 2,
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <FingerprintIcon sx={{ fontSize: 24 }} />
+                    <Box sx={{ textAlign: 'left' }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                        {webAuthnLoading ? 'Authenticating...' : 'Secure Login'}
+                      </Typography>
+                      {isPlatformAvailable && !webAuthnLoading && (
+                        <Typography variant="caption" sx={{ opacity: 0.9, lineHeight: 1 }}>
+                          Touch ID • Face ID • Fingerprint
+                        </Typography>
+                      )}
+                    </Box>
+                    {webAuthnLoading && (
+                      <CircularProgress size={20} sx={{ color: 'white', ml: 'auto' }} />
+                    )}
+                  </Box>
+                </Button>
 
-                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                {/* Secondary username-specific login (only show if username entered) */}
+                {loginUsername && (
                   <Button
                     fullWidth
                     variant="outlined"
-                    startIcon={<FingerprintIcon />}
-                    onClick={() => handleWebAuthnLogin(false)}
+                    startIcon={<SecurityIcon />}
+                    onClick={() => handleWebAuthnLogin(true)}
                     disabled={webAuthnLoading || loading}
-                    sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
+                    sx={{ 
+                      py: 1.5, 
+                      mb: 2,
+                      textTransform: 'none', 
+                      fontWeight: 500,
+                      borderColor: 'primary.main',
+                      color: 'primary.main'
+                    }}
                   >
-                    {webAuthnLoading ? <CircularProgress size={20} /> : 'Quick Login'}
+                    Login as {loginUsername}
                   </Button>
-                  
-                  {loginUsername && (
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={<SecurityIcon />}
-                      onClick={() => handleWebAuthnLogin(true)}
-                      disabled={webAuthnLoading || loading}
-                      sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
-                    >
-                      Login as {loginUsername}
-                    </Button>
-                  )}
-                </Box>
+                )}
 
                 <Divider sx={{ my: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ px: 2 }}>
                     or use password
                   </Typography>
                 </Divider>
@@ -308,7 +352,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(e.target.value)}
                 required
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2
+                  }
+                }}
                 autoFocus={!webAuthnSupported}
               />
               <TextField
@@ -318,7 +367,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
                 required
-                sx={{ mb: 3 }}
+                sx={{ 
+                  mb: 3,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2
+                  }
+                }}
               />
               <Button
                 type="submit"
@@ -326,7 +380,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
                 variant="contained"
                 size="large"
                 disabled={loading || webAuthnLoading}
-                sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
+                sx={{ 
+                  py: 1.5, 
+                  textTransform: 'none', 
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  boxShadow: 2,
+                  '&:hover': {
+                    boxShadow: 4
+                  }
+                }}
               >
                 {loading ? <CircularProgress size={24} /> : 'Login with Password'}
               </Button>
@@ -334,30 +397,45 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
           </Box>
         ) : (
           <Box component="form" onSubmit={handleSignup}>
-            <TextField
-              fullWidth
-              label="First Name"
-              value={signupFirstName}
-              onChange={(e) => setSignupFirstName(e.target.value)}
-              required
-              sx={{ mb: 2 }}
-              autoFocus
-            />
-            <TextField
-              fullWidth
-              label="Last Name"
-              value={signupLastName}
-              onChange={(e) => setSignupLastName(e.target.value)}
-              required
-              sx={{ mb: 2 }}
-            />
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <TextField
+                fullWidth
+                label="First Name"
+                value={signupFirstName}
+                onChange={(e) => setSignupFirstName(e.target.value)}
+                required
+                sx={{ 
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2
+                  }
+                }}
+                autoFocus
+              />
+              <TextField
+                fullWidth
+                label="Last Name"
+                value={signupLastName}
+                onChange={(e) => setSignupLastName(e.target.value)}
+                required
+                sx={{ 
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2
+                  }
+                }}
+              />
+            </Box>
             <TextField
               fullWidth
               label="Username"
               value={signupUsername}
               onChange={(e) => setSignupUsername(e.target.value)}
               required
-              sx={{ mb: 2 }}
+              sx={{ 
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2
+                }
+              }}
             />
             <TextField
               fullWidth
@@ -366,7 +444,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
               value={signupEmail}
               onChange={(e) => setSignupEmail(e.target.value)}
               required
-              sx={{ mb: 2 }}
+              sx={{ 
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2
+                }
+              }}
             />
             <TextField
               fullWidth
@@ -375,7 +458,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
               value={signupPassword}
               onChange={(e) => setSignupPassword(e.target.value)}
               required
-              sx={{ mb: 3 }}
+              sx={{ 
+                mb: 3,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2
+                }
+              }}
               helperText="Minimum 6 characters"
             />
             <Button
@@ -384,7 +472,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
               variant="contained"
               size="large"
               disabled={loading}
-              sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
+              sx={{ 
+                py: 1.5, 
+                textTransform: 'none', 
+                fontWeight: 600,
+                borderRadius: 2,
+                boxShadow: 2,
+                '&:hover': {
+                  boxShadow: 4
+                }
+              }}
             >
               {loading ? <CircularProgress size={24} /> : 'Sign Up'}
             </Button>
@@ -399,7 +496,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, defaultTab = 'logi
           open={showWebAuthnSetup}
           onClose={() => {
             setShowWebAuthnSetup(false);
-            window.location.reload();
+            navigate('/dashboard');
           }}
           userId={newUser.id}
           userName={newUser.first_name}
