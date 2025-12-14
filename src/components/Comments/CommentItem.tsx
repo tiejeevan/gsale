@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import {
   Box,
   Avatar,
@@ -121,20 +122,44 @@ const CommentItem: React.FC<CommentItemProps> = ({
       
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Comment like API error:', { status: res.status, error: errorData });
+        
+        // Handle "Already liked" case - this means the UI state is out of sync
+        if (errorData.error === 'Already liked') {
+          // Fix the UI state to match the backend
+          const correctedComment: Comment = {
+            ...comment,
+            liked_by_user: true,
+            like_count: Math.max(comment.like_count, 1)
+          };
+          onCommentUpdated(correctedComment);
+          toast.error('Comment is already liked. UI state has been corrected.');
+          return; // Don't throw error, just return
+        }
+        
         throw new Error(errorData.error || `HTTP ${res.status}`);
+      }
+      
+      // Parse the response to check if it's successful
+      const responseData = await res.json().catch(() => ({ success: false }));
+      if (!responseData.success && !responseData.msg) {
+        throw new Error('Unexpected response format');
       }
       
       // 3. On success, the optimistic update should be correct
       // The socket will handle real-time updates for other users
       console.log(`✅ Comment ${isCurrentlyLiked ? 'unliked' : 'liked'} successfully`);
+      
+      // Show success toast
+      toast.success(`Comment ${isCurrentlyLiked ? 'unliked' : 'liked'}!`);
 
     } catch (err) {
       console.error('❌ Failed to like/unlike comment:', err);
       // 4. If anything goes wrong, revert the UI back to the original state
       onCommentUpdated(comment);
       
-      // Show user-friendly error message
-      alert(`Failed to ${isCurrentlyLiked ? 'unlike' : 'like'} comment. Please try again.`);
+      // Show user-friendly error message with toast
+      toast.error(`Failed to ${isCurrentlyLiked ? 'unlike' : 'like'} comment. Please try again.`);
     }
   };
   // --- END: IMPROVED handleLike FUNCTION ---

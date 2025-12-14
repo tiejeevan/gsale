@@ -34,15 +34,21 @@ const PostDetail: React.FC = () => {
   const [editImageUrl, setEditImageUrl] = useState("");
   const [visibilityAnchorEl, setVisibilityAnchorEl] = useState<null | HTMLElement>(null);
   const [menuExpanded, setMenuExpanded] = useState(false);
-  
+
   // Check if we should show comments initially (ONLY from notification)
   const navigationState = (window.history.state as any)?.usr;
   const showCommentsInitially = Boolean(navigationState?.showComments);
   const highlightCommentId = navigationState?.highlightCommentId;
+  const highlightLikeButton = Boolean(navigationState?.highlightLikeButton);
 
   // Clear navigation state after component mounts to prevent persistence on reload
   useEffect(() => {
-    if (navigationState?.showComments || navigationState?.highlightCommentId) {
+    if (navigationState?.showComments || navigationState?.highlightCommentId || navigationState?.highlightLikeButton) {
+      // Scroll to top when coming from notification
+      if (navigationState?.fromNotification) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      
       // Clear the state after a delay (after highlight animation completes)
       const timer = setTimeout(() => {
         window.history.replaceState(
@@ -68,7 +74,7 @@ const PostDetail: React.FC = () => {
         setError(null);
         const postData = await getPostById(parseInt(postId), token, user?.id);
         setPost(postData);
-        
+
         // Join post room for real-time updates
         if (socket.connected) {
           joinPostRoom(parseInt(postId));
@@ -104,7 +110,7 @@ const PostDetail: React.FC = () => {
 
   const handleSaveEdit = async (newContent: string) => {
     if (!post || !token) return;
-    
+
     try {
       const updatedPost = await updatePost(token, post.id, { content: newContent });
       setPost(updatedPost);
@@ -161,10 +167,10 @@ const PostDetail: React.FC = () => {
 
   const handleToggleComments = async () => {
     if (!post || !token) return;
-    
+
     try {
-      await updatePost(token, post.id, { 
-        comments_enabled: post.comments_enabled === false ? true : false 
+      await updatePost(token, post.id, {
+        comments_enabled: post.comments_enabled === false ? true : false
       });
       // Refetch the post to get updated data including comments
       const refreshedPost = await getPostById(parseInt(postId!), token, user?.id);
@@ -176,7 +182,7 @@ const PostDetail: React.FC = () => {
 
   const handleTogglePin = async () => {
     if (!post || !token) return;
-    
+
     try {
       if (post.is_pinned) {
         await unpinPost(token, post.id);
@@ -361,7 +367,7 @@ const PostDetail: React.FC = () => {
                       sx={{
                         bgcolor: 'action.hover',
                         color: 'text.secondary',
-                        '&:hover': { 
+                        '&:hover': {
                           bgcolor: 'action.selected',
                           color: 'info.main',
                         },
@@ -370,14 +376,14 @@ const PostDetail: React.FC = () => {
                       {renderVisibilityIcon()}
                     </IconButton>
                   </Tooltip>
-                  
+
                   <Tooltip title={post.comments_enabled !== false ? "Disable comments" : "Enable comments"} arrow>
                     <IconButton
                       onClick={handleToggleComments}
                       sx={{
                         bgcolor: 'action.hover',
                         color: post.comments_enabled !== false ? 'success.main' : 'text.disabled',
-                        '&:hover': { 
+                        '&:hover': {
                           bgcolor: 'action.selected',
                           color: post.comments_enabled !== false ? 'success.dark' : 'text.secondary',
                         },
@@ -388,14 +394,14 @@ const PostDetail: React.FC = () => {
                       </svg>
                     </IconButton>
                   </Tooltip>
-                  
+
                   <Tooltip title={post.is_pinned ? "Unpin post" : "Pin post"} arrow>
                     <IconButton
                       onClick={handleTogglePin}
                       sx={{
                         bgcolor: 'action.hover',
                         color: post.is_pinned ? 'warning.main' : 'text.secondary',
-                        '&:hover': { 
+                        '&:hover': {
                           bgcolor: 'action.selected',
                           color: 'warning.main',
                         },
@@ -404,14 +410,14 @@ const PostDetail: React.FC = () => {
                       {post.is_pinned ? <PushPin /> : <PushPinOutlined />}
                     </IconButton>
                   </Tooltip>
-                  
+
                   <Tooltip title="Edit post" arrow>
                     <IconButton
                       onClick={() => handleEdit(post)}
                       sx={{
                         bgcolor: 'action.hover',
                         color: 'text.secondary',
-                        '&:hover': { 
+                        '&:hover': {
                           bgcolor: 'action.selected',
                           color: 'primary.main',
                         },
@@ -420,14 +426,14 @@ const PostDetail: React.FC = () => {
                       <Edit />
                     </IconButton>
                   </Tooltip>
-                  
+
                   <Tooltip title="Delete post" arrow>
                     <IconButton
                       onClick={() => handleDelete(post)}
                       sx={{
                         bgcolor: 'action.hover',
                         color: 'text.secondary',
-                        '&:hover': { 
+                        '&:hover': {
                           bgcolor: 'action.selected',
                           color: 'error.main',
                         },
@@ -445,7 +451,7 @@ const PostDetail: React.FC = () => {
                     sx={{
                       bgcolor: 'action.hover',
                       color: 'text.secondary',
-                      '&:hover': { 
+                      '&:hover': {
                         bgcolor: 'action.selected',
                         color: 'text.primary',
                       },
@@ -505,14 +511,14 @@ const PostDetail: React.FC = () => {
               {post.username?.charAt(0).toUpperCase()}
             </Avatar>
             <Box>
-              <Link 
+              <Link
                 to={`/profile/${post.user_id}`}
                 style={{ textDecoration: 'none' }}
               >
-                <Typography 
-                  variant="subtitle1" 
+                <Typography
+                  variant="subtitle1"
                   fontWeight={600}
-                  sx={{ 
+                  sx={{
                     color: 'text.primary',
                     '&:hover': { color: 'primary.main' },
                     transition: 'color 0.2s',
@@ -556,6 +562,7 @@ const PostDetail: React.FC = () => {
             collapseComments={false}
             showCommentsInitially={showCommentsInitially}
             highlightCommentId={highlightCommentId}
+            highlightLikeButton={highlightLikeButton}
           />
         </Box>
       </Box>
@@ -574,51 +581,51 @@ const PostDetail: React.FC = () => {
           <Typography variant="h6" fontWeight={600} color="text.primary" sx={{ mb: 3 }}>
             Post Details
           </Typography>
-          
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
-            gap: 3 
+
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+            gap: 3
           }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
                   Post ID:
                 </Typography>
-                <Chip 
-                  label={`#${post.id}`} 
-                  size="small" 
+                <Chip
+                  label={`#${post.id}`}
+                  size="small"
                   variant="outlined"
                   sx={{ fontFamily: 'monospace' }}
                 />
               </Box>
-              
+
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
                   Author:
                 </Typography>
-                <Link 
+                <Link
                   to={`/profile/${post.user_id}`}
                   style={{ textDecoration: 'none' }}
                 >
-                  <Chip 
+                  <Chip
                     icon={<Person />}
                     label={post.username}
                     size="small"
                     clickable
-                    sx={{ 
+                    sx={{
                       '&:hover': { bgcolor: 'action.hover' },
                       color: 'primary.main',
                     }}
                   />
                 </Link>
               </Box>
-              
+
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
                   Created:
                 </Typography>
-                <Chip 
+                <Chip
                   icon={<Schedule />}
                   label={new Date(post.created_at).toLocaleString()}
                   size="small"
@@ -626,13 +633,13 @@ const PostDetail: React.FC = () => {
                 />
               </Box>
             </Box>
-            
+
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
                   Likes:
                 </Typography>
-                <Chip 
+                <Chip
                   icon={<ThumbUp />}
                   label={post.like_count}
                   size="small"
@@ -640,13 +647,13 @@ const PostDetail: React.FC = () => {
                   variant="outlined"
                 />
               </Box>
-              
+
               {post.is_edited && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="body2" color="text.secondary">
                     Status:
                   </Typography>
-                  <Chip 
+                  <Chip
                     label="Edited"
                     size="small"
                     color="warning"
@@ -654,13 +661,13 @@ const PostDetail: React.FC = () => {
                   />
                 </Box>
               )}
-              
+
               {post.attachments && post.attachments.length > 0 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="body2" color="text.secondary">
                     Attachments:
                   </Typography>
-                  <Chip 
+                  <Chip
                     icon={<Image />}
                     label={post.attachments.length}
                     size="small"
@@ -684,7 +691,7 @@ const PostDetail: React.FC = () => {
         onChangeContent={handleChangeContent}
         onChangeImage={handleChangeImage}
       />
-      
+
       {/* Bottom Navigation for Mobile */}
       <BottomNav />
     </Container>

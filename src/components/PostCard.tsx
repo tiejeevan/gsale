@@ -76,6 +76,7 @@ interface PostCardProps {
   collapseComments?: boolean;
   showCommentsInitially?: boolean;
   highlightCommentId?: number;
+  highlightLikeButton?: boolean;
 }
 
 const R2_PUBLIC_URL = "https://pub-33bf1ab4fbc14d72add6f211d35c818e.r2.dev";
@@ -93,6 +94,7 @@ const PostCard: React.FC<PostCardProps> = ({
   collapseComments = true,
   showCommentsInitially = false,
   highlightCommentId,
+  highlightLikeButton,
 }) => {
   const navigate = useNavigate();
   const [hovered, setHovered] = useState(false);
@@ -103,8 +105,18 @@ const PostCard: React.FC<PostCardProps> = ({
   const [isLiking, setIsLiking] = useState(false);
   const [bookmarked, setBookmarked] = useState(post.bookmarked_by_user || false);
   const [isBookmarking, setIsBookmarking] = useState(false);
+  const [triggerLikeAnimation, setTriggerLikeAnimation] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  useEffect(() => {
+    if (highlightLikeButton) {
+      // Small delay to ensure render
+      setTimeout(() => setTriggerLikeAnimation(true), 300);
+      // Reset after animation (2 pulses = ~1.5s)
+      setTimeout(() => setTriggerLikeAnimation(false), 2000);
+    }
+  }, [highlightLikeButton]);
 
   // Socket.IO: Listen for real-time like updates
   useEffect(() => {
@@ -129,7 +141,7 @@ const PostCard: React.FC<PostCardProps> = ({
     // Handler for new like/unlike events
     const handleNewLike = (data: any) => {
       console.log(`📡 Received like event for post ${post.id}:`, data);
-      
+
       if (data.user_id === currentUserId) {
         // This is our own like, already handled optimistically
         return;
@@ -181,7 +193,7 @@ const PostCard: React.FC<PostCardProps> = ({
   // Parse content and make mentions clickable
   const renderContentWithMentions = (content: string) => {
     const parts = content.split(/(@\w+)/g);
-    
+
     return parts.map((part, index) => {
       if (part.match(/^@\w+$/)) {
         const username = part.substring(1);
@@ -225,76 +237,76 @@ const PostCard: React.FC<PostCardProps> = ({
     // Parse the date - JavaScript automatically handles timezone conversion
     const date = new Date(dateString);
     const now = new Date();
-    
+
     // Calculate difference in milliseconds
     const diffInMs = now.getTime() - date.getTime();
     const diffInSeconds = Math.floor(diffInMs / 1000);
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     const diffInHours = Math.floor(diffInMinutes / 60);
     const diffInDays = Math.floor(diffInHours / 24);
-    
+
     // If date is in the future (shouldn't happen), show the actual date
     if (diffInMs < 0) {
-      return date.toLocaleString([], { 
-        month: 'short', 
-        day: 'numeric', 
-        hour: 'numeric', 
+      return date.toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: true 
+        hour12: true
       });
     }
-    
+
     // Less than 1 minute
     if (diffInSeconds < 60) {
       return 'Just now';
     }
-    
+
     // Less than 1 hour - show minutes
     if (diffInMinutes < 60) {
       return diffInMinutes === 1 ? '1 min ago' : `${diffInMinutes} mins ago`;
     }
-    
+
     // Less than 24 hours - show hours
     if (diffInHours < 24) {
       return diffInHours === 1 ? '1 hour ago' : `${diffInHours} hours ago`;
     }
-    
+
     // Yesterday
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    const isYesterday = date.getDate() === yesterday.getDate() && 
-                        date.getMonth() === yesterday.getMonth() && 
-                        date.getFullYear() === yesterday.getFullYear();
-    
+    const isYesterday = date.getDate() === yesterday.getDate() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear();
+
     if (isYesterday) {
       return `Yesterday at ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`;
     }
-    
+
     // Less than 7 days - show day name
     if (diffInDays < 7) {
       return `${date.toLocaleDateString([], { weekday: 'long' })} at ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`;
     }
-    
+
     // This year - show month and day
     if (date.getFullYear() === now.getFullYear()) {
       return `${date.toLocaleDateString([], { month: 'long', day: 'numeric' })} at ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`;
     }
-    
+
     // Previous years - show full date
     return `${date.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} at ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`;
   };
 
   const handleLike = async () => {
     if (isLiking) return;
-    
+
     setIsLiking(true);
     const previousLiked = liked;
     const previousCount = likeCount;
-    
+
     // Optimistic update
     setLiked(!liked);
     setLikeCount(liked ? likeCount - 1 : likeCount + 1);
-    
+
     try {
       if (liked) {
         await removeLike(token, { target_type: 'post', target_id: post.id });
@@ -313,20 +325,20 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const handleBookmark = async () => {
     if (isBookmarking) return;
-    
+
     setIsBookmarking(true);
     const previousBookmarked = bookmarked;
-    
+
     // Optimistic update
     setBookmarked(!bookmarked);
-    
+
     try {
       if (bookmarked) {
         await removeBookmark(token, post.id);
       } else {
         await addBookmark(token, post.id);
       }
-      
+
       // Notify parent to refresh posts
       if (onBookmarkChange) {
         onBookmarkChange();
@@ -394,7 +406,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   sx={{
                     bgcolor: 'action.hover',
                     color: post.is_pinned ? 'warning.main' : 'text.secondary',
-                    '&:hover': { 
+                    '&:hover': {
                       bgcolor: 'action.selected',
                       color: 'warning.main',
                     },
@@ -414,7 +426,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   sx={{
                     bgcolor: 'action.hover',
                     color: 'text.secondary',
-                    '&:hover': { 
+                    '&:hover': {
                       bgcolor: 'action.selected',
                       color: 'primary.main',
                     },
@@ -434,7 +446,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   sx={{
                     bgcolor: 'action.hover',
                     color: 'text.secondary',
-                    '&:hover': { 
+                    '&:hover': {
                       bgcolor: 'action.selected',
                       color: 'error.main',
                     },
@@ -509,12 +521,12 @@ const PostCard: React.FC<PostCardProps> = ({
                   </Typography>
                   {post.is_pinned && (
                     <Tooltip title="Pinned post" arrow>
-                      <PushPin 
-                        sx={{ 
-                          fontSize: '0.75rem', 
+                      <PushPin
+                        sx={{
+                          fontSize: '0.75rem',
                           color: 'warning.main',
                           verticalAlign: 'middle',
-                        }} 
+                        }}
                       />
                     </Tooltip>
                   )}
@@ -548,12 +560,12 @@ const PostCard: React.FC<PostCardProps> = ({
               </Typography>
               {post.is_pinned && (
                 <Tooltip title="Pinned post" arrow>
-                  <PushPin 
-                    sx={{ 
-                      fontSize: '0.75rem', 
+                  <PushPin
+                    sx={{
+                      fontSize: '0.75rem',
                       color: 'warning.main',
                       verticalAlign: 'middle',
-                    }} 
+                    }}
                   />
                 </Tooltip>
               )}
@@ -655,7 +667,7 @@ const PostCard: React.FC<PostCardProps> = ({
               {post.attachments.map((att) => {
                 const fileUrl = getPublicUrl(att.file_url);
                 const isImage = /\.(jpe?g|png|gif|webp|bmp)$/i.test(att.file_name);
-                
+
                 return isImage ? (
                   <img
                     key={att.id}
@@ -703,10 +715,10 @@ const PostCard: React.FC<PostCardProps> = ({
         )}
 
         {/* Action Bar - Like, Comment, Share */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
             gap: 1,
             pt: 1,
           }}
@@ -725,6 +737,12 @@ const PostCard: React.FC<PostCardProps> = ({
                 bgcolor: 'error.lighter',
                 color: 'error.main',
               },
+              animation: triggerLikeAnimation ? 'pulseLike 0.8s ease-in-out 2' : 'none',
+              '@keyframes pulseLike': {
+                '0%': { transform: 'scale(1)', color: liked ? '#d32f2f' : '#ef4444' },
+                '50%': { transform: 'scale(1.4)', color: '#ef4444' },
+                '100%': { transform: 'scale(1)', color: liked ? '#d32f2f' : 'inherit' }
+              }
             }}
           >
             {likeCount > 0 ? likeCount : 'Like'}

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { type Toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import {
@@ -37,6 +37,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onC
         const iconProps = { fontSize: "small" as const };
         switch (type) {
             case 'comment': return <CommentIcon {...iconProps} sx={{ color: '#3b82f6' }} />;
+            case 'comment_reply': return <CommentIcon {...iconProps} sx={{ color: '#9c27b0' }} />;
             case 'like': return <FavoriteIcon {...iconProps} sx={{ color: '#ef4444' }} />;
             case 'comment_like': return <CommentLikeIcon {...iconProps} sx={{ color: '#f59e0b' }} />;
             case 'follow': return <PersonAddIcon {...iconProps} sx={{ color: '#10b981' }} />;
@@ -51,6 +52,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onC
     const getTitle = (notif: any) => {
         switch (notif.type) {
             case "comment": return "New Comment";
+            case "comment_reply": return "New Reply";
             case "like": return "New Like";
             case "comment_like": return "Comment Liked";
             case "follow": return "New Follower";
@@ -65,6 +67,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onC
     const getContent = (notif: any) => {
         switch (notif.type) {
             case "comment": return `${notif.actor_display_name || notif.actor_name} commented: "${notif.payload?.text || ''}"`;
+            case "comment_reply": return `${notif.actor_display_name || notif.actor_name} replied to your comment: "${notif.payload?.text || ''}"`;
             case "like": return `${notif.actor_display_name || notif.actor_name} liked your post`;
             case "comment_like": return `${notif.actor_display_name || notif.actor_name} liked your comment`;
             case "follow": return `${notif.actor_display_name || notif.actor_name} started following you`;

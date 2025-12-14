@@ -51,57 +51,84 @@ const NotificationsBell = () => {
     // Close the menu
     handleClose();
 
-    // Mark as read only if not already read
+    // Optimistically mark as read immediately
     if (!notification.read) {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/${notification.id}/read`, {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      markAsRead(notification.id);
 
-        if (response.ok) {
-          // Only update UI after successful backend update
-          markAsRead(notification.id);
-        } else {
-          console.error("Failed to mark notification as read - server error");
-        }
-      } catch (err) {
+      // Fire and forget the API call
+      fetch(`${import.meta.env.VITE_API_URL}/api/notifications/${notification.id}/read`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(err => {
         console.error("Failed to mark notification as read:", err);
-      }
+        // We could revert here if needed, but for read status it's usually acceptable to keep as read
+      });
     }
 
-    // Navigate to the appropriate page based on notification type
-    if (notification.type === 'comment' || notification.type === 'like' || notification.type === 'mention' || notification.type === 'comment_like') {
-      // For comments, likes, mentions, and comment likes, navigate to the post
-      const postId = notification.payload?.postId || notification.payload?.post_id;
-      const commentId = notification.payload?.commentId || notification.payload?.comment_id;
-      if (postId) {
-        // Pass state to show comments immediately for comment/mention/comment_like notifications
-        navigate(`/post/${postId}`, {
+    // Navigate immediately
+    // Navigate immediately
+    switch (notification.type) {
+      case 'comment':
+      case 'comment_reply':
+      case 'mention':
+        if (notification.payload?.postId || notification.payload?.post_id) {
+          navigate(`/post/${notification.payload.postId || notification.payload.post_id}`, {
+            state: {
+              fromNotification: true,
+              showComments: true,
+              highlightCommentId: notification.payload?.commentId || notification.payload?.comment_id
+            }
+          });
+        }
+        break;
+
+      case 'comment_like':
+        const commentPostId = notification.payload?.postId || notification.payload?.post_id;
+        const commentId = notification.payload?.commentId || notification.payload?.comment_id;
+        if (commentPostId) {
+          navigate(`/post/${commentPostId}`, {
+            state: {
+              fromNotification: true,
+              showComments: true,
+              highlightCommentId: commentId
+            }
+          });
+        }
+        break;
+
+      case 'like':
+        const postId = notification.payload?.postId || notification.payload?.post_id || notification.payload?.target_id;
+        if (postId) {
+          navigate(`/post/${postId}`, {
+            state: {
+              fromNotification: true,
+              showComments: false,
+              highlightLikeButton: true
+            }
+          });
+        }
+        break;
+
+      case 'follow':
+        navigate(`/profile/${notification.actor_user_id}`);
+        break;
+
+      case 'product_approval':
+        navigate('/admin', {
           state: {
-            fromNotification: true,
-            showComments: notification.type === 'comment' || notification.type === 'mention' || notification.type === 'comment_like',
-            highlightCommentId: commentId // Pass the comment ID to highlight
+            tab: 'products',
+            highlightProductId: notification.payload?.productId
           }
         });
-      }
-    } else if (notification.type === 'follow') {
-      // For follows, navigate to the actor's profile
-      navigate(`/profile/${notification.actor_user_id}`);
-    } else if (notification.type === 'product_approval') {
-      // For product approvals, navigate to admin panel
-      navigate('/admin', {
-        state: {
-          tab: 'products',
-          highlightProductId: notification.payload?.productId
+        break;
+
+      case 'product_approved':
+      case 'product_rejected':
+        const productId = notification.payload?.productId;
+        if (productId) {
+          navigate(`/market/product/${productId}`);
         }
-      });
-    } else if (notification.type === 'product_approved' || notification.type === 'product_rejected') {
-      // For product status updates, navigate to the product page
-      const productId = notification.payload?.productId;
-      if (productId) {
-        navigate(`/market/product/${productId}`);
-      }
+        break;
     }
   };
 
@@ -134,6 +161,8 @@ const NotificationsBell = () => {
     switch (type) {
       case 'comment':
         return <CommentIcon sx={{ fontSize: 16, color: 'primary.main' }} />;
+      case 'comment_reply':
+        return <CommentIcon sx={{ fontSize: 16, color: '#9c27b0' }} />;
       case 'like':
         return <FavoriteIcon sx={{ fontSize: 16, color: 'error.main' }} />;
       case 'comment_like':
@@ -317,6 +346,7 @@ const NotificationsBell = () => {
                           {' '}
                           {n.type === "like" && "liked your post"}
                           {n.type === "comment" && "commented on your post"}
+                          {n.type === "comment_reply" && "replied to your comment"}
                           {n.type === "comment_like" && "liked your comment"}
                           {n.type === "follow" && "started following you"}
                           {n.type === "mention" && "mentioned you in a comment"}
@@ -326,7 +356,7 @@ const NotificationsBell = () => {
                         </Typography>
 
                         {/* Comment/Mention/Comment Like preview */}
-                        {(n.type === "comment" || n.type === "mention" || n.type === "comment_like") && n.payload?.text && (
+                        {(n.type === "comment" || n.type === "comment_reply" || n.type === "mention" || n.type === "comment_like") && n.payload?.text && (
                           <Typography
                             variant="body2"
                             sx={{

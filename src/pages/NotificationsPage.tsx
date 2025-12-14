@@ -10,7 +10,6 @@ import {
   Chip,
   Button,
   IconButton,
-  Menu,
   MenuItem,
   FormControl,
   InputLabel,
@@ -19,7 +18,6 @@ import {
   InputAdornment,
   Divider,
   List,
-  ListItem,
   ListItemAvatar,
   ListItemText,
   ListItemButton,
@@ -38,10 +36,7 @@ import {
   Favorite as FavoriteIcon,
   PersonAdd as PersonAddIcon,
   Circle as CircleIcon,
-  FilterList as FilterIcon,
   Search as SearchIcon,
-  Sort as SortIcon,
-  CheckCircle as CheckCircleIcon,
   RadioButtonUnchecked as UnreadIcon,
   Approval as ApprovalIcon,
   CheckCircleOutline as ApprovedIcon,
@@ -53,7 +48,7 @@ import {
 } from '@mui/icons-material';
 import { useNotifications, type Notification } from '../NotificationsContext';
 import { useUserContext } from '../context/UserContext';
-import { formatTimeAgo, formatDetailedDate, getNotificationTypeInfo } from '../utils/timeUtils';
+import { formatTimeAgo, formatDetailedDate } from '../utils/timeUtils';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -71,8 +66,7 @@ const NotificationsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterMenuAnchor, setFilterMenuAnchor] = useState<null | HTMLElement>(null);
-  const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
+
 
   // Get unique users for filter
   const uniqueUsers = useMemo(() => {

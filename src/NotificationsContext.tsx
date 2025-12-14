@@ -72,7 +72,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     setNotifications(prev => [notif, ...prev]);
 
   const markAsRead = (id: number) => {
-    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
+    setNotifications(prev => prev.map(n => (n.id == id ? { ...n, read: true } : n)));
   };
 
   const handleNotificationClick = async (notif: Notification) => {
@@ -95,32 +95,71 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     }
 
     // Navigate based on notification type
-    if (notif.type === 'comment' || notif.type === 'like' || notif.type === 'mention' || notif.type === 'comment_like') {
-      const postId = notif.payload?.postId || notif.payload?.post_id;
-      const commentId = notif.payload?.commentId || notif.payload?.comment_id;
-      if (postId) {
-        navigate(`/post/${postId}`, {
+    switch (notif.type) {
+      case 'comment':
+      case 'comment_reply':
+      case 'mention':
+        // For comments, replies, and mentions, navigate to post and show/highlight the specific comment
+        if (notif.payload?.postId || notif.payload?.post_id) {
+          navigate(`/post/${notif.payload.postId || notif.payload.post_id}`, {
+            state: {
+              fromNotification: true,
+              showComments: true,
+              highlightCommentId: notif.payload?.commentId || notif.payload?.comment_id
+            }
+          });
+        }
+        break;
+
+      case 'comment_like':
+        const commentPostId = notif.payload?.postId || notif.payload?.post_id;
+        const commentId = notif.payload?.commentId || notif.payload?.comment_id;
+        if (commentPostId) {
+          navigate(`/post/${commentPostId}`, {
+            state: {
+              fromNotification: true,
+              showComments: true,
+              highlightCommentId: commentId
+            }
+          });
+        }
+        break;
+
+      case 'like':
+        const postId = notif.payload?.postId || notif.payload?.post_id || notif.payload?.target_id;
+        if (postId) {
+          navigate(`/post/${postId}`, {
+            state: {
+              fromNotification: true,
+              showComments: false,
+              highlightLikeButton: true
+            }
+          });
+        }
+        break;
+
+      case 'follow':
+        navigate(`/profile/${notif.actor_user_id}`);
+        break;
+
+      case 'product_approval':
+        navigate('/admin', {
           state: {
-            fromNotification: true,
-            showComments: notif.type === 'comment' || notif.type === 'mention' || notif.type === 'comment_like',
-            highlightCommentId: commentId
+            tab: 'products',
+            highlightProductId: notif.payload?.productId
           }
         });
-      }
-    } else if (notif.type === 'follow') {
-      navigate(`/profile/${notif.actor_user_id}`);
-    } else if (notif.type === 'product_approval') {
-      navigate('/admin', { state: { tab: 'products', highlightProductId: notif.payload?.productId } });
-    } else if (notif.type === 'product_approved') {
-      const productId = notif.payload?.productId;
-      if (productId) {
-        navigate(`/market/product/${productId}`);
-      }
-    } else if (notif.type === 'product_rejected') {
-      const productId = notif.payload?.productId;
-      if (productId) {
-        navigate(`/market/product/${productId}`);
-      }
+        break;
+
+      case 'product_approved':
+      case 'product_rejected':
+        if (notif.payload?.productId) {
+          navigate(`/market/product/${notif.payload.productId}`);
+        }
+        break;
+
+      default:
+        console.warn("Unhandled notification type:", notif.type);
     }
   };
 
