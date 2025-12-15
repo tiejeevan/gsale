@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { Close as X } from '@mui/icons-material';
 import StarRating from './StarRating';
 import { reviewService } from '../../services/reviewService';
 import type { Transaction } from '../../types/review';
@@ -74,7 +74,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
             onClick={onClose}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
           >
-            <X className="w-5 h-5" />
+            <X sx={{ width: 20, height: 20 }} />
           </button>
         </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, User } from 'lucide-react';
+import { Close as X, Check, Person as User } from '@mui/icons-material';
 import { transactionService } from '../../services/reviewService';
 import type { PotentialBuyer } from '../../types/review';
 
@@ -86,7 +86,7 @@ const MarkAsSoldModal: React.FC<MarkAsSoldModalProps> = ({
             onClick={onClose}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
           >
-            <X className="w-5 h-5" />
+            <X sx={{ width: 20, height: 20 }} />
           </button>
         </div>
 
@@ -128,11 +128,12 @@ const MarkAsSoldModal: React.FC<MarkAsSoldModalProps> = ({
                       <img
                         src={buyer.profile_picture}
                         alt={buyer.username}
+                        loading="lazy"
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                        <User className="w-5 h-5 text-gray-500" />
+                        <User sx={{ width: 20, height: 20, color: '#6b7280' }} />
                       </div>
                     )}
                     <div className="flex-1 text-left">
@@ -142,7 +143,7 @@ const MarkAsSoldModal: React.FC<MarkAsSoldModalProps> = ({
                       )}
                     </div>
                     {selectedBuyerId === buyer.id && (
-                      <Check className="w-5 h-5 text-blue-500" />
+                      <Check sx={{ width: 20, height: 20, color: '#3b82f6' }} />
                     )}
                   </button>
                 ))}

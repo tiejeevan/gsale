@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiX, FiSave } from "react-icons/fi";
+import { Close as FiX, Save as FiSave } from "@mui/icons-material";
 import { useUserContext } from "../context/UserContext";
 import { type User } from "../services/userService";
 
@@ -92,7 +92,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onUp
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            <FiX size={24} />
+            <FiX sx={{ fontSize: 24 }} />
           </button>
         </div>
 
@@ -308,7 +308,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onUp
               disabled={loading}
               className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg transition-colors flex items-center gap-2"
             >
-              <FiSave size={18} />
+              <FiSave sx={{ fontSize: 18 }} />
               {loading ? "Saving..." : "Save Changes"}
             </button>
           </div>

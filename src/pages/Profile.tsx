@@ -34,8 +34,11 @@ import {
   Chat as ChatIcon,
   Storefront as StorefrontIcon,
   Security as SecurityIcon,
+  Facebook as FaFacebook,
+  Twitter as FaTwitter,
+  Instagram as FaInstagram,
+  LinkedIn as FaLinkedin,
 } from "@mui/icons-material";
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { useUserContext } from "../context/UserContext";
 import { userService, type User } from "../services/userService";
 import { getUserPosts } from "../services/postService";
@@ -1011,7 +1014,7 @@ const Profile: React.FC = () => {
                     field="social_facebook"
                     value={profileUser.social_links?.facebook || ''}
                     placeholder="Facebook URL"
-                    icon={<FaFacebook size={20} style={{ color: '#1877F2' }} />}
+                    icon={<FaFacebook sx={{ fontSize: 20, color: '#1877F2' }} />}
                     type="url"
                   />
                   
@@ -1019,7 +1022,7 @@ const Profile: React.FC = () => {
                     field="social_twitter"
                     value={profileUser.social_links?.twitter || ''}
                     placeholder="Twitter URL"
-                    icon={<FaTwitter size={20} style={{ color: '#1DA1F2' }} />}
+                    icon={<FaTwitter sx={{ fontSize: 20, color: '#1DA1F2' }} />}
                     type="url"
                   />
                   
@@ -1027,7 +1030,7 @@ const Profile: React.FC = () => {
                     field="social_instagram"
                     value={profileUser.social_links?.instagram || ''}
                     placeholder="Instagram URL"
-                    icon={<FaInstagram size={20} style={{ color: '#E4405F' }} />}
+                    icon={<FaInstagram sx={{ fontSize: 20, color: '#E4405F' }} />}
                     type="url"
                   />
                   
@@ -1035,7 +1038,7 @@ const Profile: React.FC = () => {
                     field="social_linkedin"
                     value={profileUser.social_links?.linkedin || ''}
                     placeholder="LinkedIn URL"
-                    icon={<FaLinkedin size={20} style={{ color: '#0077B5' }} />}
+                    icon={<FaLinkedin sx={{ fontSize: 20, color: '#0077B5' }} />}
                     type="url"
                   />
                 </Box>

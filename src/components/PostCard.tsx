@@ -630,6 +630,7 @@ const PostCard: React.FC<PostCardProps> = ({
               <img
                 src={getPublicUrl(post.image_url)}
                 alt="Post"
+                loading="lazy"
                 style={{
                   width: '100%',
                   maxHeight: isMobile ? '200px' : '300px',
@@ -673,6 +674,7 @@ const PostCard: React.FC<PostCardProps> = ({
                     key={att.id}
                     src={fileUrl}
                     alt={att.file_name}
+                    loading="lazy"
                     style={{
                       maxHeight: isMobile ? '100px' : '140px',
                       width: 'auto',

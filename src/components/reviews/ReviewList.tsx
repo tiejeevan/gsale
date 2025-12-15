@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ThumbsUp, User } from 'lucide-react';
+import { ThumbUp as ThumbsUp, Person as User } from '@mui/icons-material';
 import StarRating from './StarRating';
 import { reviewService } from '../../services/reviewService';
 import type { Review } from '../../types/review';
@@ -106,11 +106,12 @@ const ReviewList: React.FC<ReviewListProps> = ({ userId, type }) => {
               <img
                 src={review.reviewer_profile_picture}
                 alt={review.reviewer_username}
+                loading="lazy"
                 className="w-10 h-10 rounded-full object-cover"
               />
             ) : (
               <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <User className="w-5 h-5 text-gray-500" />
+                <User sx={{ width: 20, height: 20, color: '#6b7280' }} />
               </div>
             )}
             <div className="flex-1">
@@ -162,6 +163,7 @@ const ReviewList: React.FC<ReviewListProps> = ({ userId, type }) => {
                 <img
                   src={review.product_image}
                   alt={review.product_title}
+                  loading="lazy"
                   className="w-8 h-8 rounded object-cover"
                 />
               )}
@@ -186,7 +188,7 @@ const ReviewList: React.FC<ReviewListProps> = ({ userId, type }) => {
                 onClick={() => handleHelpful(review.id, false)}
                 className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
               >
-                <ThumbsUp className="w-4 h-4" />
+                <ThumbsUp sx={{ width: 16, height: 16 }} />
                 <span>Helpful ({review.helpful_count})</span>
               </button>
             </div>

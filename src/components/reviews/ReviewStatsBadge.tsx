@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Star, ShoppingBag, Package } from 'lucide-react';
+import { Star, ShoppingBag, Inventory as Package } from '@mui/icons-material';
 import { reviewService } from '../../services/reviewService';
 import type { ReviewStats } from '../../types/review';
 
@@ -53,19 +53,19 @@ const ReviewStatsBadge: React.FC<ReviewStatsBadgeProps> = ({
       return {
         rating: stats.seller_average_rating,
         count: stats.seller_reviews_count,
-        icon: <ShoppingBag className="w-4 h-4" />
+        icon: <ShoppingBag sx={{ width: 16, height: 16 }} />
       };
     } else if (type === 'buyer') {
       return {
         rating: stats.buyer_average_rating,
         count: stats.buyer_reviews_count,
-        icon: <Package className="w-4 h-4" />
+        icon: <Package sx={{ width: 16, height: 16 }} />
       };
     } else {
       return {
         rating: stats.average_rating,
         count: stats.total_reviews_received,
-        icon: <Star className="w-4 h-4" />
+        icon: <Star sx={{ width: 16, height: 16 }} />
       };
     }
   };
@@ -75,7 +75,7 @@ const ReviewStatsBadge: React.FC<ReviewStatsBadgeProps> = ({
   if (compact) {
     return (
       <div className="flex items-center gap-1 text-sm">
-        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+        <Star sx={{ width: 16, height: 16, color: '#facc15' }} />
         <span className="font-semibold">{displayStats.rating.toFixed(1)}</span>
         <span className="text-gray-500 dark:text-gray-400">
           ({displayStats.count})
@@ -87,7 +87,7 @@ const ReviewStatsBadge: React.FC<ReviewStatsBadgeProps> = ({
   return (
     <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
       <div className="flex items-center gap-1">
-        <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+        <Star sx={{ width: 20, height: 20, color: '#facc15' }} />
         <span className="text-lg font-bold">{displayStats.rating.toFixed(1)}</span>
       </div>
       <div className="text-sm text-gray-600 dark:text-gray-400">

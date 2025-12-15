@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useUserContext } from "../context/UserContext";
-import { FiHome, FiCompass, FiSettings, FiMenu, FiX, FiLogOut } from "react-icons/fi";
+import { Home as FiHome, Explore as FiCompass, Settings as FiSettings, Menu as FiMenu, Close as FiX, Logout as FiLogOut } from "@mui/icons-material";
 
 const navItems = [
-  { name: "Home", path: "/", icon: <FiHome size={20} /> },
-  { name: "Discover", path: "/discover", icon: <FiCompass size={20} /> },
-  { name: "Settings", path: "/settings", icon: <FiSettings size={20} /> },
+  { name: "Home", path: "/", icon: <FiHome sx={{ fontSize: 20 }} /> },
+  { name: "Discover", path: "/discover", icon: <FiCompass sx={{ fontSize: 20 }} /> },
+  { name: "Settings", path: "/settings", icon: <FiSettings sx={{ fontSize: 20 }} /> },
 ];
 
 const Sidebar: React.FC = () => {
@@ -25,7 +25,7 @@ const Sidebar: React.FC = () => {
         className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-md bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow"
         onClick={toggleSidebar}
       >
-        {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+        {isOpen ? <FiX sx={{ fontSize: 24 }} /> : <FiMenu sx={{ fontSize: 24 }} />}
       </button>
 
       {/* Sidebar container */}
@@ -73,7 +73,7 @@ const Sidebar: React.FC = () => {
             onClick={logout}
             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 transform hover:scale-105"
           >
-            <FiLogOut size={18} />
+            <FiLogOut sx={{ fontSize: 18 }} />
             Sign Out
           </button>
         </div>

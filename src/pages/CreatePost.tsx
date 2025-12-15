@@ -4,7 +4,7 @@ import PublicIcon from "@mui/icons-material/Public";
 import LockIcon from "@mui/icons-material/Lock";
 import GroupIcon from "@mui/icons-material/Group";
 import { useUserContext } from "../context/UserContext";
-import { FiImage, FiLoader, FiSend, FiX } from "react-icons/fi";
+import { Image as FiImage, HourglassEmpty as FiLoader, Send as FiSend, Close as FiX } from "@mui/icons-material";
 import { triggerPostCreated } from "../utils/eventBus";
 import { createPost as createPostService } from "../services/postService";
 import { searchUsersForMentions } from "../services/userService";
@@ -457,7 +457,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ sharedProduct }) => {
                     },
                   }}
                 >
-                  <FiImage style={{ fontSize: '16px' }} /> 
+                  <FiImage sx={{ fontSize: 16 }} /> 
                   <span style={{ display: 'inline' }}>Add Photo/Video</span>
                 </Box>
                 <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} />
@@ -512,7 +512,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ sharedProduct }) => {
                   },
                 }}
               >
-                {loading ? <><FiLoader className="animate-spin" /> Posting...</> : <><FiSend /> Post</>}
+                {loading ? <><FiLoader sx={{ animation: 'spin 1s linear infinite', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} /> Posting...</> : <><FiSend /> Post</>}
               </Box>
             </Box>
           </Box>

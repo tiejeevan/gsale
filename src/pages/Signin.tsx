@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserContext } from "../context/UserContext";
-import { ShoppingBagIcon } from "@heroicons/react/24/outline";
 import { Box, Paper, TextField, Button, Typography, Alert } from "@mui/material";
+import { ShoppingBag as ShoppingBagIcon } from "@mui/icons-material";
 
 
 const Signin: React.FC = () => {
@@ -78,7 +78,7 @@ const Signin: React.FC = () => {
             gap: 2,
           }}
         >
-          <ShoppingBagIcon style={{ width: 80, height: 80, color: 'white' }} />
+          <ShoppingBagIcon sx={{ width: 80, height: 80, color: 'white' }} />
           <Typography variant="h3" sx={{ color: 'white', fontWeight: 700 }}>
             Gsale
           </Typography>

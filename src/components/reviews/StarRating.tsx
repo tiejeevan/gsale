@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star } from 'lucide-react';
+import { Star } from '@mui/icons-material';
 
 interface StarRatingProps {
   rating: number;
@@ -20,10 +20,10 @@ const StarRating: React.FC<StarRatingProps> = ({
 }) => {
   const [hoverRating, setHoverRating] = React.useState(0);
 
-  const sizeClasses = {
-    sm: 'w-4 h-4',
-    md: 'w-5 h-5',
-    lg: 'w-6 h-6'
+  const sizeSx = {
+    sm: { width: 16, height: 16 },
+    md: { width: 20, height: 20 },
+    lg: { width: 24, height: 24 }
   };
 
   const handleClick = (value: number) => {
@@ -52,13 +52,14 @@ const StarRating: React.FC<StarRatingProps> = ({
             className={`${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
           >
             <Star
-              className={`${sizeClasses[size]} ${
-                isFilled
-                  ? 'fill-yellow-400 text-yellow-400'
+              sx={{
+                ...sizeSx[size],
+                color: isFilled
+                  ? '#facc15'
                   : isPartial
-                  ? 'fill-yellow-200 text-yellow-400'
-                  : 'fill-none text-gray-300'
-              }`}
+                  ? '#fef08a'
+                  : '#d1d5db',
+              }}
             />
           </button>
         );
