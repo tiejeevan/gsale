@@ -14,5 +14,24 @@ export default defineConfig({
       key: fs.existsSync('./certs/key.pem') ? fs.readFileSync('./certs/key.pem') : undefined,
       cert: fs.existsSync('./certs/cert.pem') ? fs.readFileSync('./certs/cert.pem') : undefined,
     } : undefined
+  },
+  build: {
+    // Optimize bundle splitting for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separate MUI into its own chunk for better caching
+          'mui-core': ['@mui/material'],
+          'mui-icons': ['@mui/icons-material'],
+          'mui-lab': ['@mui/lab'],
+          'mui-x': ['@mui/x-data-grid'],
+          // Separate other large libraries
+          'vendor': ['react', 'react-dom', 'react-router-dom'],
+          'utils': ['axios', 'date-fns', 'fuse.js']
+        }
+      }
+    },
+    // Enable source maps for bundle analysis
+    sourcemap: process.env.ANALYZE === 'true'
   }
 })

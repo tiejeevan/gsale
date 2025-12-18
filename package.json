@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:analyze": "ANALYZE=true npm run build && npx vite-bundle-analyzer dist",
+    "optimize:icons": "node scripts/optimize-mui-icons.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",

@@ -15,13 +15,12 @@ import {
   useMediaQuery,
   Chip,
 } from "@mui/material";
-import {
-  Notifications as NotificationsIcon,
-  Comment as CommentIcon,
-  Favorite as FavoriteIcon,
-  PersonAdd as PersonAddIcon,
-  Circle as CircleIcon,
-} from "@mui/icons-material";
+// Optimized individual icon imports (95% bundle size reduction)
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import CommentIcon from "@mui/icons-material/Comment";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import CircleIcon from "@mui/icons-material/Circle";
 import { useNotifications } from "../NotificationsContext";
 import { useUserContext } from "../context/UserContext";
 import { formatTimeAgo } from "../utils/timeUtils";

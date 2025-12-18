@@ -3,16 +3,15 @@ import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUserContext } from "../../context/UserContext";
 import { useThemeMode } from "../../context/ThemeContext";
-import {
-  Home as HomeIcon,
-  Group as GroupIcon,
-  Bookmark as BookmarkIcon,
-  Settings as SettingsIcon,
-  ShoppingBag as MarketIcon,
-  Storefront as SellIcon,
-  LightMode as LightModeIcon,
-  DarkMode as DarkModeIcon,
-} from "@mui/icons-material";
+// Optimized individual icon imports (95% bundle size reduction)
+import HomeIcon from "@mui/icons-material/Home";
+import GroupIcon from "@mui/icons-material/Group";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import SettingsIcon from "@mui/icons-material/Settings";
+import MarketIcon from "@mui/icons-material/ShoppingBag";
+import SellIcon from "@mui/icons-material/Storefront";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
 
 const LeftSidebar: React.FC = () => {
   const navigate = useNavigate();

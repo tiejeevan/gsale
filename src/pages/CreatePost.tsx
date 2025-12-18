@@ -573,48 +573,109 @@ const CreatePost: React.FC<CreatePostProps> = ({ sharedProduct }) => {
           )}
 
           {files.length > 0 && (
-            <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
-              {files.map((file, idx) => {
-                const url = URL.createObjectURL(file);
-                if (file.type.startsWith("image/")) {
-                  return (
-                    <Box
-                      key={idx}
-                      component="img"
-                      src={url}
-                      alt={file.name}
-                      sx={{
-                        borderRadius: 2,
-                        objectFit: 'cover',
-                        height: 128,
-                        width: '100%',
-                        border: 1,
-                        borderColor: 'divider',
-                      }}
-                    />
-                  );
-                } else {
-                  return (
-                    <Box
-                      key={idx}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.875rem',
-                        color: 'text.primary',
-                        bgcolor: 'background.default',
-                        borderRadius: 2,
-                        p: 2,
-                        border: 1,
-                        borderColor: 'divider',
-                      }}
-                    >
-                      📄 {file.name}
-                    </Box>
-                  );
-                }
-              })}
+            <Box sx={{ mt: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {files.length} file{files.length > 1 ? 's' : ''} selected
+                </Typography>
+                <IconButton size="small" onClick={() => setFiles([])}>
+                  <FiX fontSize="small" />
+                </IconButton>
+              </Box>
+              <Box 
+                sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: files.length === 1 
+                    ? '1fr' 
+                    : { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, 
+                  gap: 1.5 
+                }}
+              >
+                {files.map((file, idx) => {
+                  const url = URL.createObjectURL(file);
+                  if (file.type.startsWith("image/")) {
+                    return (
+                      <Box
+                        key={idx}
+                        sx={{
+                          position: 'relative',
+                          aspectRatio: files.length === 1 ? '16/10' : '1/1',
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                          bgcolor: 'action.hover',
+                          border: 1,
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Box
+                          component="img"
+                          src={url}
+                          alt={file.name}
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: files.length === 1 ? 'contain' : 'cover',
+                          }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => setFiles(files.filter((_, i) => i !== idx))}
+                          sx={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            bgcolor: 'rgba(0,0,0,0.6)',
+                            color: 'white',
+                            '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
+                            width: 24,
+                            height: 24,
+                          }}
+                        >
+                          <FiX sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Box>
+                    );
+                  } else {
+                    return (
+                      <Box
+                        key={idx}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.875rem',
+                          color: 'text.primary',
+                          bgcolor: 'background.default',
+                          borderRadius: 2,
+                          p: 2,
+                          border: 1,
+                          borderColor: 'divider',
+                          position: 'relative',
+                        }}
+                      >
+                        📄 {file.name}
+                        <IconButton
+                          size="small"
+                          onClick={() => setFiles(files.filter((_, i) => i !== idx))}
+                          sx={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            bgcolor: 'action.hover',
+                            width: 20,
+                            height: 20,
+                          }}
+                        >
+                          <FiX sx={{ fontSize: 12 }} />
+                        </IconButton>
+                      </Box>
+                    );
+                  }
+                })}
+              </Box>
             </Box>
           )}
 
