@@ -5,14 +5,14 @@ import { useUserContext } from '../../context/UserContext';
 import FloatingChatPopup from './FloatingChatPopup';
 import { Box, Paper, Typography, Avatar, Badge, IconButton, Button } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Chat as ChatIcon } from '@mui/icons-material';
- 
+
 const MessagesTab = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const { chats, totalUnreadCount } = useChatContext();
+  const { chats, totalUnreadCount, fetchFullChats } = useChatContext();
   const { currentUser } = useUserContext();
   const messagesTabRef = useRef<HTMLDivElement>(null);
 
@@ -24,7 +24,7 @@ const MessagesTab = () => {
 
     return () => clearTimeout(timer);
   }, []);
- 
+
   // Close expanded tab when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -32,16 +32,16 @@ const MessagesTab = () => {
         setIsExpanded(false);
       }
     };
- 
+
     if (isExpanded) {
       document.addEventListener('mousedown', handleClickOutside);
     }
- 
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isExpanded]);
- 
+
   const handleChatClick = (chatId: number) => {
     console.log('[MessagesTab] Chat clicked:', chatId);
     setSelectedChatId(chatId);
@@ -52,7 +52,7 @@ const MessagesTab = () => {
       navigate(location.pathname + location.search + '#chat', { replace: false });
     }
   };
- 
+
   const handleClosePopup = () => {
     setSelectedChatId(null);
     // Remove hash from URL
@@ -60,7 +60,7 @@ const MessagesTab = () => {
       navigate(-1);
     }
   };
- 
+
   // Close popup when hash changes (back button pressed)
   useEffect(() => {
     console.log('[MessagesTab] Hash changed:', location.hash, 'selectedChatId:', selectedChatId);
@@ -95,13 +95,13 @@ const MessagesTab = () => {
       window.removeEventListener('openChat', handleOpenChat);
     };
   }, [location.hash, location.pathname, location.search, navigate]);
- 
+
   const formatLastMessage = (chat: any) => {
     if (!chat.last_message_content) return 'No messages yet';
     const preview = chat.last_message_content.substring(0, 40);
     return preview.length < chat.last_message_content.length ? `${preview}...` : preview;
   };
- 
+
   const formatTime = (timestamp: string) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -110,30 +110,30 @@ const MessagesTab = () => {
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
- 
+
     if (minutes < 1) return 'Just now';
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     if (days < 7) return `${days}d`;
     return date.toLocaleDateString();
   };
- 
+
   const selectedChat = chats.find(c => c.id === selectedChatId);
 
   // Don't render until visible
   if (!isVisible) {
     return null;
   }
- 
+
   return (
     <>
       {/* Messages Tab */}
-      <Box 
-        ref={messagesTabRef} 
-        sx={{ 
-          position: 'fixed', 
-          bottom: { xs: 56, lg: 0 }, 
-          right: 24, 
+      <Box
+        ref={messagesTabRef}
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 56, lg: 0 },
+          right: 24,
           zIndex: 40,
           opacity: 0,
           animation: 'fadeIn 0.3s ease-in forwards',
@@ -178,7 +178,7 @@ const MessagesTab = () => {
                 <ExpandMoreIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
               </IconButton>
             </Box>
- 
+
             {/* Chat List */}
             <Box sx={{ maxHeight: { xs: 320, sm: 384 }, overflowY: 'auto' }}>
               {chats.length === 0 ? (
@@ -191,11 +191,11 @@ const MessagesTab = () => {
               ) : (
                 chats.map(chat => {
                   const isGroup = chat.type === 'group';
-                  
+
                   // For direct chats, get the other participant's name
                   let chatTitle = chat.title || 'User';
                   let avatarUrl = chat.avatar_url;
-                  
+
                   if (!isGroup) {
                     if (chat.participants && chat.participants.length > 0) {
                       // Find the other participant (not the current user)
@@ -209,7 +209,7 @@ const MessagesTab = () => {
                       chatTitle = chat.last_message_sender;
                     }
                   }
-                  
+
                   return (
                     <Button
                       key={chat.id}
@@ -244,7 +244,7 @@ const MessagesTab = () => {
                         >
                           {!avatarUrl && chatTitle.charAt(0).toUpperCase()}
                         </Avatar>
- 
+
                         {/* Right Side - Name and Message */}
                         <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                           {/* User Name */}
@@ -307,16 +307,20 @@ const MessagesTab = () => {
                     </Button>
                   );
                 })
-                .filter(Boolean) // Remove null entries
+                  .filter(Boolean) // Remove null entries
               )}
             </Box>
           </Paper>
         )}
- 
+
         {/* Collapsed Tab */}
         {!isExpanded && (
           <Button
-            onClick={() => setIsExpanded(true)}
+            onClick={() => {
+              setIsExpanded(true);
+              // Lazy load full chats when tab is expanded
+              fetchFullChats();
+            }}
             variant="contained"
             sx={{
               px: { xs: 1.5, sm: 3 },
@@ -354,17 +358,17 @@ const MessagesTab = () => {
           </Button>
         )}
       </Box>
- 
+
       {/* Floating Chat Popup */}
       {selectedChat && (() => {
         const otherParticipant = selectedChat.participants?.find(p => p.id !== currentUser?.id);
         const isGroup = selectedChat.type === 'group';
-        
+
         // Don't render if we don't have a valid user ID for direct chats
         if (!isGroup && (!otherParticipant || !otherParticipant.id)) {
           return null;
         }
-        
+
         return (
           <FloatingChatPopup
             userId={otherParticipant?.id || 0}
@@ -377,5 +381,5 @@ const MessagesTab = () => {
     </>
   );
 };
- 
+
 export default MessagesTab;

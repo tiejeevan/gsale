@@ -66,6 +66,9 @@ export interface User {
   longitude?: number | null;
   location_last_updated?: string;
   location_info?: LocationInfo;
+  // Unread counts (populated by /api/users/me for optimization)
+  unread_notifications_count?: number;
+  unread_messages_count?: number;
 }
 
 // -------------------- 🟢 HELPER --------------------
@@ -145,7 +148,7 @@ export const userService = {
 
 export const searchUsersForMentions = async (query: string, token: string): Promise<User[]> => {
   if (!query.trim()) return [];
-  
+
   const res = await fetch(`${API_URL}/api/users/search/mentions?q=${encodeURIComponent(query)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -157,7 +160,7 @@ export const searchUsersForMentions = async (query: string, token: string): Prom
 
 export const searchActiveUsers = async (query: string, token: string): Promise<User[]> => {
   if (!query.trim() || query.trim().length < 2) return [];
-  
+
   const res = await fetch(`${API_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -183,13 +186,13 @@ export const getUserSuggestions = async (
   if (!query.trim() || query.trim().length < 2) {
     return { success: true, suggestions: [], count: 0 };
   }
-  
+
   const res = await fetch(
     `${API_URL}/api/users/search/suggestions?q=${encodeURIComponent(query)}&limit=${limit}`,
     {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  
+
   return handleResponse<{ success: boolean; suggestions: UserSuggestion[]; count: number }>(res);
 };

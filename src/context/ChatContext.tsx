@@ -17,8 +17,10 @@ interface ChatContextType {
   removeReactionFromMessage: (chatId: number, messageId: number, userId: number, emoji: string) => void;
   setMessages: (chatId: number, messages: Message[]) => void;
   refreshChats: () => Promise<void>;
+  fetchFullChats: () => Promise<void>;
   updateChatInList: (updatedChat: Partial<Chat> & { id: number }) => void;
   totalUnreadCount: number;
+  hasFetchedFull: boolean;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -41,38 +43,70 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [messages, setMessagesState] = useState<Record<number, Message[]>>({});
   const [typingUsers, setTypingUsers] = useState<Record<number, TypingUser[]>>({});
+  const [hasFetchedFull, setHasFetchedFull] = useState(false);
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
 
-  // Calculate total unread count
-  const totalUnreadCount = chats.reduce((sum, chat) => sum + (chat.unread_count || 0), 0);
+  // ================== Initialize unread count from UserContext ==================
+  useEffect(() => {
+    if (currentUser?.unread_messages_count !== undefined) {
+      setTotalUnreadCount(currentUser.unread_messages_count);
+    }
+  }, [currentUser?.unread_messages_count]);
 
-  // Fetch chats on mount
-  const refreshChats = async () => {
+  // ================== Fetch FULL chats list (lazy - on demand) ==================
+  const fetchFullChats = async () => {
     if (!token) return;
+    if (hasFetchedFull) return; // Already fetched, don't re-fetch
+
     try {
       const fetchedChats = await getUserChats(token);
-      
+
       // Filter out invalid chats
       const validChats = fetchedChats.filter(chat => {
-        // Keep chats that have a title or participants
         const hasTitle = chat.title && chat.title.trim() !== '';
         const hasParticipants = chat.participants && chat.participants.length > 0;
         const hasLastMessage = chat.last_message_content && chat.last_message_content.trim() !== '';
-        
-        // Keep chat if it has any of these
         return hasTitle || hasParticipants || hasLastMessage;
       });
-      
+
       setChats(validChats);
-      
-      // Note: Chat room joining is handled by separate useEffect
+      setHasFetchedFull(true);
+
+      // Update unread count based on actual data
+      const actualUnread = validChats.reduce((sum, chat) => sum + (chat.unread_count || 0), 0);
+      setTotalUnreadCount(actualUnread);
     } catch (error) {
       console.error('Failed to fetch chats:', error);
     }
   };
 
-  useEffect(() => {
-    refreshChats();
-  }, [token]);
+  // ================== Refresh chats (force re-fetch) ==================
+  const refreshChats = async () => {
+    if (!token) return;
+    try {
+      const fetchedChats = await getUserChats(token);
+
+      // Filter out invalid chats
+      const validChats = fetchedChats.filter(chat => {
+        const hasTitle = chat.title && chat.title.trim() !== '';
+        const hasParticipants = chat.participants && chat.participants.length > 0;
+        const hasLastMessage = chat.last_message_content && chat.last_message_content.trim() !== '';
+        return hasTitle || hasParticipants || hasLastMessage;
+      });
+
+      setChats(validChats);
+      setHasFetchedFull(true);
+
+      // Update unread count based on actual data
+      const actualUnread = validChats.reduce((sum, chat) => sum + (chat.unread_count || 0), 0);
+      setTotalUnreadCount(actualUnread);
+    } catch (error) {
+      console.error('Failed to fetch chats:', error);
+    }
+  };
+
+  // NOTE: Removed auto-fetch on login - now using lazy loading
+  // Full list is only fetched when fetchFullChats() is called (e.g., when messages tab is clicked)
 
   // Join all chat rooms when chats are loaded (needed for real-time messages)
   useEffect(() => {
@@ -109,7 +143,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     // New message received
     const handleNewMessage = (message: Message) => {
       addMessage(message.chat_id, message);
-      
+
       // Update chat list
       setChats(prev => {
         const chatIndex = prev.findIndex(c => c.id === message.chat_id);
@@ -118,15 +152,15 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
           refreshChats();
           return prev;
         }
-        
+
         const updatedChats = [...prev];
         const chat = { ...updatedChats[chatIndex] };
-        
+
         chat.last_message_at = message.created_at;
         chat.last_message_content = message.content;
         chat.last_message_type = message.type;
         chat.last_message_sender = message.username;
-        
+
         // Handle unread count
         if (message.sender_id !== currentUser.id) {
           if (activeChat?.id === message.chat_id) {
@@ -135,14 +169,16 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
           } else {
             // If not active chat, increment unread
             chat.unread_count = (chat.unread_count || 0) + 1;
+            // Also update totalUnreadCount for real-time badge update
+            setTotalUnreadCount(prev => prev + 1);
           }
         } else {
           // Own message, don't increment unread
           // Keep existing unread count
         }
-        
+
         updatedChats[chatIndex] = chat;
-        
+
         // Sort by last message time
         return updatedChats.sort((a, b) => {
           const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
@@ -165,11 +201,11 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     // User typing
     const handleUserTyping = ({ chatId, userId, username, avatar_url }: any) => {
       if (userId === currentUser.id) return; // Don't show own typing
-      
+
       setTypingUsers(prev => {
         const chatTyping = prev[chatId] || [];
         if (chatTyping.some(u => u.id === userId)) return prev;
-        
+
         return {
           ...prev,
           [chatId]: [...chatTyping, { id: userId, username, avatar_url }],
@@ -192,24 +228,32 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     const handleMessagesRead = ({ chatId, userId, lastMessageId }: any) => {
       // If current user read the messages, clear unread count
       if (userId === currentUser.id) {
-        setChats(prev => 
-          prev.map(chat => 
-            chat.id === chatId 
-              ? { ...chat, unread_count: 0 }
-              : chat
-          )
-        );
+        setChats(prev => {
+          const chat = prev.find(c => c.id === chatId);
+          const previousUnread = chat?.unread_count || 0;
+
+          // Update totalUnreadCount by subtracting the cleared unread
+          if (previousUnread > 0) {
+            setTotalUnreadCount(count => Math.max(0, count - previousUnread));
+          }
+
+          return prev.map(c =>
+            c.id === chatId
+              ? { ...c, unread_count: 0 }
+              : c
+          );
+        });
       } else {
         // Someone else read our messages - update read status
         setMessagesState(prev => {
           const chatMessages = prev[chatId] || [];
-          
+
           const updatedMessages = chatMessages.map(msg => {
             // Update read status for messages up to lastMessageId
             if (msg.id <= lastMessageId && msg.sender_id === currentUser.id) {
               const readBy = msg.read_by || [];
               const alreadyRead = readBy.some(r => r.user_id === userId);
-              
+
               if (!alreadyRead) {
                 return {
                   ...msg,
@@ -219,7 +263,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
             }
             return msg;
           });
-          
+
           return {
             ...prev,
             [chatId]: updatedMessages
@@ -242,7 +286,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     const handleChatNewMessage = ({ chatId }: { chatId: number }) => {
       // Check if chat exists in list
       const chatExists = chats.some(c => c.id === chatId);
-      
+
       if (!chatExists) {
         // New chat - refresh the entire list to get it
         refreshChats();
@@ -280,19 +324,19 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
   const addMessage = (chatId: number, message: Message) => {
     setMessagesState(prev => {
       const existingMessages = prev[chatId] || [];
-      
+
       // Prevent duplicates - check if message already exists by ID
       const exists = existingMessages.some(m => m.id === message.id);
       if (exists) {
         // Silently ignore duplicates (this is normal with socket + API responses)
         return prev;
       }
-      
+
       // Add message and sort by timestamp to maintain chronological order
-      const updatedMessages = [...existingMessages, message].sort((a, b) => 
+      const updatedMessages = [...existingMessages, message].sort((a, b) =>
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
-      
+
       return {
         ...prev,
         [chatId]: updatedMessages,
@@ -372,8 +416,10 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
         removeReactionFromMessage,
         setMessages,
         refreshChats,
+        fetchFullChats,
         updateChatInList,
         totalUnreadCount,
+        hasFetchedFull,
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -53,7 +53,7 @@ import { formatTimeAgo, formatDetailedDate } from '../utils/timeUtils';
 const ITEMS_PER_PAGE = 20;
 
 const NotificationsPage: React.FC = () => {
-  const { notifications, markAsRead, refreshNotifications } = useNotifications();
+  const { notifications, markAsRead, refreshNotifications, fetchFullNotifications } = useNotifications();
   const { token } = useUserContext();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -67,7 +67,10 @@ const NotificationsPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
-
+  // Fetch full notifications when page mounts (lazy loading)
+  useEffect(() => {
+    fetchFullNotifications();
+  }, []);
   // Get unique users for filter
   const uniqueUsers = useMemo(() => {
     const users = notifications.reduce((acc, notif) => {

@@ -35,10 +35,10 @@ interface CommentItemProps {
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const CommentItem: React.FC<CommentItemProps> = ({ 
-  comment, 
-  currentUserId, 
-  currentUserAvatar, 
+const CommentItem: React.FC<CommentItemProps> = ({
+  comment,
+  currentUserId,
+  currentUserAvatar,
   onCommentAdded,
   onCommentUpdated,
   onCommentDeleted,
@@ -51,7 +51,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [repliesVisible, setRepliesVisible] = useState(false);
   const [isHighlighted, setIsHighlighted] = useState(false);
   const commentRef = useRef<HTMLDivElement>(null);
-  
+
   const showMenu = Boolean(menuAnchor);
 
   // Check if this comment should be highlighted
@@ -60,7 +60,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   // Check if any child comment should be highlighted
   const hasHighlightedChild = (children: Comment[]): boolean => {
     if (!highlightCommentId || !children) return false;
-    return children.some(child => 
+    return children.some(child =>
       child.id === highlightCommentId || hasHighlightedChild(child.children || [])
     );
   };
@@ -77,12 +77,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
     if (shouldHighlight && commentRef.current) {
       // Small delay to ensure DOM is ready
       setTimeout(() => {
-        commentRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
+        commentRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
         });
         setIsHighlighted(true);
-        
+
         // Remove highlight after animation
         setTimeout(() => {
           setIsHighlighted(false);
@@ -106,24 +106,24 @@ const CommentItem: React.FC<CommentItemProps> = ({
       like_count: Math.max(0, isCurrentlyLiked ? comment.like_count - 1 : comment.like_count + 1),
       liked_by_user: !isCurrentlyLiked,
     };
-    
+
     // 1. Update the UI immediately with the optimistic state
     onCommentUpdated(optimisticComment);
 
     try {
       // 2. Send the actual request to the server
-      const res = await fetch(endpoint, { 
-        method: "POST", 
-        headers: { 
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
-        } 
+        }
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
         console.error('❌ Comment like API error:', { status: res.status, error: errorData });
-        
+
         // Handle "Already liked" case - this means the UI state is out of sync
         if (errorData.error === 'Already liked') {
           // Fix the UI state to match the backend
@@ -136,28 +136,26 @@ const CommentItem: React.FC<CommentItemProps> = ({
           toast.error('Comment is already liked. UI state has been corrected.');
           return; // Don't throw error, just return
         }
-        
+
         throw new Error(errorData.error || `HTTP ${res.status}`);
       }
-      
+
       // Parse the response to check if it's successful
       const responseData = await res.json().catch(() => ({ success: false }));
       if (!responseData.success && !responseData.msg) {
         throw new Error('Unexpected response format');
       }
-      
-      // 3. On success, the optimistic update should be correct
+
+      // 3. On success, the optimistic update is correct
       // The socket will handle real-time updates for other users
+      // No toast needed - UI already provides visual feedback via icon change
       console.log(`✅ Comment ${isCurrentlyLiked ? 'unliked' : 'liked'} successfully`);
-      
-      // Show success toast
-      toast.success(`Comment ${isCurrentlyLiked ? 'unliked' : 'liked'}!`);
 
     } catch (err) {
       console.error('❌ Failed to like/unlike comment:', err);
       // 4. If anything goes wrong, revert the UI back to the original state
       onCommentUpdated(comment);
-      
+
       // Show user-friendly error message with toast
       toast.error(`Failed to ${isCurrentlyLiked ? 'unlike' : 'like'} comment. Please try again.`);
     }
@@ -171,7 +169,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
     try {
       const res = await fetch(`${API_URL}/api/comments/${comment.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error("Failed to delete comment");
-      
+
       onCommentDeleted(comment.id);
 
     } catch (err) { console.error(err); }
@@ -186,7 +184,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
         body: JSON.stringify({ content: editContent }),
       });
       if (!res.ok) throw new Error("Failed to edit comment");
-      
+
       const updatedComment = await res.json();
       setEditing(false);
       setMenuAnchor(null);
@@ -198,42 +196,42 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const formatDate = (dateString: string) => {
     // Parse the date string properly, handling timezone
     let date: Date;
-    
+
     // If the date string doesn't have timezone info, treat it as UTC
     if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
       date = new Date(dateString + 'Z');
     } else {
       date = new Date(dateString);
     }
-    
+
     // Validate the date
     if (isNaN(date.getTime())) {
       console.error('Invalid date:', dateString);
       return 'Recently';
     }
-    
+
     const now = new Date();
     const diffInMs = now.getTime() - date.getTime();
-    
+
     // If the difference is negative or very small, it's just now
     if (diffInMs < 0 || diffInMs < 60000) return 'Just now';
-    
+
     const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
     if (diffInMinutes === 1) return '1 min ago';
     if (diffInMinutes < 60) return `${diffInMinutes} mins ago`;
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours === 1) return '1 hour ago';
     if (diffInHours < 24) return `${diffInHours} hours ago`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays === 1) return 'Yesterday';
     if (diffInDays < 7) return `${diffInDays} days ago`;
-    
+
     const diffInWeeks = Math.floor(diffInDays / 7);
     if (diffInWeeks === 1) return '1 week ago';
     if (diffInWeeks < 4) return `${diffInWeeks} weeks ago`;
-    
+
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
@@ -254,11 +252,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const canReply = commentDepth < 1; // Only allow replies on top-level comments (depth 0)
 
   return (
-    <Box 
+    <Box
       ref={commentRef}
-      sx={{ 
-        display: 'flex', 
-        gap: 1.5, 
+      sx={{
+        display: 'flex',
+        gap: 1.5,
         width: '100%',
         p: isHighlighted ? 1.5 : 0,
         borderRadius: 2,
@@ -298,7 +296,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 {/* Header */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                  <Link 
+                  <Link
                     to={`/profile/${comment.user_id}`}
                     style={{ textDecoration: 'none' }}
                   >
@@ -393,7 +391,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   color: comment.liked_by_user ? 'primary.main' : 'text.secondary',
                   p: 0.5,
                   transition: 'all 0.2s ease',
-                  '&:hover': { 
+                  '&:hover': {
                     backgroundColor: 'rgba(103, 126, 234, 0.08)',
                     transform: 'scale(1.1)',
                   },
@@ -443,7 +441,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             )}
           </Box>
         )}
-        
+
         {/* Hint for nested comments */}
         {!editing && !canReply && (
           <Box sx={{ mt: 0.5 }}>

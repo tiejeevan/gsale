@@ -27,9 +27,12 @@ export interface Notification {
 
 interface NotificationsContextProps {
   notifications: Notification[];
+  unreadCount: number;
+  hasFetchedFull: boolean;
   addNotification: (notif: Notification) => void;
   markAsRead: (id: number) => void;
   refreshNotifications: () => Promise<void>;
+  fetchFullNotifications: () => Promise<void>;
 }
 
 export const NotificationsContext = createContext<NotificationsContextProps | undefined>(undefined);
@@ -46,8 +49,38 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const { currentUser: user, token } = useUserContext();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [hasFetchedFull, setHasFetchedFull] = useState(false);
 
-  // ================== Fetch notifications from API ==================
+  // ================== Initialize unread count from UserContext ==================
+  useEffect(() => {
+    if (user?.unread_notifications_count !== undefined) {
+      setUnreadCount(user.unread_notifications_count);
+    }
+  }, [user?.unread_notifications_count]);
+
+  // ================== Fetch FULL notifications list (lazy - on demand) ==================
+  const fetchFullNotifications = async () => {
+    if (!user?.id || !token) return;
+    if (hasFetchedFull) return; // Already fetched, don't re-fetch
+
+    try {
+      const res = await fetch(`${API_URL}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch notifications");
+      const data = await res.json();
+      setNotifications(data);
+      setHasFetchedFull(true);
+      // Update unread count based on actual data
+      const actualUnread = data.filter((n: Notification) => !n.read).length;
+      setUnreadCount(actualUnread);
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+    }
+  };
+
+  // ================== Refresh notifications (force re-fetch) ==================
   const refreshNotifications = async () => {
     if (!user?.id || !token) return;
     try {
@@ -57,22 +90,36 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       if (!res.ok) throw new Error("Failed to fetch notifications");
       const data = await res.json();
       setNotifications(data);
+      setHasFetchedFull(true);
+      // Update unread count based on actual data
+      const actualUnread = data.filter((n: Notification) => !n.read).length;
+      setUnreadCount(actualUnread);
     } catch (err) {
       console.error("Failed to load notifications:", err);
     }
   };
 
-  // Fetch notifications on login
-  useEffect(() => {
-    if (user?.id) refreshNotifications();
-  }, [user, token]);
+  // NOTE: Removed auto-fetch on login - now using lazy loading
+  // Full list is only fetched when fetchFullNotifications() is called (e.g., when bell is clicked)
 
   // ================== Context Actions ==================
-  const addNotification = (notif: Notification) =>
+  const addNotification = (notif: Notification) => {
     setNotifications(prev => [notif, ...prev]);
+    // Increment unread count for real-time notifications
+    if (!notif.read) {
+      setUnreadCount(prev => prev + 1);
+    }
+  };
 
   const markAsRead = (id: number) => {
-    setNotifications(prev => prev.map(n => (n.id == id ? { ...n, read: true } : n)));
+    setNotifications(prev => {
+      const notification = prev.find(n => n.id === id);
+      // Decrement unread count if this notification was unread
+      if (notification && !notification.read) {
+        setUnreadCount(c => Math.max(0, c - 1));
+      }
+      return prev.map(n => (n.id == id ? { ...n, read: true } : n));
+    });
   };
 
   const handleNotificationClick = async (notif: Notification) => {
@@ -216,7 +263,8 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         ...{ actor_avatar: actorAvatar, actor_display_name: actorDisplayName }
       };
 
-      setNotifications(prev => [transformedNotif, ...prev]);
+      // Use addNotification to update both notifications list AND unread count
+      addNotification(transformedNotif);
 
       // Show Premium Toast
       toast.custom((t) => (
@@ -250,7 +298,15 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   return (
     <NotificationsContext.Provider
-      value={{ notifications, addNotification, markAsRead, refreshNotifications }}
+      value={{
+        notifications,
+        unreadCount,
+        hasFetchedFull,
+        addNotification,
+        markAsRead,
+        refreshNotifications,
+        fetchFullNotifications
+      }}
     >
       {children}
     </NotificationsContext.Provider>

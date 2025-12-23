@@ -26,7 +26,7 @@ import { useUserContext } from "../context/UserContext";
 import { formatTimeAgo } from "../utils/timeUtils";
 
 const NotificationsBell = () => {
-  const { notifications, markAsRead } = useNotifications();
+  const { notifications, unreadCount, fetchFullNotifications, markAsRead } = useNotifications();
   const { token } = useUserContext();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -35,11 +35,12 @@ const NotificationsBell = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const open = Boolean(anchorEl);
-  const unreadCount = notifications.filter(n => !n.read).length;
   const recentNotifications = notifications.slice(0, 10); // Show only recent 10
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
+    // Lazy load full notifications when bell is clicked
+    fetchFullNotifications();
   };
 
   const handleClose = () => {
